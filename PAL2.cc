@@ -21,7 +21,7 @@
 #include "PAL2.h"
 #include "debug/PAL2.hh"
 
-PAL2::PAL2(PALStatistics* statistics, NVMeConfig *c, Latency *l)
+PAL2::PAL2(PALStatistics* statistics, BaseConfig *c, Latency *l)
 {
   stats = statistics;
   gconf = c;

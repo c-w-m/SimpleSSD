@@ -22,14 +22,17 @@
 
 #include "SimpleSSD_types.h"
 
-#include "dev/storage/nvme/nvme_cfg.hh"
+#include "base_config.hh"
 #include "Latency.h"
 #include "PAL2_TimeSlot.h"
 #include "ftl.hh"
 
 #include "base/types.hh"
 #include "base/trace.hh"
+
+#ifndef SIMPLESSD_STANDALONE
 #include "debug/PAL2.hh"
+#endif
 
 
 #include <iostream>
@@ -67,7 +70,7 @@ class PALStatistics
       TICK_STAT_NUM
     };
 
-    NVMeConfig *gconf;
+    BaseConfig *gconf;
     Latency *lat;
 
     #if 0 //ch-die io count (legacy)

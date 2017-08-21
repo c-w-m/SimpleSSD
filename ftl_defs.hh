@@ -17,7 +17,10 @@
 #include "base/types.hh"
 #include "SimpleSSD_types.h"
 #include "base/trace.hh"
+
+#ifndef SIMPLESSD_STANDALONE
 #include "debug/FTLOut.hh"
+#endif
 
 #define EPOCH_INTERVAL 100000000000
 

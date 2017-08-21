@@ -22,7 +22,7 @@
 
 #include "SimpleSSD_types.h"
 
-#include "dev/storage/nvme/nvme_cfg.hh"
+#include "base_config.hh"
 #include "Latency.h"
 #include "PALStatistics.h"
 
@@ -42,10 +42,10 @@ class PALStatistics;
 class PAL2 //let's not inherit PAL1
 {
   public:
-    PAL2(PALStatistics* statistics, NVMeConfig *c, Latency *l);
+    PAL2(PALStatistics* statistics, BaseConfig *c, Latency *l);
     ~PAL2();
 
-    NVMeConfig *gconf;
+    BaseConfig *gconf;
     Latency *lat;
 
     TimeSlot** ChTimeSlots;

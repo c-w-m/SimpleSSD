@@ -33,10 +33,9 @@ Source('LatencyTLC.cc')
 Source('PAL2.cc')
 Source('PAL2_TimeSlot.cc')
 Source('PALStatistics.cc')
+Source('base_config.cc')
 
-DebugFlag('GLOBALCONFIG')
-DebugFlag('HIL')
 DebugFlag('FTLOut')
 DebugFlag('PAL2')
 
-CompoundFlag('SimpleSSD', [ 'GLOBALCONFIG', 'HIL', 'FTLOut', 'PAL2' ])
+CompoundFlag('SimpleSSD', [ 'FTLOut', 'PAL2' ])

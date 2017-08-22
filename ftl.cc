@@ -95,7 +95,7 @@ void FTL::translate(Addr lpn, CPDPBP *pa) {
   Addr ppn;
 
   FTLmapping->read(lpn, ppn);
-  pal->PPNdisassemble((uint64 *)&ppn, pa);
+  pal->PPNdisassemble(&ppn, pa);
 }
 
 Tick FTL::readInternal(Addr ppn, Tick now, bool flag) {

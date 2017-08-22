@@ -20,6 +20,7 @@
  *          Donghyun Gouk <kukdh1@camelab.org>
  */
 
+#include <cinttypes>
 #include <string>
 #include <vector>
 #include <map>

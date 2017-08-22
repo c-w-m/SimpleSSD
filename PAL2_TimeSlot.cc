@@ -19,7 +19,7 @@
 
 #include "PAL2_TimeSlot.h"
 
-TimeSlot::TimeSlot(uint64 startTick, uint64 duration)
+TimeSlot::TimeSlot(uint64_t startTick, uint64_t duration)
 {
     StartTick = startTick;
     EndTick = startTick + duration - 1;

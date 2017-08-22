@@ -176,14 +176,14 @@ void PALStatistics::ValueOper::printstat(const char* namestr) //This is only use
     {
       DPRINTF(PAL, "%s, %llu, %llu, %llu, %llu, %llu\n",
       OPER_STR[i],
-      (uint64)vals[i].avg(),
-      (uint64)vals[i].cnt, (uint64)vals[i].sum,
-      (uint64)vals[i].minval, (uint64)vals[i].maxval);
+      (uint64_t)vals[i].avg(),
+      (uint64_t)vals[i].cnt, (uint64_t)vals[i].sum,
+      (uint64_t)vals[i].minval, (uint64_t)vals[i].maxval);
     }
   }
 }
 
-void PALStatistics::ValueOper::printstat_bandwidth(class ValueOper* Access_Capacity, uint64 ExactBusyTime, uint64 LastExactBusyTime)
+void PALStatistics::ValueOper::printstat_bandwidth(class ValueOper* Access_Capacity, uint64_t ExactBusyTime, uint64_t LastExactBusyTime)
 {
   char OPER_STR[OPER_ALL][8] = {"Read", "Write", "Erase", "Total"};
   for (int i=0;i<OPER_ALL;i++)
@@ -207,7 +207,7 @@ void PALStatistics::ValueOper::printstat_bandwidth(class ValueOper* Access_Capac
   }
 }
 
-void PALStatistics::ValueOper::printstat_bandwidth_widle(class ValueOper* Access_Capacity, uint64 ExecutionTime, uint64 LastExecutionTime)
+void PALStatistics::ValueOper::printstat_bandwidth_widle(class ValueOper* Access_Capacity, uint64_t ExecutionTime, uint64_t LastExecutionTime)
 {
   char OPER_STR[OPER_ALL][8] = {"Read", "Write", "Erase", "Total"};
   for (int i=0;i<OPER_ALL;i++)
@@ -230,7 +230,7 @@ void PALStatistics::ValueOper::printstat_bandwidth_widle(class ValueOper* Access
   }
 }
 
-void PALStatistics::ValueOper::printstat_oper_bandwidth(class ValueOper* Access_Capacity, uint64* OpBusyTime, uint64* LastOpBusyTime)
+void PALStatistics::ValueOper::printstat_oper_bandwidth(class ValueOper* Access_Capacity, uint64_t* OpBusyTime, uint64_t* LastOpBusyTime)
 {
   char OPER_STR[OPER_ALL][8] = {"Read", "Write", "Erase", "Total"};
   for (int i=0;i<3;i++) //only read/write/erase
@@ -253,7 +253,7 @@ void PALStatistics::ValueOper::printstat_oper_bandwidth(class ValueOper* Access_
   }
 }
 
-void PALStatistics::ValueOper::printstat_iops(class ValueOper* Access_Capacity, uint64 ExactBusyTime, uint64 LastExactBusyTime)
+void PALStatistics::ValueOper::printstat_iops(class ValueOper* Access_Capacity, uint64_t ExactBusyTime, uint64_t LastExactBusyTime)
 {
   char OPER_STR[OPER_ALL][8] = {"Read", "Write", "Erase", "Total"};
   for (int i=0;i<OPER_ALL;i++)
@@ -275,7 +275,7 @@ void PALStatistics::ValueOper::printstat_iops(class ValueOper* Access_Capacity, 
   }
 }
 
-void PALStatistics::ValueOper::printstat_iops_widle(class ValueOper* Access_Capacity, uint64 ExecutionTime, uint64 LastExecutionTime)
+void PALStatistics::ValueOper::printstat_iops_widle(class ValueOper* Access_Capacity, uint64_t ExecutionTime, uint64_t LastExecutionTime)
 {
   char OPER_STR[OPER_ALL][8] = {"Read", "Write", "Erase", "Total"};
   for (int i=0;i<OPER_ALL;i++)
@@ -297,7 +297,7 @@ void PALStatistics::ValueOper::printstat_iops_widle(class ValueOper* Access_Capa
   }
 }
 
-void PALStatistics::ValueOper::printstat_oper_iops(class ValueOper* Access_Capacity, uint64* OpBusyTime, uint64* LastOpBusyTime)
+void PALStatistics::ValueOper::printstat_oper_iops(class ValueOper* Access_Capacity, uint64_t* OpBusyTime, uint64_t* LastOpBusyTime)
 {
   char OPER_STR[OPER_ALL][8] = {"Read", "Write", "Erase", "Total"};
   for (int i=0;i<3;i++) //only read/write/erase
@@ -332,9 +332,9 @@ void PALStatistics::ValueOper::printstat_latency(const char* namestr)
     {
       DPRINTF(PAL, "%s latency (min, max, average): %llu us, %llu us, %llu us\n",
       OPER_STR[i],
-      (uint64)(vals[i].minval*1.0/1000000),
-      (uint64)(vals[i].maxval*1.0/1000000),
-      (uint64)(vals[i].avg()*1.0/1000000));
+      (uint64_t)(vals[i].minval*1.0/1000000),
+      (uint64_t)(vals[i].maxval*1.0/1000000),
+      (uint64_t)(vals[i].avg()*1.0/1000000));
     }
   }
 }
@@ -425,12 +425,12 @@ void PALStatistics::ClearStats()
 
 
 
-void PALStatistics::UpdateLastTick(uint64 tick)
+void PALStatistics::UpdateLastTick(uint64_t tick)
 {
   if (LastTick<tick) LastTick=tick;
 }
 
-uint64 PALStatistics::GetLastTick()
+uint64_t PALStatistics::GetLastTick()
 {
   return LastTick;
 }
@@ -438,18 +438,18 @@ uint64 PALStatistics::GetLastTick()
 void PALStatistics::MergeSnapshot()
 {
   if (Ticks_Total_snapshot.size() != 0){
-    std::map<uint64, ValueOper*>::iterator e  = Ticks_Total_snapshot.end();
+    std::map<uint64_t, ValueOper*>::iterator e  = Ticks_Total_snapshot.end();
     e--;
-    for (std::map<uint64, ValueOper*>::iterator f = Ticks_Total_snapshot.begin(); f != e;){
+    for (std::map<uint64_t, ValueOper*>::iterator f = Ticks_Total_snapshot.begin(); f != e;){
       delete f->second;
       Ticks_Total_snapshot.erase(f++);
     }
 
   }
   if (Access_Capacity_snapshot.size() != 0){
-    std::map<uint64, ValueOper*>::iterator e  = Access_Capacity_snapshot.end();
+    std::map<uint64_t, ValueOper*>::iterator e  = Access_Capacity_snapshot.end();
     e--;
-    for (std::map<uint64, ValueOper*>::iterator f = Access_Capacity_snapshot.begin(); f != e;){
+    for (std::map<uint64_t, ValueOper*>::iterator f = Access_Capacity_snapshot.begin(); f != e;){
       delete f->second;
       Access_Capacity_snapshot.erase(f++);
     }
@@ -457,14 +457,14 @@ void PALStatistics::MergeSnapshot()
 }
 
 #if GATHER_RESOURCE_CONFLICT
-void PALStatistics::AddLatency(Command& CMD, CPDPBP* CPD, uint32 dieIdx, TimeSlot* DMA0, TimeSlot* MEM, TimeSlot* DMA1, uint8 confType, uint64 confLength)
+void PALStatistics::AddLatency(Command& CMD, CPDPBP* CPD, uint32 dieIdx, TimeSlot* DMA0, TimeSlot* MEM, TimeSlot* DMA1, uint8 confType, uint64_t confLength)
 #else
 void PALStatistics::AddLatency(Command& CMD, CPDPBP* CPD, uint32 dieIdx, TimeSlot* DMA0, TimeSlot* MEM, TimeSlot* DMA1)
 #endif
 {
   uint32 oper = CMD.operation;
   uint32 chIdx = CPD->Channel;
-  uint64 time_all[TICK_STAT_NUM];
+  uint64_t time_all[TICK_STAT_NUM];
   uint8 pageType = lat->GetPageType(CPD->Page);
   memset(time_all,0,sizeof(time_all));
 
@@ -516,9 +516,9 @@ void PALStatistics::AddLatency(Command& CMD, CPDPBP* CPD, uint32 dieIdx, TimeSlo
   Ticks_DMA1.add(oper, time_all[TICK_DMA1]);
   Ticks_Total.add(oper, time_all[TICK_FULL]);
   //***********************************************
-  uint64 finished_time = CMD.finished;
-  uint64 update_point = finished_time / EPOCH_INTERVAL;
-  std::map<uint64, ValueOper*>::iterator e  = Ticks_Total_snapshot.find(update_point);
+  uint64_t finished_time = CMD.finished;
+  uint64_t update_point = finished_time / EPOCH_INTERVAL;
+  std::map<uint64_t, ValueOper*>::iterator e  = Ticks_Total_snapshot.find(update_point);
   if (e != Ticks_Total_snapshot.end()) e->second->add(oper, time_all[TICK_FULL]);
   else{
 
@@ -557,7 +557,7 @@ void PALStatistics::AddLatency(Command& CMD, CPDPBP* CPD, uint32 dieIdx, TimeSlo
   else                    Access_Capacity.add(oper, gconf->SizePage);                // READ,WRITE
   //************************************************
   update_point = finished_time / EPOCH_INTERVAL;
-  std::map<uint64, ValueOper*>::iterator f  = Access_Capacity_snapshot.find(update_point);
+  std::map<uint64_t, ValueOper*>::iterator f  = Access_Capacity_snapshot.find(update_point);
   if (f != Access_Capacity_snapshot.end()){
     if (oper == OPER_ERASE) f->second->add(oper, gconf->SizePage*gconf->NumPage); // ERASE
     else                    f->second->add(oper, gconf->SizePage);                // READ,WRITE
@@ -599,13 +599,13 @@ void PALStatistics::AddLatency(Command& CMD, CPDPBP* CPD, uint32 dieIdx, TimeSlo
 
 #define fDPRINTF(out_to, fmt, ...) do { char buf[1024]; sprintf(buf, fmt, ##__VA_ARGS__); DPRINTF(out_to,"%s",buf); } while(0);
 
-void PALStatistics::PrintFinalStats(uint64 sim_time_ps){
+void PALStatistics::PrintFinalStats(uint64_t sim_time_ps){
   DPRINTF(PAL, "PAL Final Stats Report ]\n");
   DPRINTF(PAL, "Total execution time (ms), Total SSD active time (ms)\n");
   DPRINTF(PAL, "%.2f\t\t\t, %.2f\n", sim_time_ps * 1.0 / 1000000000, SampledExactBusyTime * 1.0 / 1000000000);
 
   assert(Access_Capacity_snapshot.size() > 0);
-  std::map<uint64, ValueOper*>::iterator e  = Access_Capacity_snapshot.end();
+  std::map<uint64_t, ValueOper*>::iterator e  = Access_Capacity_snapshot.end();
   e--;
 
   e->second->printstat("Info of Access Capacity");
@@ -615,7 +615,7 @@ void PALStatistics::PrintFinalStats(uint64 sim_time_ps){
 
 
   assert(Ticks_Total_snapshot.size() > 0);
-  std::map<uint64, ValueOper*>::iterator f  = Ticks_Total_snapshot.end();
+  std::map<uint64_t, ValueOper*>::iterator f  = Ticks_Total_snapshot.end();
   f--;
 
   f->second->printstat_latency("Info of Latency");
@@ -687,9 +687,9 @@ void PALStatistics::PrintFinalStats(uint64 sim_time_ps){
 
 }
 
-void PALStatistics::PrintStats(uint64 sim_time_ps)
+void PALStatistics::PrintStats(uint64_t sim_time_ps)
 {
-  uint64 elapsed_time_ps = (sim_time_ps - sim_start_time_ps) + 1;
+  uint64_t elapsed_time_ps = (sim_time_ps - sim_start_time_ps) + 1;
   if (LastExecutionTime == 0)
   LastExecutionTime = sim_start_time_ps;
   DPRINTF(PAL, "Execution time = %llu\n",sim_time_ps);
@@ -718,7 +718,7 @@ void PALStatistics::PrintStats(uint64 sim_time_ps)
 
 
   #if 1 // Polished stats - Improved instrumentation
-  std::map<uint64, ValueOper*>::iterator e  = Access_Capacity_snapshot.find(sim_time_ps/EPOCH_INTERVAL-1);
+  std::map<uint64_t, ValueOper*>::iterator e  = Access_Capacity_snapshot.find(sim_time_ps/EPOCH_INTERVAL-1);
   if (sim_time_ps > 0 && e != Access_Capacity_snapshot.end()){
     PPN_requested_rwe.printstat("Num of PPN IO request");
     DPRINTF(PAL, "===================\n");
@@ -787,7 +787,7 @@ void PALStatistics::PrintStats(uint64 sim_time_ps)
     Access_Bandwidth.printstat_bandwidth(e->second, SampledExactBusyTime, LastExactBusyTime);
     Access_Bandwidth_widle.printstat_bandwidth_widle(e->second, sim_time_ps, LastExecutionTime);
     Access_Oper_Bandwidth.printstat_oper_bandwidth(e->second, OpBusyTime, LastOpBusyTime);
-    std::map<uint64, ValueOper*>::iterator f  = Ticks_Total_snapshot.find(sim_time_ps/EPOCH_INTERVAL-1);
+    std::map<uint64_t, ValueOper*>::iterator f  = Ticks_Total_snapshot.find(sim_time_ps/EPOCH_INTERVAL-1);
     f->second->printstat_latency("Info of Latency");
     Access_Iops.printstat_iops(e->second, SampledExactBusyTime, LastExactBusyTime);
     Access_Iops_widle.printstat_iops_widle(e->second, sim_time_ps, LastExecutionTime);
@@ -797,7 +797,7 @@ void PALStatistics::PrintStats(uint64 sim_time_ps)
     LastOpBusyTime[0] = OpBusyTime[0];
     LastOpBusyTime[1] = OpBusyTime[1];
     LastOpBusyTime[2] = OpBusyTime[2];
-    std::map<uint64, ValueOper*>::iterator g  = Access_Capacity_snapshot.upper_bound(sim_time_ps/EPOCH_INTERVAL-1);
+    std::map<uint64_t, ValueOper*>::iterator g  = Access_Capacity_snapshot.upper_bound(sim_time_ps/EPOCH_INTERVAL-1);
     if (g != Access_Capacity_snapshot.end()){
       for (int i=0;i<OPER_ALL;i++){
         g->second->vals[i].sampled_sum = e->second->vals[i].sum;
@@ -813,7 +813,7 @@ void PALStatistics::PrintStats(uint64 sim_time_ps)
         Access_Capacity_snapshot[sim_time_ps/EPOCH_INTERVAL]->vals[i].sampled_cnt = e->second->vals[i].cnt;
       }
     }
-    std::map<uint64, ValueOper*>::iterator h  = Ticks_Total_snapshot.upper_bound(sim_time_ps/EPOCH_INTERVAL-1);
+    std::map<uint64_t, ValueOper*>::iterator h  = Ticks_Total_snapshot.upper_bound(sim_time_ps/EPOCH_INTERVAL-1);
     if (h != Ticks_Total_snapshot.end()){
       for (int i=0;i<OPER_ALL;i++){
         h->second->vals[i].sampled_sum = f->second->vals[i].sum;

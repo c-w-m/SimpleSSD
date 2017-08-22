@@ -52,36 +52,36 @@ class PAL2 //let's not inherit PAL1
     TimeSlot** DieTimeSlots;
     TimeSlot** MergedTimeSlots; //for gathering busy time
 
-    std::map<uint64, uint64> OpTimeStamp[3];
+    std::map<uint64_t, uint64_t> OpTimeStamp[3];
 
-    std::map<uint64, std::map<uint64, uint64>* > * ChFreeSlots;
-    uint64* ChStartPoint; //record the start point of rightmost free slot
-    std::map<uint64, std::map<uint64, uint64>* > * DieFreeSlots;
-    uint64* DieStartPoint;
+    std::map<uint64_t, std::map<uint64_t, uint64_t>* > * ChFreeSlots;
+    uint64_t* ChStartPoint; //record the start point of rightmost free slot
+    std::map<uint64_t, std::map<uint64_t, uint64_t>* > * DieFreeSlots;
+    uint64_t* DieStartPoint;
 
     void submit(Command &cmd);
     void TimelineScheduling(Command& req);
     PALStatistics* stats; //statistics of PAL2, not created by itself
-    void InquireBusyTime(uint64 currentTick);
-    void FlushTimeSlots(uint64 currentTick);
+    void InquireBusyTime(uint64_t currentTick);
+    void FlushTimeSlots(uint64_t currentTick);
     void FlushOpTimeStamp();
-    TimeSlot* FlushATimeSlot(TimeSlot* tgtTimeSlot, uint64 currentTick);
-    TimeSlot* FlushATimeSlotBusyTime(TimeSlot* tgtTimeSlot, uint64 currentTick, uint64* TimeSum);
+    TimeSlot* FlushATimeSlot(TimeSlot* tgtTimeSlot, uint64_t currentTick);
+    TimeSlot* FlushATimeSlotBusyTime(TimeSlot* tgtTimeSlot, uint64_t currentTick, uint64_t* TimeSum);
     //Jie: merge time slotss
     void MergeATimeSlot(TimeSlot* tgtTimeSlot);
     void MergeATimeSlot(TimeSlot* startTimeSlot, TimeSlot* endTimeSlot);
     void MergeATimeSlotCH(TimeSlot* tgtTimeSlot);
     void MergeATimeSlotDIE(TimeSlot* tgtTimeSlot);
-    TimeSlot* InsertAfter(TimeSlot* tgtTimeSlot, uint64 tickLen, uint64 tickFrom);
+    TimeSlot* InsertAfter(TimeSlot* tgtTimeSlot, uint64_t tickLen, uint64_t tickFrom);
 
-    TimeSlot* FindFreeTime(TimeSlot* tgtTimeSlot, uint64 tickLen, uint64 tickFrom); // you can insert a tickLen TimeSlot after Returned TimeSlot.
+    TimeSlot* FindFreeTime(TimeSlot* tgtTimeSlot, uint64_t tickLen, uint64_t tickFrom); // you can insert a tickLen TimeSlot after Returned TimeSlot.
 
     //Jie: return: FreeSlot is found?
-    bool FindFreeTime(std::map<uint64, std::map<uint64, uint64>* >& tgtFreeSlot, uint64 tickLen, uint64 & tickFrom, uint64 & startTick, bool & conflicts);
-    void InsertFreeSlot(std::map<uint64, std::map<uint64, uint64>* >& tgtFreeSlot, uint64 tickLen, uint64 tickFrom, uint64 startTick, uint64 & startPoint, bool split);
-    void AddFreeSlot(std::map<uint64, std::map<uint64, uint64>* >& tgtFreeSlot, uint64 tickLen, uint64 tickFrom);
-    void FlushFreeSlots(uint64 currentTick);
-    void FlushAFreeSlot(std::map<uint64, std::map<uint64, uint64>* >& tgtFreeSlot, uint64 currentTick);
+    bool FindFreeTime(std::map<uint64_t, std::map<uint64_t, uint64_t>* >& tgtFreeSlot, uint64_t tickLen, uint64_t & tickFrom, uint64_t & startTick, bool & conflicts);
+    void InsertFreeSlot(std::map<uint64_t, std::map<uint64_t, uint64_t>* >& tgtFreeSlot, uint64_t tickLen, uint64_t tickFrom, uint64_t startTick, uint64_t & startPoint, bool split);
+    void AddFreeSlot(std::map<uint64_t, std::map<uint64_t, uint64_t>* >& tgtFreeSlot, uint64_t tickLen, uint64_t tickFrom);
+    void FlushFreeSlots(uint64_t currentTick);
+    void FlushAFreeSlot(std::map<uint64_t, std::map<uint64_t, uint64_t>* >& tgtFreeSlot, uint64_t currentTick);
     uint8 VerifyTimeLines(uint8 print_on);
 
 
@@ -89,8 +89,8 @@ class PAL2 //let's not inherit PAL1
     uint32 RearrangedSizes[7];
     uint32 CPDPBPtoDieIdx(CPDPBP* pCPDPBP);
     void printCPDPBP(CPDPBP* pCPDPBP);
-    void PPNdisassemble(uint64* pPPN, CPDPBP* pCPDPBP);
-    void AssemblePPN(CPDPBP* pCPDPBP, uint64* pPPN);
+    void PPNdisassemble(uint64_t* pPPN, CPDPBP* pCPDPBP);
+    void AssemblePPN(CPDPBP* pCPDPBP, uint64_t* pPPN);
 };
 
 #endif

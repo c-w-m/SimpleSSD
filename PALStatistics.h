@@ -78,7 +78,7 @@ class PALStatistics
     {
         public:
         mini_cnt_page();
-        uint64 c[OPER_NUM][PAGE_NUM];
+        uint64_t c[OPER_NUM][PAGE_NUM];
     };
     mini_cnt_page* ch_io_cnt;
     mini_cnt_page* die_io_cnt;
@@ -89,7 +89,7 @@ class PALStatistics
     {
         public:
         mini_cnt_conflict();
-        uint64 c[OPER_NUM][CONFLICT_NUM];
+        uint64_t c[OPER_NUM][CONFLICT_NUM];
     };
     mini_cnt_conflict* ch_conflict_cnt;
     mini_cnt_conflict* ch_conflict_length;
@@ -98,28 +98,28 @@ class PALStatistics
     #endif
 
     #if 0 //latency (legacy method)
-    uint64 latency_cnt[OPER_NUM][TICK_STAT_NUM]; // RWE count for: (page_size * cnt)/SIM_TIME
-    uint64 latency_sum[OPER_NUM][TICK_STAT_NUM];
+    uint64_t latency_cnt[OPER_NUM][TICK_STAT_NUM]; // RWE count for: (page_size * cnt)/SIM_TIME
+    uint64_t latency_sum[OPER_NUM][TICK_STAT_NUM];
     #endif
 
     #if 0 //util time (legacy method)
-    uint64* channel_util_time_sum;
-    uint64* die_util_time_sum_mem;   //mem only-mem occupy
-    uint64* die_util_time_sum_optimum; //mem oper occupy optimum (DMA0+MEM+DMA1)
-    uint64* die_util_time_sum_all;  //mem oper actual occupy
+    uint64_t* channel_util_time_sum;
+    uint64_t* die_util_time_sum_mem;   //mem only-mem occupy
+    uint64_t* die_util_time_sum_optimum; //mem oper occupy optimum (DMA0+MEM+DMA1)
+    uint64_t* die_util_time_sum_all;  //mem oper actual occupy
     #endif
 
     #if 0 //stall
     /*  StallInfo:
            Actually, only use 5 entries --- 1a) TICK_DMA0_CHANNEL_CONFLICT, 1b) TICK_DMA0_PLANE_CONFLICT,
                                             2) TICK_DMA1WAIT, 3) TICK_DMA0_SUSPEND, 4) TICK_DMA1_SUSPEND  */
-    uint64 stall_sum[OPER_NUM][TICK_STAT_NUM];
-    uint64 stall_cnt[OPER_NUM][TICK_STAT_NUM];
+    uint64_t stall_sum[OPER_NUM][TICK_STAT_NUM];
+    uint64_t stall_cnt[OPER_NUM][TICK_STAT_NUM];
     uint8 LastDMA0Stall;
-    uint64 LastDMA0AttemptTick;
+    uint64_t LastDMA0AttemptTick;
 
     void CountStall(uint8 oper, uint8 stall_kind);
-    void AddStall(uint8 oper, uint8 stall_kind, uint64 lat);
+    void AddStall(uint8 oper, uint8 stall_kind, uint64_t lat);
     #endif
 
     PALStatistics(BaseConfig *, Latency *);
@@ -133,27 +133,27 @@ class PALStatistics
     void AddLatency(Task* task);
 
     /*
-    void AddOccupy(uint32 ch, uint64 ch_time, uint64 pl, uint64 pl_time, uint64 pl2_time);
+    void AddOccupy(uint32 ch, uint64_t ch_time, uint64_t pl, uint64_t pl_time, uint64_t pl2_time);
     */
 
-    uint64 sim_start_time_ps;
-    uint64 LastTick;
-    void UpdateLastTick(uint64 tick);
-    uint64 GetLastTick();
+    uint64_t sim_start_time_ps;
+    uint64_t LastTick;
+    void UpdateLastTick(uint64_t tick);
+    uint64_t GetLastTick();
     #if GATHER_RESOURCE_CONFLICT
-    void AddLatency(Command& CMD, CPDPBP* CPD, uint32 dieIdx, TimeSlot* DMA0, TimeSlot* MEM, TimeSlot* DMA1, uint8 confType, uint64 confLength );
+    void AddLatency(Command& CMD, CPDPBP* CPD, uint32 dieIdx, TimeSlot* DMA0, TimeSlot* MEM, TimeSlot* DMA1, uint8 confType, uint64_t confLength );
     #else
     void AddLatency(Command& CMD, CPDPBP* CPD, uint32 dieIdx, TimeSlot* DMA0, TimeSlot* MEM, TimeSlot* DMA1);
     #endif
     void MergeSnapshot();
-    uint64 ExactBusyTime, SampledExactBusyTime;
-    uint64 OpBusyTime[3], LastOpBusyTime[3]; // 0: Read, 1: Write, 2: Erase;
-    uint64 LastExactBusyTime;
-    uint64 LastExecutionTime;
+    uint64_t ExactBusyTime, SampledExactBusyTime;
+    uint64_t OpBusyTime[3], LastOpBusyTime[3]; // 0: Read, 1: Write, 2: Erase;
+    uint64_t LastExactBusyTime;
+    uint64_t LastExecutionTime;
 
-    void PrintStats(uint64 sim_time_ps);
+    void PrintStats(uint64_t sim_time_ps);
     void ResetStats();
-    void PrintFinalStats(uint64 sim_time_ps);
+    void PrintFinalStats(uint64_t sim_time_ps);
 
     ///////////////////////////////// polished stats
     class Counter
@@ -162,7 +162,7 @@ class PALStatistics
         Counter();
         void init();
         void add();
-        uint64 cnt;
+        uint64_t cnt;
     };
 
     class CounterOper
@@ -209,13 +209,13 @@ class PALStatistics
         void add(uint32 oper, double val);
         void exclusive_add(uint32 oper, double val);
         void printstat(const char* namestr);
-        void printstat_bandwidth(class ValueOper*, uint64 , uint64 ); //bandwidth excluding idle time
-        void printstat_bandwidth_widle(class ValueOper*, uint64, uint64); //bandwidth including idle time
-        void printstat_oper_bandwidth(class ValueOper*, uint64*, uint64*); // read/write/erase-only bandwidth
+        void printstat_bandwidth(class ValueOper*, uint64_t , uint64_t ); //bandwidth excluding idle time
+        void printstat_bandwidth_widle(class ValueOper*, uint64_t, uint64_t); //bandwidth including idle time
+        void printstat_oper_bandwidth(class ValueOper*, uint64_t*, uint64_t*); // read/write/erase-only bandwidth
         void printstat_latency(const char* namestr);
-        void printstat_iops(class ValueOper*, uint64 , uint64 );
-        void printstat_iops_widle(class ValueOper*, uint64 , uint64 );
-        void printstat_oper_iops(class ValueOper*, uint64* , uint64* );
+        void printstat_iops(class ValueOper*, uint64_t , uint64_t );
+        void printstat_iops_widle(class ValueOper*, uint64_t , uint64_t );
+        void printstat_oper_iops(class ValueOper*, uint64_t* , uint64_t* );
     };
 
     ValueOper  Ticks_DMA0WAIT;
@@ -224,19 +224,19 @@ class PALStatistics
     ValueOper  Ticks_DMA1WAIT;
     ValueOper  Ticks_DMA1;
     ValueOper  Ticks_Total; // Total = D0W+D0+M+D1W+D1
-    std::map<uint64, ValueOper*> Ticks_Total_snapshot;
+    std::map<uint64_t, ValueOper*> Ticks_Total_snapshot;
     ValueOper  Ticks_TotalOpti; //TotalOpti = D0+M+D1 --- exclude WAIT
     ValueOper* Ticks_Active_ch; //channels
     ValueOper* Ticks_Active_die; //dies
     ValueOper  Access_Capacity;
-    std::map<uint64, ValueOper*> Access_Capacity_snapshot;
+    std::map<uint64_t, ValueOper*> Access_Capacity_snapshot;
     ValueOper  Access_Bandwidth;
     ValueOper  Access_Bandwidth_widle;
     ValueOper  Access_Oper_Bandwidth;
     ValueOper  Access_Iops;
     ValueOper  Access_Iops_widle;
     ValueOper  Access_Oper_Iops;
-    uint64 SampledTick;
+    uint64_t SampledTick;
     bool skip;
 
 

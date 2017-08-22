@@ -85,7 +85,7 @@ void FTLStats::print_epoch_stats(Tick sim_time){
 
   collect_epoch_stats(epoch_number);
 
-  DPRINTF(FTLOut, "FTL Host epoch %d , time: %lf \n", epoch_number, sim_time);
+  DPRINTF(FTLOut, "FTL Host epoch %d , time: %" PRIu64 " \n", epoch_number, sim_time);
   DPRINTF(FTLOut, "FTL Host read count %d \n", (int) host_epoch_read_count.Get() );
   DPRINTF(FTLOut, "FTL Host read size %lf KB\n", host_epoch_read_size.Get());
   DPRINTF(FTLOut, "FTL Host read latency %lf us\n", host_epoch_read_latency.Get());

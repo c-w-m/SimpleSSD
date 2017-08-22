@@ -47,52 +47,52 @@ PAL2::PAL2(PALStatistics* statistics, BaseConfig *c, Latency *l)
   MergedTimeSlots = new TimeSlot*[1];
   MergedTimeSlots[0] = NULL;
 
-  ChFreeSlots = new std::map<uint64, std::map<uint64, uint64>* >[gconf->NumChannel];
-  ChStartPoint = new uint64[gconf->NumChannel];
+  ChFreeSlots = new std::map<uint64_t, std::map<uint64_t, uint64_t>* >[gconf->NumChannel];
+  ChStartPoint = new uint64_t[gconf->NumChannel];
   for (unsigned i = 0; i < gconf->NumChannel; i++) ChStartPoint[i] = 0;
 
-  DieFreeSlots = new std::map<uint64, std::map<uint64, uint64>* >[gconf->GetTotalNumDie()];
-  DieStartPoint = new uint64[gconf->GetTotalNumDie()];
+  DieFreeSlots = new std::map<uint64_t, std::map<uint64_t, uint64_t>* >[gconf->GetTotalNumDie()];
+  DieStartPoint = new uint64_t[gconf->GetTotalNumDie()];
   for (unsigned i = 0; i < gconf->GetTotalNumDie(); i++) DieStartPoint[i] = 0;
 
   //currently, hard code pre-dma, mem-op and post-dma values
   for (unsigned i = 0; i < gconf->NumChannel; i++){
-    std::map<uint64, uint64> * tmp;
+    std::map<uint64_t, uint64_t> * tmp;
     switch (gconf->NANDType) {
       case NAND_SLC:
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       ChFreeSlots[i][100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       ChFreeSlots[i][100000/lat->SPDIV + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       ChFreeSlots[i][185000000/(lat->PGDIV*lat->SPDIV)] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       ChFreeSlots[i][185000000/(lat->PGDIV*lat->SPDIV) + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       ChFreeSlots[i][1500000/lat->SPDIV] = tmp;
       break;
       case NAND_MLC:
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       ChFreeSlots[i][100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       ChFreeSlots[i][100000/lat->SPDIV + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       ChFreeSlots[i][185000000/(lat->PGDIV*lat->SPDIV)] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       ChFreeSlots[i][185000000/(lat->PGDIV*lat->SPDIV) + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       ChFreeSlots[i][1500000/lat->SPDIV] = tmp;
       break;
       case NAND_TLC:
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       ChFreeSlots[i][100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       ChFreeSlots[i][100000/lat->SPDIV + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       ChFreeSlots[i][185000000/(lat->PGDIV*lat->SPDIV)] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       ChFreeSlots[i][185000000/(lat->PGDIV*lat->SPDIV) + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       ChFreeSlots[i][1500000/lat->SPDIV] = tmp;
       break;
       default:
@@ -103,42 +103,42 @@ PAL2::PAL2(PALStatistics* statistics, BaseConfig *c, Latency *l)
   }
 
   for (unsigned i = 0; i < gconf->GetTotalNumDie(); i++){
-    std::map<uint64, uint64> * tmp;
+    std::map<uint64_t, uint64_t> * tmp;
     switch (gconf->NANDType) {
       case NAND_SLC:
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       DieFreeSlots[i][25000000 + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       DieFreeSlots[i][300000000 + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       DieFreeSlots[i][2000000000 + 100000/lat->SPDIV] = tmp;
       break;
       case NAND_MLC:
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       DieFreeSlots[i][40000000 + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       DieFreeSlots[i][90000000 + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       DieFreeSlots[i][500000000 + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       DieFreeSlots[i][1300000000 + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       DieFreeSlots[i][3500000000 + 100000/lat->SPDIV] = tmp;
       break;
       case NAND_TLC:
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       DieFreeSlots[i][58000000 + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       DieFreeSlots[i][78000000 + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       DieFreeSlots[i][107000000 + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       DieFreeSlots[i][558000000 + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       DieFreeSlots[i][2201000000 + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       DieFreeSlots[i][5001000000 + 100000/lat->SPDIV] = tmp;
-      tmp = new std::map<uint64, uint64>;
+      tmp = new std::map<uint64_t, uint64_t>;
       DieFreeSlots[i][2274000000 + 100000/lat->SPDIV] = tmp;
       break;
       default:
@@ -179,17 +179,17 @@ void PAL2::TimelineScheduling(Command& req)
   for (unsigned cur_command = 0; cur_command < erase_block; cur_command++){
 #if GATHER_RESOURCE_CONFLICT
     uint8 confType = CONFLICT_NONE;
-    uint64 confLength = 0;
+    uint64_t confLength = 0;
 #endif
     req.ppn = req.ppn - (req.ppn & (erase_block - 1)) + cur_command;
     CPDPBP reqCPD;
-    PPNdisassemble((uint64*) &(req.ppn), &reqCPD );
+    PPNdisassemble((uint64_t*) &(req.ppn), &reqCPD );
     uint32 reqCh = reqCPD.Channel;
     uint32 reqDieIdx = CPDPBPtoDieIdx( &reqCPD );
     TimeSlot *tsDMA0 = NULL, *tsMEM = NULL, *tsDMA1 = NULL;
-    uint64 tickDMA0 = 0, tickMEM = 0, tickDMA1 = 0;
-    uint64 latDMA0, latMEM, latDMA1, DMA0tickFrom, MEMtickFrom, DMA1tickFrom, totalLat;
-    uint64 latANTI; //anticipate time slot
+    uint64_t tickDMA0 = 0, tickMEM = 0, tickDMA1 = 0;
+    uint64_t latDMA0, latMEM, latDMA1, DMA0tickFrom, MEMtickFrom, DMA1tickFrom, totalLat;
+    uint64_t latANTI; //anticipate time slot
     bool conflicts; //check conflict when scheduling
     latDMA0 = lat->GetLatency(reqCPD.Page, req.operation, BUSY_DMA0);
     latMEM  = lat->GetLatency(reqCPD.Page, req.operation, BUSY_MEM );
@@ -241,7 +241,7 @@ void PAL2::TimelineScheduling(Command& req)
         }
         if (tickMEM == tickDMA0) break;
         DMA0tickFrom = MEMtickFrom;
-        uint64 tickDMA0_vrfy;
+        uint64_t tickDMA0_vrfy;
         if (!FindFreeTime( ChFreeSlots[reqCh], latDMA0, DMA0tickFrom, tickDMA0_vrfy, conflicts)){
           tickDMA0_vrfy = ChStartPoint[reqCh];
         }
@@ -273,7 +273,7 @@ void PAL2::TimelineScheduling(Command& req)
 
       // 4) Re-verify MEM slot with including MEM(DMA0_start ~ DMA1_end)
       totalLat = (DMA1tickFrom+latDMA1 + latANTI) - DMA0tickFrom;
-      uint64 tickMEM_vrfy;
+      uint64_t tickMEM_vrfy;
       if (!FindFreeTime( DieFreeSlots[reqDieIdx], totalLat, DMA0tickFrom, tickMEM_vrfy, conflicts)){
         tickMEM_vrfy = DieStartPoint[reqDieIdx];
       }
@@ -323,7 +323,7 @@ void PAL2::TimelineScheduling(Command& req)
       //******************************************************************//
       if (DMA0tickFrom > tickDMA0) DMA0tickFrom = DMA0tickFrom + latDMA0;
       else DMA0tickFrom = tickDMA0 + latDMA0;
-      uint64 tmpTick = DMA0tickFrom;
+      uint64_t tmpTick = DMA0tickFrom;
       if (! FindFreeTime( ChFreeSlots[reqCh], latANTI * 2, DMA0tickFrom, tickDMA0, conflicts)){
         if (DMA0tickFrom < ChStartPoint[reqCh]){
           DMA0tickFrom = ChStartPoint[reqCh];
@@ -348,8 +348,8 @@ void PAL2::TimelineScheduling(Command& req)
       else
       {
         TimeSlot* cur = MergedTimeSlots[0];
-        uint64 s = tsMEM->StartTick;
-        uint64 e = tsMEM->EndTick;
+        uint64_t s = tsMEM->StartTick;
+        uint64_t e = tsMEM->EndTick;
         TimeSlot *spos = NULL, *epos = NULL;
         int spnt = 0, epnt = 0; //inside(0), rightside(1)
 
@@ -487,7 +487,7 @@ void PAL2::TimelineScheduling(Command& req)
     req.finished = tsDMA1->EndTick;
 
     // categorize the time spent for read/write operation
-    std::map<uint64, uint64>::iterator e;
+    std::map<uint64_t, uint64_t>::iterator e;
     e = OpTimeStamp[req.operation].find(tsDMA0->StartTick);
     if (e != OpTimeStamp[req.operation].end()){
       if (e->second < tsDMA1->EndTick) e->second = tsDMA1->EndTick;
@@ -529,10 +529,10 @@ uint8 PAL2::VerifyTimeLines(uint8 print_on)
   {
     TimeSlot *tsDBG = ChTimeSlots[c];
     TimeSlot *prev = tsDBG;
-    uint64 ioCnt = 0;
-    uint64 cntVrfy = 0;
-    uint64 utilTime = 0;
-    uint64 idleTime = 0;
+    uint64_t ioCnt = 0;
+    uint64_t cntVrfy = 0;
+    uint64_t utilTime = 0;
+    uint64_t idleTime = 0;
     if (!tsDBG) {
       printf("WARN: no entry in CH%02d\n", c);
       continue;
@@ -546,7 +546,7 @@ uint8 PAL2::VerifyTimeLines(uint8 print_on)
       if(!( (prev->EndTick    < tsDBG->StartTick) &&
       (tsDBG->StartTick < tsDBG->EndTick) ))
       {
-        if(print_on) printf( "CH%02d VERIFY FAILED: %llu~%llu, %llu~%llu\n", c, prev->StartTick, prev->EndTick, tsDBG->StartTick, tsDBG->EndTick );
+        if(print_on) printf( "CH%02d VERIFY FAILED: %" PRIu64 "~%" PRIu64 ", %" PRIu64 "~%" PRIu64 "\n", c, prev->StartTick, prev->EndTick, tsDBG->StartTick, tsDBG->EndTick );
         cntVrfy++;
       }
       ioCnt++;
@@ -560,7 +560,7 @@ uint8 PAL2::VerifyTimeLines(uint8 print_on)
     {
       if(print_on)
       {
-        printf("TimeSlot - CH%02d Vrfy : FAIL %llu\n", c, cntVrfy);
+        printf("TimeSlot - CH%02d Vrfy : FAIL %" PRIu64 "\n", c, cntVrfy);
 
         TimeSlot* tsDBG = ChTimeSlots[c];
         printf("TimeSlot - CH%d : ", c);
@@ -574,17 +574,17 @@ uint8 PAL2::VerifyTimeLines(uint8 print_on)
       }
       ret|=1;
     }
-    if(print_on) printf("TimeSlot - CH%02d UtilTime : %llu , IdleTime : %llu , Count: %llu\n", c, utilTime, idleTime, ioCnt);
+    if(print_on) printf("TimeSlot - CH%02d UtilTime : %" PRIu64 " , IdleTime : %" PRIu64 " , Count: %" PRIu64 "\n", c, utilTime, idleTime, ioCnt);
   }
 
   for (uint32 d=0;d<gconf->GetTotalNumDie();d++)
   {
     TimeSlot *tsDBG = DieTimeSlots[d];
     TimeSlot *prev = tsDBG;
-    uint64 ioCnt = 0;
-    uint64 cntVrfy = 0;
-    uint64 idleTime = 0;
-    uint64 utilTime = 0;
+    uint64_t ioCnt = 0;
+    uint64_t cntVrfy = 0;
+    uint64_t idleTime = 0;
+    uint64_t utilTime = 0;
     if (!tsDBG){
       printf("WARN: no entry in DIE%05d\n", d);
       continue;
@@ -599,7 +599,7 @@ uint8 PAL2::VerifyTimeLines(uint8 print_on)
       if(!( (prev->EndTick    < tsDBG->StartTick) &&
       (tsDBG->StartTick < tsDBG->EndTick) ))
       {
-        if(print_on) printf( "DIE%05d VERIFY FAILED: %llu~%llu, %llu~%llu\n", d, prev->StartTick, prev->EndTick, tsDBG->StartTick, tsDBG->EndTick );
+        if(print_on) printf( "DIE%05d VERIFY FAILED: %" PRIu64 "~%" PRIu64 ", %" PRIu64 "~%" PRIu64 "\n", d, prev->StartTick, prev->EndTick, tsDBG->StartTick, tsDBG->EndTick );
         cntVrfy++;
       }
       ioCnt++;
@@ -614,7 +614,7 @@ uint8 PAL2::VerifyTimeLines(uint8 print_on)
     {
       if(print_on)
       {
-        printf("TimeSlot - DIE%05d Vrfy : FAIL %llu\n", d, cntVrfy);
+        printf("TimeSlot - DIE%05d Vrfy : FAIL %" PRIu64 "\n", d, cntVrfy);
 
         TimeSlot* tsDBG = DieTimeSlots[d];
         printf("TimeSlot - DIE%d : ", d);
@@ -628,14 +628,14 @@ uint8 PAL2::VerifyTimeLines(uint8 print_on)
       }
       ret|=2;
     }
-    if(print_on) printf("TimeSlot - DIE%05d UtilTime : %llu , IdleTime : %llu , Count: %llu\n", d, utilTime, idleTime, ioCnt);
+    if(print_on) printf("TimeSlot - DIE%05d UtilTime : %" PRIu64 " , IdleTime : %" PRIu64 " , Count: %" PRIu64 "\n", d, utilTime, idleTime, ioCnt);
   }
 
   return ret;
 }
 
 
-TimeSlot* PAL2::InsertAfter(TimeSlot* tgtTimeSlot, uint64 tickLen, uint64 startTick)
+TimeSlot* PAL2::InsertAfter(TimeSlot* tgtTimeSlot, uint64_t tickLen, uint64_t startTick)
 {
   TimeSlot* curTS;
   TimeSlot* newTS;
@@ -652,7 +652,7 @@ TimeSlot* PAL2::InsertAfter(TimeSlot* tgtTimeSlot, uint64 tickLen, uint64 startT
   return newTS;
 }
 
-TimeSlot* PAL2::FlushATimeSlot(TimeSlot* tgtTimeSlot, uint64 currentTick)
+TimeSlot* PAL2::FlushATimeSlot(TimeSlot* tgtTimeSlot, uint64_t currentTick)
 {
 
   TimeSlot* cur = tgtTimeSlot;
@@ -763,7 +763,7 @@ void PAL2::MergeATimeSlotDIE(TimeSlot* tgtTimeSlot)
   printf("TimeAfterSlot length: %d\n",counter);
 
 }
-TimeSlot* PAL2::FlushATimeSlotBusyTime(TimeSlot* tgtTimeSlot, uint64 currentTick, uint64* TimeSum)
+TimeSlot* PAL2::FlushATimeSlotBusyTime(TimeSlot* tgtTimeSlot, uint64_t currentTick, uint64_t* TimeSum)
 {
   TimeSlot* cur = tgtTimeSlot;
   while (cur)
@@ -785,11 +785,11 @@ TimeSlot* PAL2::FlushATimeSlotBusyTime(TimeSlot* tgtTimeSlot, uint64 currentTick
 void PAL2::FlushOpTimeStamp() //currently only used during garbage collection
 {
   //flush OpTimeStamp
-  std::map<uint64, uint64>::iterator e;
+  std::map<uint64_t, uint64_t>::iterator e;
   for (unsigned Oper = 0; Oper < 3; Oper++){
-    uint64 start_tick = (uint64)-1, end_tick = (uint64)-1;
+    uint64_t start_tick = (uint64_t)-1, end_tick = (uint64_t)-1;
     for (e = OpTimeStamp[Oper].begin(); e != OpTimeStamp[Oper].end(); ){
-      if (start_tick == (uint64)-1 && end_tick == (uint64)-1){
+      if (start_tick == (uint64_t)-1 && end_tick == (uint64_t)-1){
         start_tick = e->first; end_tick = e->second;
       }
       else if (e->first < end_tick && e->second <= end_tick){
@@ -808,16 +808,16 @@ void PAL2::FlushOpTimeStamp() //currently only used during garbage collection
     stats->OpBusyTime[Oper] += end_tick - start_tick + 1;
   }
 }
-void PAL2::InquireBusyTime(uint64 currentTick)
+void PAL2::InquireBusyTime(uint64_t currentTick)
 {
   stats->SampledExactBusyTime = stats->ExactBusyTime;
   //flush OpTimeStamp
-  std::map<uint64, uint64>::iterator e;
+  std::map<uint64_t, uint64_t>::iterator e;
   for (unsigned Oper = 0; Oper < 3; Oper++){
-    uint64 start_tick = (uint64)-1, end_tick = (uint64)-1;
+    uint64_t start_tick = (uint64_t)-1, end_tick = (uint64_t)-1;
     for (e = OpTimeStamp[Oper].begin(); e != OpTimeStamp[Oper].end(); ){
       if (e->second > currentTick) break;
-      if (start_tick == (uint64)-1 && end_tick == (uint64)-1){
+      if (start_tick == (uint64_t)-1 && end_tick == (uint64_t)-1){
         start_tick = e->first; end_tick = e->second;
       }
       else if (e->first < end_tick && e->second <= end_tick){
@@ -856,7 +856,7 @@ void PAL2::InquireBusyTime(uint64 currentTick)
   }
 }
 
-void PAL2::FlushTimeSlots(uint64 currentTick)
+void PAL2::FlushTimeSlots(uint64_t currentTick)
 {
 
 
@@ -878,7 +878,7 @@ void PAL2::FlushTimeSlots(uint64 currentTick)
 
 }
 
-void PAL2::FlushFreeSlots(uint64 currentTick){
+void PAL2::FlushFreeSlots(uint64_t currentTick){
   for(uint32 i=0;i<gconf->NumChannel;i++)
   {
     FlushAFreeSlot(ChFreeSlots[i], currentTick);
@@ -892,10 +892,10 @@ void PAL2::FlushFreeSlots(uint64 currentTick){
   stats->Ticks_Total.update();
 }
 
-void PAL2::FlushAFreeSlot(std::map<uint64, std::map<uint64, uint64>* >& tgtFreeSlot, uint64 currentTick){
-  for (std::map<uint64, std::map<uint64, uint64>* >::iterator e = tgtFreeSlot.begin(); e != tgtFreeSlot.end(); e++){
-    std::map<uint64, uint64>::iterator f = (e->second)->begin();
-    std::map<uint64, uint64>::iterator g = (e->second)->end();
+void PAL2::FlushAFreeSlot(std::map<uint64_t, std::map<uint64_t, uint64_t>* >& tgtFreeSlot, uint64_t currentTick){
+  for (std::map<uint64_t, std::map<uint64_t, uint64_t>* >::iterator e = tgtFreeSlot.begin(); e != tgtFreeSlot.end(); e++){
+    std::map<uint64_t, uint64_t>::iterator f = (e->second)->begin();
+    std::map<uint64_t, uint64_t>::iterator g = (e->second)->end();
 
     for (; f != g;){
       //count++;
@@ -907,7 +907,7 @@ void PAL2::FlushAFreeSlot(std::map<uint64, std::map<uint64, uint64>* >& tgtFreeS
 
 
 
-TimeSlot* PAL2::FindFreeTime(TimeSlot* tgtTimeSlot, uint64 tickLen, uint64 fromTick)
+TimeSlot* PAL2::FindFreeTime(TimeSlot* tgtTimeSlot, uint64_t tickLen, uint64_t fromTick)
 {
   TimeSlot* cur = tgtTimeSlot;
   TimeSlot* next = NULL;
@@ -937,7 +937,7 @@ TimeSlot* PAL2::FindFreeTime(TimeSlot* tgtTimeSlot, uint64 tickLen, uint64 fromT
     cur = cur->Next;
   }
 
-  //                   v-- this condition looks strange? but [minus of uint64 values] do not work correctly without this!
+  //                   v-- this condition looks strange? but [minus of uint64_t values] do not work correctly without this!
   if ( tgtTimeSlot && (tgtTimeSlot->StartTick > fromTick) && ( (tgtTimeSlot->StartTick - fromTick) >= tickLen ) )
   {
     cur = NULL; // if there is an available time slot before first cmd, return NULL!
@@ -946,14 +946,14 @@ TimeSlot* PAL2::FindFreeTime(TimeSlot* tgtTimeSlot, uint64 tickLen, uint64 fromT
   return cur;
 }
 
-bool PAL2::FindFreeTime(std::map<uint64, std::map<uint64, uint64>* > & tgtFreeSlot, uint64 tickLen, uint64 & tickFrom, uint64 & startTick,  bool & conflicts){
-  std::map<uint64, std::map<uint64, uint64>* >::iterator e = tgtFreeSlot.upper_bound(tickLen);
+bool PAL2::FindFreeTime(std::map<uint64_t, std::map<uint64_t, uint64_t>* > & tgtFreeSlot, uint64_t tickLen, uint64_t & tickFrom, uint64_t & startTick,  bool & conflicts){
+  std::map<uint64_t, std::map<uint64_t, uint64_t>* >::iterator e = tgtFreeSlot.upper_bound(tickLen);
   if (e == tgtFreeSlot.end()){
     e--; //Jie: tgtFreeSlot is not empty
-    std::map<uint64, uint64>::iterator f = (e->second)->upper_bound(tickFrom);
+    std::map<uint64_t, uint64_t>::iterator f = (e->second)->upper_bound(tickFrom);
     if (f != (e->second)->begin()){
       f--;
-      if (f->second >= tickLen + tickFrom - (uint64)1){
+      if (f->second >= tickLen + tickFrom - (uint64_t)1){
         startTick = f->first;
         conflicts = false;
         return true;
@@ -974,13 +974,13 @@ bool PAL2::FindFreeTime(std::map<uint64, std::map<uint64, uint64>* > & tgtFreeSl
     return false;
   }
   if (e != tgtFreeSlot.begin()) e--;
-  uint64 minTick = (uint64)-1;
+  uint64_t minTick = (uint64_t)-1;
   while (e != tgtFreeSlot.end()){
 
-    std::map<uint64, uint64>::iterator f = (e->second)->upper_bound(tickFrom);
+    std::map<uint64_t, uint64_t>::iterator f = (e->second)->upper_bound(tickFrom);
     if (f != (e->second)->begin()){
       f--;
-      if (f->second >= tickLen + tickFrom - (uint64)1){ //this free slot is best fit one, skip checking others
+      if (f->second >= tickLen + tickFrom - (uint64_t)1){ //this free slot is best fit one, skip checking others
         startTick = f->first;
         conflicts = false;
         return true;
@@ -988,8 +988,8 @@ bool PAL2::FindFreeTime(std::map<uint64, std::map<uint64, uint64>* > & tgtFreeSl
       f++;
     }
     while (f != (e->second)->end()){
-      if (f->second >= tickLen + f->first - (uint64)1){
-        if (minTick == (uint64)-1 || minTick > f->first){
+      if (f->second >= tickLen + f->first - (uint64_t)1){
+        if (minTick == (uint64_t)-1 || minTick > f->first){
           conflicts = true;
           minTick = f->first;
         }
@@ -999,7 +999,7 @@ bool PAL2::FindFreeTime(std::map<uint64, std::map<uint64, uint64>* > & tgtFreeSl
     }
     e++;
   }
-  if (minTick == (uint64)-1){
+  if (minTick == (uint64_t)-1){
     //startTick will be updated in upper function
     conflicts = false;
     return false;
@@ -1011,7 +1011,7 @@ bool PAL2::FindFreeTime(std::map<uint64, std::map<uint64, uint64>* > & tgtFreeSl
 
 }
 
-void PAL2::InsertFreeSlot(std::map<uint64, std::map<uint64, uint64>* >& tgtFreeSlot, uint64 tickLen, uint64 tickFrom, uint64 startTick, uint64 & startPoint, bool split){
+void PAL2::InsertFreeSlot(std::map<uint64_t, std::map<uint64_t, uint64_t>* >& tgtFreeSlot, uint64_t tickLen, uint64_t tickFrom, uint64_t startTick, uint64_t & startPoint, bool split){
   if (startTick == startPoint){
     if (tickFrom == startTick){
       if (split) AddFreeSlot(tgtFreeSlot, tickLen, startPoint);
@@ -1025,22 +1025,22 @@ void PAL2::InsertFreeSlot(std::map<uint64, std::map<uint64, uint64>* >& tgtFreeS
     }
   }
   else {
-    std::pair<std::map<uint64, std::map<uint64, uint64>* >::iterator, std::map<uint64, std::map<uint64, uint64>* >::iterator> ePair;
+    std::pair<std::map<uint64_t, std::map<uint64_t, uint64_t>* >::iterator, std::map<uint64_t, std::map<uint64_t, uint64_t>* >::iterator> ePair;
     ePair = tgtFreeSlot.equal_range(tickLen);
-    std::map<uint64, uint64>::iterator f;
-    std::map<uint64, std::map<uint64, uint64>* >::iterator e = tgtFreeSlot.upper_bound(tickLen);
+    std::map<uint64_t, uint64_t>::iterator f;
+    std::map<uint64_t, std::map<uint64_t, uint64_t>* >::iterator e = tgtFreeSlot.upper_bound(tickLen);
     if (e != tgtFreeSlot.begin()) e--;
     while (e != tgtFreeSlot.end()){
       f = e->second->find(startTick);
       if (f != e->second->end()){
-        uint64 tmpStartTick = f->first;
-        uint64 tmpEndTick = f->second;
+        uint64_t tmpStartTick = f->first;
+        uint64_t tmpEndTick = f->second;
         e->second->erase(f);
         if (tmpStartTick < tickFrom){
           AddFreeSlot(tgtFreeSlot, tickFrom - tmpStartTick, tmpStartTick);
           if (split) AddFreeSlot(tgtFreeSlot, tickLen, tickFrom);
           assert(tmpEndTick - tickFrom + 1 >= tickLen);
-          if (tmpEndTick > tickLen + tickFrom - (uint64)1){
+          if (tmpEndTick > tickLen + tickFrom - (uint64_t)1){
 
             AddFreeSlot(tgtFreeSlot, tmpEndTick - (tickFrom + tickLen -1), tickFrom + tickLen);
           }
@@ -1049,7 +1049,7 @@ void PAL2::InsertFreeSlot(std::map<uint64, std::map<uint64, uint64>* >& tgtFreeS
           assert(tmpStartTick == tickFrom);
           assert(tmpEndTick - tickFrom + 1 >= tickLen);
           if (split) AddFreeSlot(tgtFreeSlot, tickLen, tmpStartTick);
-          if (tmpEndTick > tickLen + tickFrom - (uint64)1){
+          if (tmpEndTick > tickLen + tickFrom - (uint64_t)1){
 
             AddFreeSlot(tgtFreeSlot, tmpEndTick - (tickFrom + tickLen -1), tmpStartTick + tickLen);
           }
@@ -1062,12 +1062,12 @@ void PAL2::InsertFreeSlot(std::map<uint64, std::map<uint64, uint64>* >& tgtFreeS
   }
 }
 
-void PAL2::AddFreeSlot(std::map<uint64, std::map<uint64, uint64>* >& tgtFreeSlot, uint64 tickLen, uint64 tickFrom){
-  std::map<uint64, std::map<uint64, uint64>* >::iterator e;
+void PAL2::AddFreeSlot(std::map<uint64_t, std::map<uint64_t, uint64_t>* >& tgtFreeSlot, uint64_t tickLen, uint64_t tickFrom){
+  std::map<uint64_t, std::map<uint64_t, uint64_t>* >::iterator e;
   e = tgtFreeSlot.upper_bound(tickLen);
   if (e != tgtFreeSlot.begin()){
     e--;
-    (e->second)->insert(std::pair<uint64,uint64>(tickFrom, tickFrom + tickLen - (uint64)1));
+    (e->second)->insert(std::pair<uint64_t,uint64_t>(tickFrom, tickFrom + tickLen - (uint64_t)1));
   }
 }
 //PPN number conversion
@@ -1090,10 +1090,10 @@ void PAL2::printCPDPBP(CPDPBP* pCPDPBP)
   DPRINTF(PAL,"PAL:    %7u | %7u | %7u | %7u | %7u | %7u\n", pCPDPBP_IDX[ gconf->AddrSeq[0] ], pCPDPBP_IDX[ gconf->AddrSeq[1] ], pCPDPBP_IDX[ gconf->AddrSeq[2] ], pCPDPBP_IDX[ gconf->AddrSeq[3] ], pCPDPBP_IDX[ gconf->AddrSeq[4] ], pCPDPBP_IDX[ gconf->AddrSeq[5] ]); //Use DPRINTF here
 }
 
-void PAL2::PPNdisassemble(uint64* pPPN, CPDPBP* pCPDPBP)
+void PAL2::PPNdisassemble(uint64_t* pPPN, CPDPBP* pCPDPBP)
 {
   uint32* pCPDPBP_IDX = ((uint32*)pCPDPBP);
-  uint64 tmp_MOD = *pPPN;
+  uint64_t tmp_MOD = *pPPN;
   uint8*  AS = gconf->AddrSeq;
   uint32* RS = RearrangedSizes;
   for (uint32 i = 0; i < 6; i++){
@@ -1142,9 +1142,9 @@ void PAL2::PPNdisassemble(uint64* pPPN, CPDPBP* pCPDPBP)
   #endif
 }
 
-void PAL2::AssemblePPN(CPDPBP* pCPDPBP, uint64* pPPN)
+void PAL2::AssemblePPN(CPDPBP* pCPDPBP, uint64_t* pPPN)
 {
-  uint64 AddrPPN = 0;
+  uint64_t AddrPPN = 0;
 
 
   //with re-arrange ... I hate current structure! too dirty even made with FOR-LOOP! (less-readability)

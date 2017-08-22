@@ -152,7 +152,7 @@ HIL::SSDoperation(Addr address, int pgNo, Tick TransTick, bool writeOp)
     }
   } else {
     #if DBG_PRINT_REQUEST
-    printf( "HIL: disk[%d] Read operation Tick: %" PRIu64 " Address: %#" PRIx64 " size: %d Bytes: %lu\n", disk_number, TransTick, address, pgNo, pgNo*512);
+    printf( "HIL: disk[%d] Read operation Tick: %" PRIu64 " Address: %#" PRIx64 " size: %d Bytes: %u\n", disk_number, TransTick, address, pgNo, pgNo*512);
     #endif
     //************************ statistics ************************************************//
     access_count[OPER_READ]++; total_volume[OPER_READ]+=pgNo*512;
@@ -330,7 +330,7 @@ void HIL::get_parameter(enum layer_type layer, struct output_result &output)
 {
   #define MIN(a,b) (((a)<(b))?(a):(b))
   #define MAX(a,b) (((a)>(b))?(a):(b))
-  printf("finishTick = %llu\n", finishTick);
+  printf("finishTick = %" PRIu64 "\n", finishTick);
   if (SSD != 0 ) {
     if (layer == PAL_LAYER){
       while (finishTick >= sampled_period) {

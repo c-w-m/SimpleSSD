@@ -56,7 +56,7 @@ void PALStatistics::CounterOper::init()
   for (int i=0; i<OPER_ALL; i++) cnts[i].init();
 }
 
-void PALStatistics::CounterOper::add(uint32 oper)
+void PALStatistics::CounterOper::add(uint32_t oper)
 {
   cnts[oper].add();
   cnts[OPER_NUM].add();
@@ -151,13 +151,13 @@ void PALStatistics::ValueOper::update()
   for (int i=0; i<OPER_ALL; i++) vals[i].update();
 }
 
-void PALStatistics::ValueOper::add(uint32 oper, double val)
+void PALStatistics::ValueOper::add(uint32_t oper, double val)
 {
   vals[oper].add(val);
   vals[OPER_NUM].add(val);
 }
 
-void PALStatistics::ValueOper::exclusive_add(uint32 oper, double val){
+void PALStatistics::ValueOper::exclusive_add(uint32_t oper, double val){
   vals[oper].add(val);
 }
 
@@ -457,15 +457,15 @@ void PALStatistics::MergeSnapshot()
 }
 
 #if GATHER_RESOURCE_CONFLICT
-void PALStatistics::AddLatency(Command& CMD, CPDPBP* CPD, uint32 dieIdx, TimeSlot* DMA0, TimeSlot* MEM, TimeSlot* DMA1, uint8 confType, uint64_t confLength)
+void PALStatistics::AddLatency(Command& CMD, CPDPBP* CPD, uint32_t dieIdx, TimeSlot* DMA0, TimeSlot* MEM, TimeSlot* DMA1, uint8_t confType, uint64_t confLength)
 #else
-void PALStatistics::AddLatency(Command& CMD, CPDPBP* CPD, uint32 dieIdx, TimeSlot* DMA0, TimeSlot* MEM, TimeSlot* DMA1)
+void PALStatistics::AddLatency(Command& CMD, CPDPBP* CPD, uint32_t dieIdx, TimeSlot* DMA0, TimeSlot* MEM, TimeSlot* DMA1)
 #endif
 {
-  uint32 oper = CMD.operation;
-  uint32 chIdx = CPD->Channel;
+  uint32_t oper = CMD.operation;
+  uint32_t chIdx = CPD->Channel;
   uint64_t time_all[TICK_STAT_NUM];
-  uint8 pageType = lat->GetPageType(CPD->Page);
+  uint8_t pageType = lat->GetPageType(CPD->Page);
   memset(time_all,0,sizeof(time_all));
 
   /*
@@ -626,7 +626,7 @@ void PALStatistics::PrintFinalStats(uint64_t sim_time_ps){
   PPN_requested_rwe.printstat("Num of PPN IO request");
   DPRINTF(PAL, "===================\n");
 
-  for(uint32 i=0; i<PAGE_NUM; i++)
+  for(uint32_t i=0; i<PAGE_NUM; i++)
   {
     char str[256];
     sprintf(str, "Num of %s page PPN IO request", PAGE_STRINFO[i]);
@@ -634,7 +634,7 @@ void PALStatistics::PrintFinalStats(uint64_t sim_time_ps){
   }
   printf( "===================\n");
 
-  for (uint32 i=0;i<gconf->NumChannel; i++)
+  for (uint32_t i=0;i<gconf->NumChannel; i++)
   {
     char str[256];
     sprintf(str, "Num of CH_%u PPN IO request", i);
@@ -642,7 +642,7 @@ void PALStatistics::PrintFinalStats(uint64_t sim_time_ps){
   }
   printf( "===================\n");
 
-  for (uint32 i=0; i<gconf->GetTotalNumDie(); i++)
+  for (uint32_t i=0; i<gconf->GetTotalNumDie(); i++)
   {
     char str[256];
     sprintf(str, "Num of DIE_%u PPN IO request", i);
@@ -668,7 +668,7 @@ void PALStatistics::PrintFinalStats(uint64_t sim_time_ps){
   Ticks_TotalOpti.printstat("Info of OPTIMUM(D0+M+D1) Tick");
   printf( "===================\n");
 
-  for (uint32 i=0;i<gconf->NumChannel; i++)
+  for (uint32_t i=0;i<gconf->NumChannel; i++)
   {
     char str[256];
     sprintf(str, "Info of CH_%u Active Tick", i);
@@ -676,7 +676,7 @@ void PALStatistics::PrintFinalStats(uint64_t sim_time_ps){
   }
   printf( "===================\n");
 
-  for (uint32 i=0; i<gconf->GetTotalNumDie(); i++)
+  for (uint32_t i=0; i<gconf->GetTotalNumDie(); i++)
   {
     char str[256];
     sprintf(str, "Info of DIE_%u Active Tick", i);
@@ -723,7 +723,7 @@ void PALStatistics::PrintStats(uint64_t sim_time_ps)
     PPN_requested_rwe.printstat("Num of PPN IO request");
     DPRINTF(PAL, "===================\n");
 
-    for(uint32 i=0; i<PAGE_NUM; i++)
+    for(uint32_t i=0; i<PAGE_NUM; i++)
     {
       char str[256];
       sprintf(str, "Num of %s page PPN IO request", PAGE_STRINFO[i]);
@@ -731,7 +731,7 @@ void PALStatistics::PrintStats(uint64_t sim_time_ps)
     }
     DPRINTF(PAL, "===================\n");
 
-    for (uint32 i=0;i<gconf->NumChannel; i++)
+    for (uint32_t i=0;i<gconf->NumChannel; i++)
     {
       char str[256];
       sprintf(str, "Num of CH_%u PPN IO request", i);
@@ -739,7 +739,7 @@ void PALStatistics::PrintStats(uint64_t sim_time_ps)
     }
     DPRINTF(PAL, "===================\n");
 
-    for (uint32 i=0; i<gconf->GetTotalNumDie(); i++)
+    for (uint32_t i=0; i<gconf->GetTotalNumDie(); i++)
     {
       char str[256];
       sprintf(str, "Num of DIE_%u PPN IO request", i);
@@ -765,7 +765,7 @@ void PALStatistics::PrintStats(uint64_t sim_time_ps)
     Ticks_TotalOpti.printstat("Info of OPTIMUM(D0+M+D1) Tick");
     DPRINTF(PAL, "===================\n");
 
-    for (uint32 i=0;i<gconf->NumChannel; i++)
+    for (uint32_t i=0;i<gconf->NumChannel; i++)
     {
       char str[256];
       sprintf(str, "Info of CH_%u Active Tick", i);
@@ -773,7 +773,7 @@ void PALStatistics::PrintStats(uint64_t sim_time_ps)
     }
     DPRINTF(PAL, "===================\n");
 
-    for (uint32 i=0; i<gconf->GetTotalNumDie(); i++)
+    for (uint32_t i=0; i<gconf->GetTotalNumDie(); i++)
     {
       char str[256];
       sprintf(str, "Info of DIE_%u Active Tick", i);

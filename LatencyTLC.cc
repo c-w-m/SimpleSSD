@@ -20,22 +20,22 @@
 
 #include "LatencyTLC.h"
 
-LatencyTLC::LatencyTLC(uint32 mhz, uint32 pagesize)
+LatencyTLC::LatencyTLC(uint32_t mhz, uint32_t pagesize)
 : Latency(mhz, pagesize)
 {
     ;
 }
 
-inline uint8 LatencyTLC::GetPageType(uint32 AddrPage)
+inline uint8_t LatencyTLC::GetPageType(uint32_t AddrPage)
 {
-    return (AddrPage<=5)?(uint8)PAGE_LSB : ( (AddrPage<=7)?(uint8)PAGE_CSB : (((AddrPage-8)>>1)%3) );
+    return (AddrPage<=5)?(uint8_t)PAGE_LSB : ( (AddrPage<=7)?(uint8_t)PAGE_CSB : (((AddrPage-8)>>1)%3) );
 }
 
-uint64 LatencyTLC::GetLatency(uint32 AddrPage, uint8 Oper, uint8 Busy)
+uint64_t LatencyTLC::GetLatency(uint32_t AddrPage, uint8_t Oper, uint8_t Busy)
 {
     #if 1
     //ps
-  uint64 lat_tbl[3][5] =  //uint32 lat_tbl[3][5] = //Gieseo,is this right?
+  uint64_t lat_tbl[3][5] =  //uint32_t lat_tbl[3][5] = //Gieseo,is this right?
     {                /*  LSB           CSB         MSB         DMA0,                  DMA1*/
         /* Read  */{   58000000,   78000000,  107000000,    100000/SPDIV,         185000000*2/(PGDIV*SPDIV) },
         /* Write */{  558000000, 2201000000, 5001000000, 185000000*2/(PGDIV*SPDIV), 100000/SPDIV },
@@ -43,7 +43,7 @@ uint64 LatencyTLC::GetLatency(uint32 AddrPage, uint8 Oper, uint8 Busy)
     };
     #else
     //ns
-    uint64 lat_tbl[3][5] =  //uint32 lat_tbl[3][5] = //Gieseo,is this right?
+    uint64_t lat_tbl[3][5] =  //uint32_t lat_tbl[3][5] = //Gieseo,is this right?
     {                /*  LSB      CSB      MSB    DMA0,  DMA1*/
         /* Read  */{   58000,   78000,  107000,    100/SPDIV, 185000/(PGDIV*SPDIV) },
         /* Write */{  558000, 2201000, 5001000, 185000/(PGDIV*SPDIV),    100/SPDIV },
@@ -59,9 +59,9 @@ uint64 LatencyTLC::GetLatency(uint32 AddrPage, uint8 Oper, uint8 Busy)
             return lat_tbl[Oper][4];
         case BUSY_MEM:
         {
-            //uint8 ptype = (AddrPage<=5)?PAGE_LSB : ( (AddrPage<=7)?PAGE_CSB : (((AddrPage-8)>>1)%3) );
-            uint8 ptype = GetPageType(AddrPage);
-            uint64 ret= lat_tbl[Oper][ ptype ];
+            //uint8_t ptype = (AddrPage<=5)?PAGE_LSB : ( (AddrPage<=7)?PAGE_CSB : (((AddrPage-8)>>1)%3) );
+            uint8_t ptype = GetPageType(AddrPage);
+            uint64_t ret= lat_tbl[Oper][ ptype ];
 
             #if DBG_PRINT_TICK
             //    printf("LAT %s page_%u(%s) = %llu\n", OPER_STRINFO[Oper], AddrPage, PAGE_STRINFO[ptype], ret);

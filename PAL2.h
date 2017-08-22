@@ -82,12 +82,12 @@ class PAL2 //let's not inherit PAL1
     void AddFreeSlot(std::map<uint64_t, std::map<uint64_t, uint64_t>* >& tgtFreeSlot, uint64_t tickLen, uint64_t tickFrom);
     void FlushFreeSlots(uint64_t currentTick);
     void FlushAFreeSlot(std::map<uint64_t, std::map<uint64_t, uint64_t>* >& tgtFreeSlot, uint64_t currentTick);
-    uint8 VerifyTimeLines(uint8 print_on);
+    uint8_t VerifyTimeLines(uint8_t print_on);
 
 
     //PPN Conversion related //ToDo: Shifted-Mode is also required for better performance.
-    uint32 RearrangedSizes[7];
-    uint32 CPDPBPtoDieIdx(CPDPBP* pCPDPBP);
+    uint32_t RearrangedSizes[7];
+    uint32_t CPDPBPtoDieIdx(CPDPBP* pCPDPBP);
     void printCPDPBP(CPDPBP* pCPDPBP);
     void PPNdisassemble(uint64_t* pPPN, CPDPBP* pCPDPBP);
     void AssemblePPN(CPDPBP* pCPDPBP, uint64_t* pPPN);

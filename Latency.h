@@ -38,15 +38,15 @@ using namespace std;
 class Latency
 {
     public:
-        uint32 SPDIV; //50 to 100mhz
-        uint32 PGDIV;
+        uint32_t SPDIV; //50 to 100mhz
+        uint32_t PGDIV;
 
         //Get Latency for PageAddress(L/C/MSBpage), Operation(RWE), BusyFor(Ch.DMA/Mem.Work)
-        virtual uint64 GetLatency(uint32 AddrPage, uint8 Oper, uint8 BusyFor){ return 0; };
-        virtual inline uint8  GetPageType(uint32 AddrPage) { return PAGE_NUM; };
+        virtual uint64_t GetLatency(uint32_t AddrPage, uint8_t Oper, uint8_t BusyFor){ return 0; };
+        virtual inline uint8_t  GetPageType(uint32_t AddrPage) { return PAGE_NUM; };
 
         //Setup DMA speed and pagesize
-        Latency(uint32 mhz, uint32 pagesize);
+        Latency(uint32_t mhz, uint32_t pagesize);
 };
 
 

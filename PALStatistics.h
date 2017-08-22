@@ -115,11 +115,11 @@ class PALStatistics
                                             2) TICK_DMA1WAIT, 3) TICK_DMA0_SUSPEND, 4) TICK_DMA1_SUSPEND  */
     uint64_t stall_sum[OPER_NUM][TICK_STAT_NUM];
     uint64_t stall_cnt[OPER_NUM][TICK_STAT_NUM];
-    uint8 LastDMA0Stall;
+    uint8_t LastDMA0Stall;
     uint64_t LastDMA0AttemptTick;
 
-    void CountStall(uint8 oper, uint8 stall_kind);
-    void AddStall(uint8 oper, uint8 stall_kind, uint64_t lat);
+    void CountStall(uint8_t oper, uint8_t stall_kind);
+    void AddStall(uint8_t oper, uint8_t stall_kind, uint64_t lat);
     #endif
 
     PALStatistics(BaseConfig *, Latency *);
@@ -127,13 +127,13 @@ class PALStatistics
     ~PALStatistics();
 
     /*
-    void AddLatency(uint32 lat, uint8 oper, uint8 busyfor);
+    void AddLatency(uint32_t lat, uint8_t oper, uint8_t busyfor);
     */
 
     void AddLatency(Task* task);
 
     /*
-    void AddOccupy(uint32 ch, uint64_t ch_time, uint64_t pl, uint64_t pl_time, uint64_t pl2_time);
+    void AddOccupy(uint32_t ch, uint64_t ch_time, uint64_t pl, uint64_t pl_time, uint64_t pl2_time);
     */
 
     uint64_t sim_start_time_ps;
@@ -141,9 +141,9 @@ class PALStatistics
     void UpdateLastTick(uint64_t tick);
     uint64_t GetLastTick();
     #if GATHER_RESOURCE_CONFLICT
-    void AddLatency(Command& CMD, CPDPBP* CPD, uint32 dieIdx, TimeSlot* DMA0, TimeSlot* MEM, TimeSlot* DMA1, uint8 confType, uint64_t confLength );
+    void AddLatency(Command& CMD, CPDPBP* CPD, uint32_t dieIdx, TimeSlot* DMA0, TimeSlot* MEM, TimeSlot* DMA1, uint8_t confType, uint64_t confLength );
     #else
-    void AddLatency(Command& CMD, CPDPBP* CPD, uint32 dieIdx, TimeSlot* DMA0, TimeSlot* MEM, TimeSlot* DMA1);
+    void AddLatency(Command& CMD, CPDPBP* CPD, uint32_t dieIdx, TimeSlot* DMA0, TimeSlot* MEM, TimeSlot* DMA1);
     #endif
     void MergeSnapshot();
     uint64_t ExactBusyTime, SampledExactBusyTime;
@@ -171,7 +171,7 @@ class PALStatistics
         CounterOper();
         Counter cnts[OPER_ALL];
         void init();
-        void add(uint32 oper);
+        void add(uint32_t oper);
         void printstat(const char* namestr);
     };
 
@@ -206,8 +206,8 @@ class PALStatistics
         Value vals[OPER_ALL];
         void init();
         void update();
-        void add(uint32 oper, double val);
-        void exclusive_add(uint32 oper, double val);
+        void add(uint32_t oper, double val);
+        void exclusive_add(uint32_t oper, double val);
         void printstat(const char* namestr);
         void printstat_bandwidth(class ValueOper*, uint64_t , uint64_t ); //bandwidth excluding idle time
         void printstat_bandwidth_widle(class ValueOper*, uint64_t, uint64_t); //bandwidth including idle time

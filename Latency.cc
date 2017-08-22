@@ -32,7 +32,7 @@
     - SLC
 */
 
-Latency::Latency(uint32 mhz, uint32 pagesize)
+Latency::Latency(uint32_t mhz, uint32_t pagesize)
 {
     switch (mhz) //base = 50mhz
     {

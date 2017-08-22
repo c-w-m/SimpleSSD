@@ -21,6 +21,8 @@
 #ifndef __ssdsim_types_h__
 #define __ssdsim_types_h__
 
+#include <cinttypes>
+
 /*==============================
 Switches
 ==============================*/
@@ -112,8 +114,8 @@ Type & Struct
 #define SEC  (1)
 #define MSEC (1000)      // 1 000
 #define USEC (1000*MSEC) // 1 000 000
-#define NSEC ((uint64)1000*USEC) // 1 000 000 000
-#define PSEC ((uint64)1000*NSEC) // 1 000 000 000 000
+#define NSEC ((uint64_t)1000*USEC) // 1 000 000 000
+#define PSEC ((uint64_t)1000*NSEC) // 1 000 000 000 000
 
 //===== Address Sequence =====
 enum {
@@ -211,50 +213,50 @@ Todo: Make those structs to class?, to check address limitation & warn.
 //===== Divided Address =====
 typedef struct _CPDPBP
 {
-  uint32 Channel;
-  uint32 Package;
-  uint32 Die;
-  uint32 Plane;
-  uint32 Block;
-  uint32 Page;
+  uint32_t Channel;
+  uint32_t Package;
+  uint32_t Die;
+  uint32_t Plane;
+  uint32_t Block;
+  uint32_t Page;
 }CPDPBP;
 
 //===== PPN Request Info (would be in the queue) =====
 class RequestFTL
 {
 public:
-  uint64 PPN;
-  uint8  Oper;
-  uint64 TickRequested;
+  uint64_t PPN;
+  uint8_t  Oper;
+  uint64_t TickRequested;
 };
 
 //===== Task which can be assign to Channel or Memory =====
 class Task
 {
 public:
-  uint64 PPN;
+  uint64_t PPN;
   CPDPBP CPD;
-  uint32 PlaneIdx;
-  uint8  Oper;
-  uint8  Busy;
+  uint32_t PlaneIdx;
+  uint8_t  Oper;
+  uint8_t  Busy;
   #if DMA_PREEMPTION
-  uint64 DMASuspend;   // 0 = no suspend, true = suspended & left time
+  uint64_t DMASuspend;   // 0 = no suspend, true = suspended & left time
   #endif
-  uint64 TickStart[TICK_NUM]; // End Time of each BUSY status, [BUSY_NUM] = END_TIME, actually not needed for simulation itself.
-  uint64 TickNext;
+  uint64_t TickStart[TICK_NUM]; // End Time of each BUSY status, [BUSY_NUM] = END_TIME, actually not needed for simulation itself.
+  uint64_t TickNext;
 };
 
 //===== PPN Request Info (would be in the queue) =====
 class RequestLL
 {
 public:
-  uint64 PPN;
-  uint8  Oper;
-  uint64 TickRequested;
-  uint64 TickFinished;
+  uint64_t PPN;
+  uint8_t  Oper;
+  uint64_t TickRequested;
+  uint64_t TickFinished;
 
   CPDPBP CPD;
-  uint8 status; // 0-New, 1-Fetched, 2-Finished
+  uint8_t status; // 0-New, 1-Fetched, 2-Finished
   RequestLL* LLprev; //Dual-Linked-List
   RequestLL* LLnext; //Dual-Linked-List
 };

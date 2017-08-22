@@ -29,7 +29,7 @@ PAL2::PAL2(PALStatistics* statistics, BaseConfig *c, Latency *l)
   gconf = c;
   lat = l;
 
-  uint32* OriginalSizes = gconf->OriginalSizes;
+  uint32_t *OriginalSizes = gconf->OriginalSizes;
   RearrangedSizes[6] = OriginalSizes[6];
   for (int i=0; i<6; i++)
   {
@@ -178,14 +178,14 @@ void PAL2::TimelineScheduling(Command& req)
   /*=========== CONFLICT data gather ============*/
   for (unsigned cur_command = 0; cur_command < erase_block; cur_command++){
 #if GATHER_RESOURCE_CONFLICT
-    uint8 confType = CONFLICT_NONE;
+    uint8_t confType = CONFLICT_NONE;
     uint64_t confLength = 0;
 #endif
     req.ppn = req.ppn - (req.ppn & (erase_block - 1)) + cur_command;
     CPDPBP reqCPD;
     PPNdisassemble((uint64_t*) &(req.ppn), &reqCPD );
-    uint32 reqCh = reqCPD.Channel;
-    uint32 reqDieIdx = CPDPBPtoDieIdx( &reqCPD );
+    uint32_t reqCh = reqCPD.Channel;
+    uint32_t reqDieIdx = CPDPBPtoDieIdx( &reqCPD );
     TimeSlot *tsDMA0 = NULL, *tsMEM = NULL, *tsDMA1 = NULL;
     uint64_t tickDMA0 = 0, tickMEM = 0, tickDMA1 = 0;
     uint64_t latDMA0, latMEM, latDMA1, DMA0tickFrom, MEMtickFrom, DMA1tickFrom, totalLat;
@@ -520,12 +520,12 @@ void PAL2::submit(Command &cmd) {
   TimelineScheduling(cmd);
 }
 
-uint8 PAL2::VerifyTimeLines(uint8 print_on)
+uint8_t PAL2::VerifyTimeLines(uint8_t print_on)
 {
-  uint8 ret = 0;
+  uint8_t ret = 0;
   if (print_on) printf("[ Verify Timelines ]\n");
 
-  for (uint32 c = 0; c < gconf->NumChannel; c++)
+  for (uint32_t c = 0; c < gconf->NumChannel; c++)
   {
     TimeSlot *tsDBG = ChTimeSlots[c];
     TimeSlot *prev = tsDBG;
@@ -577,7 +577,7 @@ uint8 PAL2::VerifyTimeLines(uint8 print_on)
     if(print_on) printf("TimeSlot - CH%02d UtilTime : %" PRIu64 " , IdleTime : %" PRIu64 " , Count: %" PRIu64 "\n", c, utilTime, idleTime, ioCnt);
   }
 
-  for (uint32 d=0;d<gconf->GetTotalNumDie();d++)
+  for (uint32_t d=0;d<gconf->GetTotalNumDie();d++)
   {
     TimeSlot *tsDBG = DieTimeSlots[d];
     TimeSlot *prev = tsDBG;
@@ -860,12 +860,12 @@ void PAL2::FlushTimeSlots(uint64_t currentTick)
 {
 
 
-  for(uint32 i=0;i<gconf->NumChannel;i++)
+  for(uint32_t i=0;i<gconf->NumChannel;i++)
   {
     ChTimeSlots[i] = FlushATimeSlot(ChTimeSlots[i], currentTick);
   }
 
-  for(uint32 i=0;i<gconf->GetTotalNumDie();i++)
+  for(uint32_t i=0;i<gconf->GetTotalNumDie();i++)
   {
     DieTimeSlots[i] = FlushATimeSlot(DieTimeSlots[i], currentTick);
   }
@@ -879,11 +879,11 @@ void PAL2::FlushTimeSlots(uint64_t currentTick)
 }
 
 void PAL2::FlushFreeSlots(uint64_t currentTick){
-  for(uint32 i=0;i<gconf->NumChannel;i++)
+  for(uint32_t i=0;i<gconf->NumChannel;i++)
   {
     FlushAFreeSlot(ChFreeSlots[i], currentTick);
   }
-  for(uint32 i=0;i<gconf->GetTotalNumDie();i++)
+  for(uint32_t i=0;i<gconf->GetTotalNumDie();i++)
   {
     FlushAFreeSlot(DieFreeSlots[i], currentTick);
   }
@@ -1071,10 +1071,10 @@ void PAL2::AddFreeSlot(std::map<uint64_t, std::map<uint64_t, uint64_t>* >& tgtFr
   }
 }
 //PPN number conversion
-uint32 PAL2::CPDPBPtoDieIdx(CPDPBP* pCPDPBP)
+uint32_t PAL2::CPDPBPtoDieIdx(CPDPBP* pCPDPBP)
 {
   //[Channel][Package][Die];
-  uint32 ret = 0;
+  uint32_t ret = 0;
   ret += pCPDPBP->Die;
   ret += pCPDPBP->Package * (gconf->NumDie);
   ret += pCPDPBP->Channel * (gconf->NumDie * gconf->NumPackage);
@@ -1084,7 +1084,7 @@ uint32 PAL2::CPDPBPtoDieIdx(CPDPBP* pCPDPBP)
 
 void PAL2::printCPDPBP(CPDPBP* pCPDPBP)
 {
-  uint32* pCPDPBP_IDX = ((uint32*)pCPDPBP);
+  uint32_t* pCPDPBP_IDX = ((uint32_t*)pCPDPBP);
 
   DPRINTF(PAL,"PAL:    %7s | %7s | %7s | %7s | %7s | %7s\n", ADDR_STRINFO[ gconf->AddrSeq[0] ], ADDR_STRINFO[ gconf->AddrSeq[1] ], ADDR_STRINFO[ gconf->AddrSeq[2] ], ADDR_STRINFO[ gconf->AddrSeq[3] ], ADDR_STRINFO[ gconf->AddrSeq[4] ], ADDR_STRINFO[ gconf->AddrSeq[5] ]); //Use DPRINTF here
   DPRINTF(PAL,"PAL:    %7u | %7u | %7u | %7u | %7u | %7u\n", pCPDPBP_IDX[ gconf->AddrSeq[0] ], pCPDPBP_IDX[ gconf->AddrSeq[1] ], pCPDPBP_IDX[ gconf->AddrSeq[2] ], pCPDPBP_IDX[ gconf->AddrSeq[3] ], pCPDPBP_IDX[ gconf->AddrSeq[4] ], pCPDPBP_IDX[ gconf->AddrSeq[5] ]); //Use DPRINTF here
@@ -1092,11 +1092,11 @@ void PAL2::printCPDPBP(CPDPBP* pCPDPBP)
 
 void PAL2::PPNdisassemble(uint64_t* pPPN, CPDPBP* pCPDPBP)
 {
-  uint32* pCPDPBP_IDX = ((uint32*)pCPDPBP);
+  uint32_t* pCPDPBP_IDX = ((uint32_t*)pCPDPBP);
   uint64_t tmp_MOD = *pPPN;
-  uint8*  AS = gconf->AddrSeq;
-  uint32* RS = RearrangedSizes;
-  for (uint32 i = 0; i < 6; i++){
+  uint8_t * AS = gconf->AddrSeq;
+  uint32_t* RS = RearrangedSizes;
+  for (uint32_t i = 0; i < 6; i++){
     pCPDPBP_IDX[i] = 0;
   }
   if (RS[6] == 0) //there is no misalignment
@@ -1119,14 +1119,14 @@ void PAL2::PPNdisassemble(uint64_t* pPPN, CPDPBP* pCPDPBP)
     pCPDPBP_IDX[ AS[5] ] = tmp_MOD;
   }
   else{
-    uint32 tmp_size = RS[6] * RS[5] *RS[4] * RS[3] * RS[2] * RS[1] * RS[0];
+    uint32_t tmp_size = RS[6] * RS[5] *RS[4] * RS[3] * RS[2] * RS[1] * RS[0];
     for (unsigned i = 0; i < (5-AS[6]-1); i++){
       tmp_size /= RS[i];
       pCPDPBP_IDX[ AS[i] ] = tmp_MOD / tmp_size;
       tmp_MOD = tmp_MOD % tmp_size;
     }
     tmp_size /= RS[6];
-    uint32 tmp = tmp_MOD / tmp_size;
+    uint32_t tmp = tmp_MOD / tmp_size;
     tmp_MOD = tmp_MOD % tmp_size;
     for (unsigned i = (5-AS[6]-1); i < 6; i++){
       tmp_size /= RS[i];
@@ -1148,9 +1148,9 @@ void PAL2::AssemblePPN(CPDPBP* pCPDPBP, uint64_t* pPPN)
 
 
   //with re-arrange ... I hate current structure! too dirty even made with FOR-LOOP! (less-readability)
-  uint32* pCPDPBP_IDX = ((uint32*)pCPDPBP);
-  uint8*  AS = gconf->AddrSeq;
-  uint32* RS = RearrangedSizes;
+  uint32_t *pCPDPBP_IDX = ((uint32_t*)pCPDPBP);
+  uint8_t  *AS = gconf->AddrSeq;
+  uint32_t *RS = RearrangedSizes;
   AddrPPN += pCPDPBP_IDX[ AS[5] ];
   AddrPPN += pCPDPBP_IDX[ AS[4] ] * (RS[5] );
   AddrPPN += pCPDPBP_IDX[ AS[3] ] * (RS[5] * RS[4]);

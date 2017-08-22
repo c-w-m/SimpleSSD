@@ -26,10 +26,10 @@
 class LatencyMLC : public Latency
 {
     public:
-        LatencyMLC(uint32 mhz, uint32 pagesize);
+        LatencyMLC(uint32_t mhz, uint32_t pagesize);
 
-        uint64 GetLatency(uint32 AddrPage, uint8 Oper, uint8 Busy);
-        inline uint8  GetPageType(uint32 AddrPage);
+        uint64_t GetLatency(uint32_t AddrPage, uint8_t Oper, uint8_t Busy);
+        inline uint8_t  GetPageType(uint32_t AddrPage);
 };
 
 #endif //__LatencyMLC_h__

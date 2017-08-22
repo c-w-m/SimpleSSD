@@ -20,22 +20,22 @@
 
 #include "LatencyMLC.h"
 
-LatencyMLC::LatencyMLC(uint32 mhz, uint32 pagesize)
+LatencyMLC::LatencyMLC(uint32_t mhz, uint32_t pagesize)
 : Latency(mhz, pagesize)
 {
     ;
 }
 
-inline uint8 LatencyMLC::GetPageType(uint32 AddrPage)
+inline uint8_t LatencyMLC::GetPageType(uint32_t AddrPage)
 {
     return AddrPage%2;
 }
 
-uint64 LatencyMLC::GetLatency(uint32 AddrPage, uint8 Oper, uint8 Busy)
+uint64_t LatencyMLC::GetLatency(uint32_t AddrPage, uint8_t Oper, uint8_t Busy)
 {
     #if 1
     //ps
-    uint32 lat_tbl[3][5] =
+    uint32_t lat_tbl[3][5] =
     {                /*  LSB         MSB         DMA0,                     DMA1*/
         /* Read  */{   40000000,   65000000,    100000/SPDIV,         185000000*2/(PGDIV*SPDIV) },
         /* Write */{   500000000, 1300000000, 185000000*2/(PGDIV*SPDIV), 100000/SPDIV },
@@ -43,7 +43,7 @@ uint64 LatencyMLC::GetLatency(uint32 AddrPage, uint8 Oper, uint8 Busy)
     };
     #else
     //ns
-    uint32 lat_tbl[3][5] =
+    uint32_t lat_tbl[3][5] =
     {                /*  LSB      MSB    DMA0,  DMA1*/
         /* Read  */{   58000,   78000,    100/SPDIV, 185000/(PGDIV*SPDIV) },
         /* Write */{  558000, 2201000, 185000/(PGDIV*SPDIV),    100/SPDIV },
@@ -59,7 +59,7 @@ uint64 LatencyMLC::GetLatency(uint32 AddrPage, uint8 Oper, uint8 Busy)
             return lat_tbl[Oper][3];
         case BUSY_MEM:
         {
-            uint64 ret= lat_tbl[Oper][ AddrPage%2 ];
+            uint64_t ret= lat_tbl[Oper][ AddrPage%2 ];
             #if DBG_PRINT_TICK
             //    printf("LAT %s page_%u(%s) = %llu\n", OPER_STRINFO[Oper], AddrPage, PAGE_STRINFO[ptype], ret);
             #endif

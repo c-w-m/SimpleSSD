@@ -20,7 +20,9 @@
 #include "PALStatistics.h"
 #include "SimpleSSD_types.h"
 
-#include "debug/PAL2.hh"
+#ifndef SIMPLESSD_STANDALONE
+#include "debug/PAL.hh"
+#endif
 
 // DONT USE FUCKING GLOBAL VARIABLES IN BIIIIIIG PROGRAM
 char ADDR_STRINFO[ADDR_NUM][10]= { "Channel", "Package", "Die", "Plane", "Block", "Page" };
@@ -63,11 +65,11 @@ void PALStatistics::CounterOper::add(uint32 oper)
 void PALStatistics::CounterOper::printstat(const char* namestr)
 {
   char OPER_STR[OPER_ALL][8] = {"Read ", "Write", "Erase", "Total"};
-  DPRINTF(PAL2, "[ %s ]:\n", namestr);
-  DPRINTF(PAL2, "OPER, COUNT\n");
+  DPRINTF(PAL, "[ %s ]:\n", namestr);
+  DPRINTF(PAL, "OPER, COUNT\n");
   for (int i=0;i<OPER_ALL;i++)
   {
-    DPRINTF(PAL2, "%s, %llu\n",
+    DPRINTF(PAL, "%s, %llu\n",
     OPER_STR[i],
     cnts[i].cnt);
   }
@@ -162,17 +164,17 @@ void PALStatistics::ValueOper::exclusive_add(uint32 oper, double val){
 void PALStatistics::ValueOper::printstat(const char* namestr) //This is only used by access capacity
 {
   char OPER_STR[OPER_ALL][8] = {"Read ", "Write", "Erase", "Total"};
-  DPRINTF(PAL2, "[ %s ]:\n", namestr);
-  DPRINTF(PAL2, "OPER, AVERAGE, COUNT, TOTAL, MIN, MAX\n");
+  DPRINTF(PAL, "[ %s ]:\n", namestr);
+  DPRINTF(PAL, "OPER, AVERAGE, COUNT, TOTAL, MIN, MAX\n");
   for (int i=0;i<OPER_ALL;i++)
   {
     if(vals[i].cnt == 0)
     {
-      DPRINTF(PAL2, "%s, ( NO DATA )\n", OPER_STR[i]);
+      DPRINTF(PAL, "%s, ( NO DATA )\n", OPER_STR[i]);
     }
     else
     {
-      DPRINTF(PAL2, "%s, %llu, %llu, %llu, %llu, %llu\n",
+      DPRINTF(PAL, "%s, %llu, %llu, %llu, %llu, %llu\n",
       OPER_STR[i],
       (uint64)vals[i].avg(),
       (uint64)vals[i].cnt, (uint64)vals[i].sum,
@@ -192,11 +194,11 @@ void PALStatistics::ValueOper::printstat_bandwidth(class ValueOper* Access_Capac
     }
     if(vals[i].cnt == 0)
     {
-      DPRINTF(PAL2, "%s bandwidth excluding idle time (min, max, average): ( NO DATA )\n", OPER_STR[i]);
+      DPRINTF(PAL, "%s bandwidth excluding idle time (min, max, average): ( NO DATA )\n", OPER_STR[i]);
     }
     else
     {
-      DPRINTF(PAL2, "%s bandwidth excluding idle time (min, max, average): %.6lf MB/s, %.6lf MB/s, %.6lf MB/s\n",
+      DPRINTF(PAL, "%s bandwidth excluding idle time (min, max, average): %.6lf MB/s, %.6lf MB/s, %.6lf MB/s\n",
       OPER_STR[i],
       vals[i].minval,
       vals[i].maxval,
@@ -215,11 +217,11 @@ void PALStatistics::ValueOper::printstat_bandwidth_widle(class ValueOper* Access
 
     if(vals[i].cnt == 0)
     {
-      DPRINTF(PAL2, "%s bandwidth including idle time (min, max, average): ( NO DATA )\n", OPER_STR[i]);
+      DPRINTF(PAL, "%s bandwidth including idle time (min, max, average): ( NO DATA )\n", OPER_STR[i]);
     }
     else
     {
-      DPRINTF(PAL2, "%s bandwidth including idle time (min, max, average): %.6lf MB/s, %.6lf MB/s, %.6lf MB/s\n",
+      DPRINTF(PAL, "%s bandwidth including idle time (min, max, average): %.6lf MB/s, %.6lf MB/s, %.6lf MB/s\n",
       OPER_STR[i],
       vals[i].minval,
       vals[i].maxval,
@@ -238,11 +240,11 @@ void PALStatistics::ValueOper::printstat_oper_bandwidth(class ValueOper* Access_
 
     if(vals[i].cnt == 0)
     {
-      DPRINTF(PAL2, "%s-only bandwidth (min, max, average): ( NO DATA )\n", OPER_STR[i]);
+      DPRINTF(PAL, "%s-only bandwidth (min, max, average): ( NO DATA )\n", OPER_STR[i]);
     }
     else
     {
-      DPRINTF(PAL2, "%s-only bandwidth (min, max, average): %.6lf MB/s, %.6lf MB/s, %.6lf MB/s\n",
+      DPRINTF(PAL, "%s-only bandwidth (min, max, average): %.6lf MB/s, %.6lf MB/s, %.6lf MB/s\n",
       OPER_STR[i],
       vals[i].minval,
       vals[i].maxval,
@@ -260,11 +262,11 @@ void PALStatistics::ValueOper::printstat_iops(class ValueOper* Access_Capacity, 
     this->exclusive_add(i,(Access_Capacity->vals[i].cnt - Access_Capacity->vals[i].sampled_cnt)*1.0/((ExactBusyTime - LastExactBusyTime)*1.0/PSEC));
     if(vals[i].cnt == 0)
     {
-      DPRINTF(PAL2, "%s IOPS excluding idle time (min, max, average): ( NO DATA )\n", OPER_STR[i]);
+      DPRINTF(PAL, "%s IOPS excluding idle time (min, max, average): ( NO DATA )\n", OPER_STR[i]);
     }
     else
     {
-      DPRINTF(PAL2, "%s IOPS excluding idle time (min, max, average): %.6lf, %.6lf, %.6lf\n",
+      DPRINTF(PAL, "%s IOPS excluding idle time (min, max, average): %.6lf, %.6lf, %.6lf\n",
       OPER_STR[i],
       vals[i].minval,
       vals[i].maxval,
@@ -282,11 +284,11 @@ void PALStatistics::ValueOper::printstat_iops_widle(class ValueOper* Access_Capa
     this->exclusive_add(i,(Access_Capacity->vals[i].cnt - Access_Capacity->vals[i].sampled_cnt)*1.0/((ExecutionTime - LastExecutionTime)*1.0/PSEC));
     if(vals[i].cnt == 0)
     {
-      DPRINTF(PAL2, "%s IOPS including idle time (min, max, average): ( NO DATA )\n", OPER_STR[i]);
+      DPRINTF(PAL, "%s IOPS including idle time (min, max, average): ( NO DATA )\n", OPER_STR[i]);
     }
     else
     {
-      DPRINTF(PAL2, "%s IOPS including idle time (min, max, average): %.6lf, %.6lf, %.6lf\n",
+      DPRINTF(PAL, "%s IOPS including idle time (min, max, average): %.6lf, %.6lf, %.6lf\n",
       OPER_STR[i],
       vals[i].minval,
       vals[i].maxval,
@@ -304,11 +306,11 @@ void PALStatistics::ValueOper::printstat_oper_iops(class ValueOper* Access_Capac
     this->exclusive_add(i,(Access_Capacity->vals[i].cnt - Access_Capacity->vals[i].sampled_cnt)*1.0/((OpBusyTime[i] - LastOpBusyTime[i])*1.0/PSEC));
     if(vals[i].cnt == 0)
     {
-      DPRINTF(PAL2, "%s-only IOPS (min, max, average): ( NO DATA )\n", OPER_STR[i]);
+      DPRINTF(PAL, "%s-only IOPS (min, max, average): ( NO DATA )\n", OPER_STR[i]);
     }
     else
     {
-      DPRINTF(PAL2, "%s-only IOPS (min, max, average): %.6lf, %.6lf, %.6lf\n",
+      DPRINTF(PAL, "%s-only IOPS (min, max, average): %.6lf, %.6lf, %.6lf\n",
       OPER_STR[i],
       vals[i].minval,
       vals[i].maxval,
@@ -324,11 +326,11 @@ void PALStatistics::ValueOper::printstat_latency(const char* namestr)
   {
     if(vals[i].cnt == 0)
     {
-      DPRINTF(PAL2, "%s latency (min, max, average): ( NO DATA )\n", OPER_STR[i]);
+      DPRINTF(PAL, "%s latency (min, max, average): ( NO DATA )\n", OPER_STR[i]);
     }
     else
     {
-      DPRINTF(PAL2, "%s latency (min, max, average): %llu us, %llu us, %llu us\n",
+      DPRINTF(PAL, "%s latency (min, max, average): %llu us, %llu us, %llu us\n",
       OPER_STR[i],
       (uint64)(vals[i].minval*1.0/1000000),
       (uint64)(vals[i].maxval*1.0/1000000),
@@ -595,13 +597,12 @@ void PALStatistics::AddLatency(Command& CMD, CPDPBP* CPD, uint32 dieIdx, TimeSlo
 }
 
 
-
-#define fDPRINTF(out_to, fmt...) do { char buf[1024]; sprintf(buf, fmt); DPRINTF(out_to,"%s",buf); } while(0);
+#define fDPRINTF(out_to, fmt, ...) do { char buf[1024]; sprintf(buf, fmt, ##__VA_ARGS__); DPRINTF(out_to,"%s",buf); } while(0);
 
 void PALStatistics::PrintFinalStats(uint64 sim_time_ps){
-  DPRINTF(PAL2, "PAL Final Stats Report ]\n");
-  DPRINTF(PAL2, "Total execution time (ms), Total SSD active time (ms)\n");
-  DPRINTF(PAL2, "%.2f\t\t\t, %.2f\n", sim_time_ps * 1.0 / 1000000000, SampledExactBusyTime * 1.0 / 1000000000);
+  DPRINTF(PAL, "PAL Final Stats Report ]\n");
+  DPRINTF(PAL, "Total execution time (ms), Total SSD active time (ms)\n");
+  DPRINTF(PAL, "%.2f\t\t\t, %.2f\n", sim_time_ps * 1.0 / 1000000000, SampledExactBusyTime * 1.0 / 1000000000);
 
   assert(Access_Capacity_snapshot.size() > 0);
   std::map<uint64, ValueOper*>::iterator e  = Access_Capacity_snapshot.end();
@@ -621,9 +622,9 @@ void PALStatistics::PrintFinalStats(uint64 sim_time_ps){
   Access_Iops.printstat_iops(e->second, SampledExactBusyTime, LastExactBusyTime);
   Access_Iops_widle.printstat_iops_widle(e->second, sim_time_ps, LastExecutionTime);
   Access_Oper_Iops.printstat_oper_iops(e->second, OpBusyTime, LastOpBusyTime);
-  DPRINTF(PAL2, "===================\n");
+  DPRINTF(PAL, "===================\n");
   PPN_requested_rwe.printstat("Num of PPN IO request");
-  DPRINTF(PAL2, "===================\n");
+  DPRINTF(PAL, "===================\n");
 
   for(uint32 i=0; i<PAGE_NUM; i++)
   {
@@ -691,14 +692,14 @@ void PALStatistics::PrintStats(uint64 sim_time_ps)
   uint64 elapsed_time_ps = (sim_time_ps - sim_start_time_ps) + 1;
   if (LastExecutionTime == 0)
   LastExecutionTime = sim_start_time_ps;
-  DPRINTF(PAL2, "Execution time = %llu\n",sim_time_ps);
-  DPRINTF(PAL2, "Last Execution time = %llu\n",LastExecutionTime);
+  DPRINTF(PAL, "Execution time = %llu\n",sim_time_ps);
+  DPRINTF(PAL, "Last Execution time = %llu\n",LastExecutionTime);
   if (sim_start_time_ps >= sim_time_ps) //abnormal case
   {
     elapsed_time_ps = sim_time_ps + 1;
   }
 
-  DPRINTF(PAL2, "[ PAL Stats ]\n");
+  DPRINTF(PAL, "[ PAL Stats ]\n");
 
 
   #if 1
@@ -707,11 +708,11 @@ void PALStatistics::PrintStats(uint64 sim_time_ps)
   #define TRANSFER_TOTAL_MB ( (long double)(Access_Capacity.vals[OPER_READ].sum + Access_Capacity.vals[OPER_WRITE].sum)/MBYTE )
 
 
-  fDPRINTF(PAL2, "Sim.Time :  %Lf Sec. , %llu ps\n", SIM_TIME_SEC, elapsed_time_ps);
-  fDPRINTF(PAL2, "Transferred :  %Lf MB\n", TRANSFER_TOTAL_MB);
-  fDPRINTF(PAL2, "Performance: %Lf MB/Sec\n", (long double)TRANSFER_TOTAL_MB/SIM_TIME_SEC);
-  fDPRINTF(PAL2, "Busy Sim.Time: %Lf Sec. , %llu ps\n", BUSY_TIME_SEC, ExactBusyTime);
-  fDPRINTF(PAL2, "Busy Performance: %Lf MB/Sec\n", (long double)TRANSFER_TOTAL_MB/BUSY_TIME_SEC);
+  fDPRINTF(PAL, "Sim.Time :  %Lf Sec. , %llu ps\n", SIM_TIME_SEC, elapsed_time_ps);
+  fDPRINTF(PAL, "Transferred :  %Lf MB\n", TRANSFER_TOTAL_MB);
+  fDPRINTF(PAL, "Performance: %Lf MB/Sec\n", (long double)TRANSFER_TOTAL_MB/SIM_TIME_SEC);
+  fDPRINTF(PAL, "Busy Sim.Time: %Lf Sec. , %llu ps\n", BUSY_TIME_SEC, ExactBusyTime);
+  fDPRINTF(PAL, "Busy Performance: %Lf MB/Sec\n", (long double)TRANSFER_TOTAL_MB/BUSY_TIME_SEC);
   #endif
 
 
@@ -720,7 +721,7 @@ void PALStatistics::PrintStats(uint64 sim_time_ps)
   std::map<uint64, ValueOper*>::iterator e  = Access_Capacity_snapshot.find(sim_time_ps/EPOCH_INTERVAL-1);
   if (sim_time_ps > 0 && e != Access_Capacity_snapshot.end()){
     PPN_requested_rwe.printstat("Num of PPN IO request");
-    DPRINTF(PAL2, "===================\n");
+    DPRINTF(PAL, "===================\n");
 
     for(uint32 i=0; i<PAGE_NUM; i++)
     {
@@ -728,7 +729,7 @@ void PALStatistics::PrintStats(uint64 sim_time_ps)
       sprintf(str, "Num of %s page PPN IO request", PAGE_STRINFO[i]);
       PPN_requested_pagetype[i].printstat(str);
     }
-    DPRINTF(PAL2, "===================\n");
+    DPRINTF(PAL, "===================\n");
 
     for (uint32 i=0;i<gconf->NumChannel; i++)
     {
@@ -736,7 +737,7 @@ void PALStatistics::PrintStats(uint64 sim_time_ps)
       sprintf(str, "Num of CH_%u PPN IO request", i);
       PPN_requested_ch[i].printstat(str);
     }
-    DPRINTF(PAL2, "===================\n");
+    DPRINTF(PAL, "===================\n");
 
     for (uint32 i=0; i<gconf->GetTotalNumDie(); i++)
     {
@@ -744,16 +745,16 @@ void PALStatistics::PrintStats(uint64 sim_time_ps)
       sprintf(str, "Num of DIE_%u PPN IO request", i);
       PPN_requested_die[i].printstat(str);
     }
-    DPRINTF(PAL2, "===================\n");
+    DPRINTF(PAL, "===================\n");
 
     CF_DMA0_dma.printstat("Num of conflict DMA0-CH");
     CF_DMA0_mem.printstat("Num of conflict DMA0-MEM");
     CF_DMA0_none.printstat("Num of conflict DMA0-None");
-    DPRINTF(PAL2, "===================\n");
+    DPRINTF(PAL, "===================\n");
 
     CF_DMA1_dma.printstat("Num of conflict DMA1-CH");
     CF_DMA1_none.printstat("Num of conflict DMA1-None");
-    DPRINTF(PAL2, "===================\n");
+    DPRINTF(PAL, "===================\n");
 
     Ticks_DMA0WAIT.printstat("Info of DMA0WAIT Tick");
     Ticks_DMA0.printstat("Info of DMA0 Tick");
@@ -762,7 +763,7 @@ void PALStatistics::PrintStats(uint64 sim_time_ps)
     Ticks_DMA1.printstat("Info of DMA1 Tick");
     Ticks_Total.printstat("Info of TOTAL(D0W+D0+M+D1W+D1) Tick");
     Ticks_TotalOpti.printstat("Info of OPTIMUM(D0+M+D1) Tick");
-    DPRINTF(PAL2, "===================\n");
+    DPRINTF(PAL, "===================\n");
 
     for (uint32 i=0;i<gconf->NumChannel; i++)
     {
@@ -770,7 +771,7 @@ void PALStatistics::PrintStats(uint64 sim_time_ps)
       sprintf(str, "Info of CH_%u Active Tick", i);
       Ticks_Active_ch[i].printstat(str);
     }
-    DPRINTF(PAL2, "===================\n");
+    DPRINTF(PAL, "===================\n");
 
     for (uint32 i=0; i<gconf->GetTotalNumDie(); i++)
     {
@@ -778,11 +779,11 @@ void PALStatistics::PrintStats(uint64 sim_time_ps)
       sprintf(str, "Info of DIE_%u Active Tick", i);
       Ticks_Active_die[i].printstat(str);
     }
-    DPRINTF(PAL2, "===================\n");
+    DPRINTF(PAL, "===================\n");
 
     e->second->printstat("Info of Access Capacity");
-    DPRINTF(PAL2, "Total execution time (ms)\n");
-    DPRINTF(PAL2, "%.2f\n", SampledExactBusyTime * 1.0 / 1000000000);
+    DPRINTF(PAL, "Total execution time (ms)\n");
+    DPRINTF(PAL, "%.2f\n", SampledExactBusyTime * 1.0 / 1000000000);
     Access_Bandwidth.printstat_bandwidth(e->second, SampledExactBusyTime, LastExactBusyTime);
     Access_Bandwidth_widle.printstat_bandwidth_widle(e->second, sim_time_ps, LastExecutionTime);
     Access_Oper_Bandwidth.printstat_oper_bandwidth(e->second, OpBusyTime, LastOpBusyTime);

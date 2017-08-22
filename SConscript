@@ -36,6 +36,6 @@ Source('PALStatistics.cc')
 Source('base_config.cc')
 
 DebugFlag('FTLOut')
-DebugFlag('PAL2')
+DebugFlag('PAL')
 
-CompoundFlag('SimpleSSD', [ 'FTLOut', 'PAL2' ])
+CompoundFlag('SimpleSSD', [ 'FTLOut', 'PAL' ])

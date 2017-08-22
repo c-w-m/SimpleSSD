@@ -80,7 +80,7 @@ public:
 
   std::map<Addr, Tick> delayMap;
   std::map<Addr, Tick> dlMap;
-  HIL(int dn, int SSDenable,string SSDConfig);
+  HIL(int dn, int SSDenable, BaseConfig SSDConfig);
   void SSDoperation(Addr address, int pgNo, Tick curTick, bool writeOp);
   void AsyncOperation(Addr address, int pgNo, Tick curTick, bool writeOp){
 	  SSDoperation(address, pgNo, curTick, writeOp);

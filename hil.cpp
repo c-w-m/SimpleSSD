@@ -28,32 +28,24 @@
 #include "hil.h"
 #include "SimpleSSD_types.h"
 #include "ftl.hh"
+#include "Latency.h"
+#include "LatencySLC.h"
+#include "LatencyMLC.h"
+#include "LatencyTLC.h"
+#include "PAL2.h"
+#include "PALStatistics.h"
 
 Latency* lat;
-Simulator* sim;
 
-char ADDR_STRINFO[ADDR_NUM][10]= { "Channel", "Package", "Die", "Plane", "Block", "Page" };
-char ADDR_STRINFO2[ADDR_NUM][15]= { "ADDR_CHANNEL", "ADDR_PACKAGE", "ADDR_DIE", "ADDR_PLANE", "ADDR_BLOCK", "ADDR_PAGE" };
-char OPER_STRINFO[OPER_NUM][10]= {"R","W","E"};
-char OPER_STRINFO2[OPER_NUM][10]= {"Read ","Write","Erase"};
-char BUSY_STRINFO[BUSY_NUM][10]= {"IDLE","DMA0","MEM","DMA1WAIT","DMA1","END"};
-char PAGE_STRINFO[PAGE_NUM][10]= {"LSB","CSB","MSB"};
-char NAND_STRINFO[NAND_NUM][10]= {"SLC", "MLC", "TLC"};
-#if GATHER_RESOURCE_CONFLICT
-char CONFLICT_STRINFO[CONFLICT_NUM][10]= {"NONE", "DMA0", "MEM", "DMA1"};
-#endif
-
-HIL::HIL(int dn, int SSDenable, string SSDConfig ) : cfg(SSDConfig)
+HIL::HIL(int dn, int SSDenable, BaseConfig SSDConfig ) : cfg(SSDConfig)
 {
   disk_number = dn;
 
   if(SSDenable != 0){
-    string ConfigFile = SSDConfig;
-
     switch (cfg.NANDType) {
-      case NAND_SLC:  lat = new LatencySLC(cfg.DMAMhz, cfg.SizePage); break;
-      case NAND_MLC:  lat = new LatencyMLC(cfg.DMAMhz, cfg.SizePage); break;
-      case NAND_TLC:  lat = new LatencyTLC(cfg.DMAMhz, cfg.SizePage); break;
+      case NAND_SLC:  lat = new LatencySLC(cfg.DMAMHz, cfg.SizePage); break;
+      case NAND_MLC:  lat = new LatencyMLC(cfg.DMAMHz, cfg.SizePage); break;
+      case NAND_TLC:  lat = new LatencyTLC(cfg.DMAMHz, cfg.SizePage); break;
     }
 
     lbaratio = cfg.SizePage / 512;  // Sector Size
@@ -68,7 +60,7 @@ HIL::HIL(int dn, int SSDenable, string SSDConfig ) : cfg(SSDConfig)
     param->logical_page_number = param->logical_block_number * param->page_per_block;
     param->warmup = cfg.Warmup;
     param->gc_threshold = cfg.FTLGCThreshold;
-    param->page_size = cfg.SizePage / cfg.LBASize;
+    param->page_size = cfg.SizePage / 512;
     param->mapping_K = cfg.FTLMapK;
     param->mapping_N = cfg.FTLMapN;
     param->erase_cycle = cfg.FTLEraseCycle;
@@ -76,8 +68,6 @@ HIL::HIL(int dn, int SSDenable, string SSDConfig ) : cfg(SSDConfig)
     stats = new PALStatistics(&cfg, lat);
     pal2 = new PAL2(stats, &cfg, lat);
     ftl = new FTL(param, pal2);
-    sim = new Simulator();
-    stats = new PALStatistics();
 
     ftl->initialize();
   }
@@ -127,19 +117,19 @@ HIL::SSDoperation(Addr address, int pgNo, Tick TransTick, bool writeOp)
   uint64_t slpn;
   uint16_t nlp, off;
 
-  slpn = slba / lbaratio;
-  off = slba % lbaratio;
-  nlp = (nlb + off + lbaratio - 1) / lbaratio;
+  slpn = sector_address / lbaratio;
+  off = sector_address % lbaratio;
+  nlp = (pgNo * 8 + off + lbaratio - 1) / lbaratio;
 
   if(writeOp){
     #if DBG_PRINT_REQUEST
     printf( "HIL: disk[%d] Write operation Tick: %lu Address: %#x size: %d Bytes: %lu\n", disk_number, TransTick, address, pgNo*8, pgNo*4096);
     #endif
     //************************ statistics ************************************************//
-    access_count[OP_WRITE]++; total_volume[OP_WRITE]+=pgNo*4096;
-    if (pgNo*4096 < Min_size[OP_WRITE]) Min_size[OP_WRITE] = pgNo*4096;
-    if (pgNo*4096 > Max_size[OP_WRITE]) Max_size[OP_WRITE] = pgNo*4096;
-    sample_access_count[OP_WRITE]++; sample_total_volume[OP_WRITE] += pgNo*4096;
+    access_count[OPER_WRITE]++; total_volume[OPER_WRITE]+=pgNo*4096;
+    if (pgNo*4096 < Min_size[OPER_WRITE]) Min_size[OPER_WRITE] = pgNo*4096;
+    if (pgNo*4096 > Max_size[OPER_WRITE]) Max_size[OPER_WRITE] = pgNo*4096;
+    sample_access_count[OPER_WRITE]++; sample_total_volume[OPER_WRITE] += pgNo*4096;
     //*************************************************************************************//
     if(SSD != 0){
       delay = ftl->write(slpn, nlp, TransTick);
@@ -151,11 +141,11 @@ HIL::SSDoperation(Addr address, int pgNo, Tick TransTick, bool writeOp)
       setLatency(sector_address, waiting_time + service_time); // changed to 2ms
       hdd_next_available_time = arrived_time + waiting_time + service_time;
 
-      accumulated_latency[OP_WRITE] += waiting_time + service_time;
-      total_time[OP_WRITE] += service_time;
-      sample_time[OP_WRITE] += service_time;
-      if((waiting_time + service_time) < Min_latency[OP_WRITE]) Min_latency[OP_WRITE] = waiting_time + service_time;
-      if((waiting_time + service_time) > Max_latency[OP_WRITE]) Max_latency[OP_WRITE] = waiting_time + service_time;
+      accumulated_latency[OPER_WRITE] += waiting_time + service_time;
+      total_time[OPER_WRITE] += service_time;
+      sample_time[OPER_WRITE] += service_time;
+      if((waiting_time + service_time) < Min_latency[OPER_WRITE]) Min_latency[OPER_WRITE] = waiting_time + service_time;
+      if((waiting_time + service_time) > Max_latency[OPER_WRITE]) Max_latency[OPER_WRITE] = waiting_time + service_time;
       //*************************************************************************************//
     }
   } else {
@@ -163,10 +153,10 @@ HIL::SSDoperation(Addr address, int pgNo, Tick TransTick, bool writeOp)
     printf( "HIL: disk[%d] Read operation Tick: %lu Address: %#x size: %d Bytes: %lu\n", disk_number, TransTick, address, pgNo*8, pgNo*4096);
     #endif
     //************************ statistics ************************************************//
-    access_count[OP_READ]++; total_volume[OP_READ]+=pgNo*4096;
-    if (pgNo*4096 < Min_size[OP_READ]) Min_size[OP_READ] = pgNo*4096;
-    if (pgNo*4096 > Max_size[OP_READ]) Max_size[OP_READ] = pgNo*4096;
-    sample_access_count[OP_READ]++; sample_total_volume[OP_READ] += pgNo*4096;
+    access_count[OPER_READ]++; total_volume[OPER_READ]+=pgNo*4096;
+    if (pgNo*4096 < Min_size[OPER_READ]) Min_size[OPER_READ] = pgNo*4096;
+    if (pgNo*4096 > Max_size[OPER_READ]) Max_size[OPER_READ] = pgNo*4096;
+    sample_access_count[OPER_READ]++; sample_total_volume[OPER_READ] += pgNo*4096;
     //*************************************************************************************//
     if(SSD != 0){
       delay = ftl->read(slpn, nlp, TransTick);
@@ -178,11 +168,11 @@ HIL::SSDoperation(Addr address, int pgNo, Tick TransTick, bool writeOp)
       setLatency(sector_address, waiting_time + service_time); // changed to 2ms
       hdd_next_available_time = arrived_time + waiting_time + service_time;
 
-      accumulated_latency[OP_READ] += waiting_time + service_time;
-      total_time[OP_READ] += service_time;
-      sample_time[OP_READ] += service_time;
-      if((waiting_time + service_time) < Min_latency[OP_READ]) Min_latency[OP_READ] = waiting_time + service_time;
-      if((waiting_time + service_time) > Max_latency[OP_READ]) Max_latency[OP_READ] = waiting_time + service_time;
+      accumulated_latency[OPER_READ] += waiting_time + service_time;
+      total_time[OPER_READ] += service_time;
+      sample_time[OPER_READ] += service_time;
+      if((waiting_time + service_time) < Min_latency[OPER_READ]) Min_latency[OPER_READ] = waiting_time + service_time;
+      if((waiting_time + service_time) > Max_latency[OPER_READ]) Max_latency[OPER_READ] = waiting_time + service_time;
       //*************************************************************************************//
     }
   }
@@ -199,18 +189,18 @@ HIL::SSDoperation(Addr address, int pgNo, Tick TransTick, bool writeOp)
         if (1.0 * sample_access_count[i] / (hdd_next_available_time - last_record) * 1000000000000 > Max_IOPS[i])
         Max_IOPS[i] = 1.0 * sample_access_count[i] / (hdd_next_available_time - last_record) * 1000000000000;
 
-        if(sample_time[OP_READ] + sample_time[OP_WRITE] > 0){
-          if (1.0 * sample_total_volume[i] / 1024 / 1024 / (sample_time[OP_READ] + sample_time[OP_WRITE]) * 1000000000000 < Min_bandwidth_woidle[i])
-          Min_bandwidth_woidle[i] = 1.0 * sample_total_volume[i] / 1024 / 1024 / (sample_time[OP_READ] + sample_time[OP_WRITE]) * 1000000000000;
-          if (1.0 * sample_total_volume[i] / 1024 / 1024 / (sample_time[OP_READ] + sample_time[OP_WRITE]) * 1000000000000 > Max_bandwidth_woidle[i])
-          Max_bandwidth_woidle[i] = 1.0 * sample_total_volume[i] / 1024 / 1024 / (sample_time[OP_READ] + sample_time[OP_WRITE]) * 1000000000000;
-          if (1.0 * sample_access_count[i] / (sample_time[OP_READ] + sample_time[OP_WRITE]) * 1000000000000 < Min_IOPS_woidle[i])
-          Min_IOPS_woidle[i] = 1.0 * sample_access_count[i] / (sample_time[OP_READ] + sample_time[OP_WRITE]) * 1000000000000;
-          if (1.0 * sample_access_count[i] / (sample_time[OP_READ] + sample_time[OP_WRITE]) * 1000000000000 > Max_IOPS_woidle[i])
-          Max_IOPS_woidle[i] = 1.0 * sample_access_count[i] / (sample_time[OP_READ] + sample_time[OP_WRITE]) * 1000000000000;
+        if(sample_time[OPER_READ] + sample_time[OPER_WRITE] > 0){
+          if (1.0 * sample_total_volume[i] / 1024 / 1024 / (sample_time[OPER_READ] + sample_time[OPER_WRITE]) * 1000000000000 < Min_bandwidth_woidle[i])
+          Min_bandwidth_woidle[i] = 1.0 * sample_total_volume[i] / 1024 / 1024 / (sample_time[OPER_READ] + sample_time[OPER_WRITE]) * 1000000000000;
+          if (1.0 * sample_total_volume[i] / 1024 / 1024 / (sample_time[OPER_READ] + sample_time[OPER_WRITE]) * 1000000000000 > Max_bandwidth_woidle[i])
+          Max_bandwidth_woidle[i] = 1.0 * sample_total_volume[i] / 1024 / 1024 / (sample_time[OPER_READ] + sample_time[OPER_WRITE]) * 1000000000000;
+          if (1.0 * sample_access_count[i] / (sample_time[OPER_READ] + sample_time[OPER_WRITE]) * 1000000000000 < Min_IOPS_woidle[i])
+          Min_IOPS_woidle[i] = 1.0 * sample_access_count[i] / (sample_time[OPER_READ] + sample_time[OPER_WRITE]) * 1000000000000;
+          if (1.0 * sample_access_count[i] / (sample_time[OPER_READ] + sample_time[OPER_WRITE]) * 1000000000000 > Max_IOPS_woidle[i])
+          Max_IOPS_woidle[i] = 1.0 * sample_access_count[i] / (sample_time[OPER_READ] + sample_time[OPER_WRITE]) * 1000000000000;
         }
 
-        if((i==OP_READ && sample_time[OP_READ] > 0) || (i==OP_WRITE && sample_time[OP_WRITE] > 0)){
+        if((i==OPER_READ && sample_time[OPER_READ] > 0) || (i==OPER_WRITE && sample_time[OPER_WRITE] > 0)){
           if (1.0 * sample_total_volume[i] / 1024 / 1024 / (sample_time[i]) * 1000000000000 < Min_bandwidth_only[i])
           Min_bandwidth_only[i] = 1.0 * sample_total_volume[i] / 1024 / 1024 / (sample_time[i]) * 1000000000000;
           if (1.0 * sample_total_volume[i] / 1024 / 1024 / (sample_time[i]) * 1000000000000 > Max_bandwidth_only[i])
@@ -222,27 +212,24 @@ HIL::SSDoperation(Addr address, int pgNo, Tick TransTick, bool writeOp)
         }
       }
 
-      sample_access_count[OP_READ] = 0; sample_total_volume[OP_READ] = 0;
-      sample_access_count[OP_WRITE] = 0; sample_total_volume[OP_WRITE] = 0;
-      sample_time[OP_READ] = 0; sample_time[OP_WRITE] = 0;
+      sample_access_count[OPER_READ] = 0; sample_total_volume[OPER_READ] = 0;
+      sample_access_count[OPER_WRITE] = 0; sample_total_volume[OPER_WRITE] = 0;
+      sample_time[OPER_READ] = 0; sample_time[OPER_WRITE] = 0;
       last_record = hdd_next_available_time;
     }
-  }
-  if(SSD != 0){
-    sim->TickGlobal = TransTick; //set System Tick --> this is used in PAL2
   }
 }
 
 void HIL::SyncOperation(Addr prev_address, Tick prev_Tick, Addr address, int pgNo, bool writeOp){
   Tick delay = getLatency(prev_address);
-  curTick = prev_Tick + delay;
-  SSDoperation(address, pgNo, curTick, writeOp);
+  currentTick = prev_Tick + delay;
+  SSDoperation(address, pgNo, currentTick, writeOp);
 }
 
 void HIL::updateFinishTick(Addr prev_address) {
   Tick delay = getLatency(prev_address);
-  if (finishTick < curTick + delay ) {
-    finishTick = curTick + delay;
+  if (finishTick < currentTick + delay ) {
+    finishTick = currentTick + delay;
   }
 }
 
@@ -276,7 +263,7 @@ Tick HIL::getLatency(Addr address){
 }
 
 void HIL::print_sample(Tick& sampled_period){
-  if (curTick >= sampled_period) {
+  if (currentTick >= sampled_period) {
     printStats();
     sampled_period = sampled_period + EPOCH_INTERVAL;
   }
@@ -290,48 +277,48 @@ HIL::printStats()
   if(SSD != 0){
     pal2->InquireBusyTime( sampled_period );
     stats->PrintStats( sampled_period );
-    ftl->PrintStats( sampled_period, false);
+    ftl->PrintStats( sampled_period );
   }
   else{
     printf( "*********************Info of Access Capacity*********************\n");
     printf( "HDD OPER, AVERAGE(B), COUNT, TOTAL(B), MIN(B), MAX(B)\n");
-    if (access_count[OP_READ])
+    if (access_count[OPER_READ])
     printf( "HDD %s, %.4lf, %llu, %llu, %u, %u\n",
-    operation[OP_READ], total_volume[OP_READ]*1.0/access_count[OP_READ], access_count[OP_READ], total_volume[OP_READ],Min_size[OP_READ], Max_size[OP_READ]);
-    if (access_count[OP_WRITE])
+    operation[OPER_READ], total_volume[OPER_READ]*1.0/access_count[OPER_READ], access_count[OPER_READ], total_volume[OPER_READ],Min_size[OPER_READ], Max_size[OPER_READ]);
+    if (access_count[OPER_WRITE])
     printf( "HDD %s, %.4lf, %llu, %llu, %u, %u\n",
-    operation[OP_WRITE], total_volume[OP_WRITE]*1.0/access_count[OP_WRITE], access_count[OP_WRITE], total_volume[OP_WRITE],Min_size[OP_WRITE], Max_size[OP_WRITE]);
+    operation[OPER_WRITE], total_volume[OPER_WRITE]*1.0/access_count[OPER_WRITE], access_count[OPER_WRITE], total_volume[OPER_WRITE],Min_size[OPER_WRITE], Max_size[OPER_WRITE]);
     printf( "HDD: Total execution time (ms), Total HDD active time (ms)\n");
-    printf( "HDD: %.4f\t\t\t, %.4f\n", hdd_next_available_time * 1.0 / 1000000000, (total_time[OP_READ]+total_time[OP_WRITE]) * 1.0 / 1000000000);
-    if (total_time[OP_READ])
-    printf( "HDD read bandwidth including idle time (min, max, average): (%.4lf, %.4lf, %.4lf) MB/s\n", Min_bandwidth[OP_READ], Max_bandwidth[OP_READ], total_volume[OP_READ] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / hdd_next_available_time);
-    if(total_time[OP_WRITE])
-    printf( "HDD write bandwidth including idle time (min, max, average): (%.4lf, %.4lf, %.4lf) MB/s\n", Min_bandwidth[OP_WRITE], Max_bandwidth[OP_WRITE], total_volume[OP_WRITE] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / hdd_next_available_time);
-    if (total_time[OP_READ])
-    printf( "HDD read bandwidth excluding idle time (min, max, average): (%.4lf, %.4lf, %.4lf) MB/s\n", Min_bandwidth_woidle[OP_READ], Max_bandwidth_woidle[OP_READ], total_volume[OP_READ] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / (total_time[OP_READ]+total_time[OP_WRITE]));
-    if(total_time[OP_WRITE])
-    printf( "HDD write bandwidth excluding idle time (min, max, average): (%.4lf, %.4lf, %.4lf) MB/s\n", Min_bandwidth_woidle[OP_WRITE], Max_bandwidth_woidle[OP_WRITE], total_volume[OP_WRITE] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / (total_time[OP_READ]+total_time[OP_WRITE]));
-    if (total_time[OP_READ])
-    printf( "HDD read-only bandwidth (min, max, average): (%.4lf, %.4lf, %.4lf) MB/s\n", Min_bandwidth_only[OP_READ], Max_bandwidth_only[OP_READ], total_volume[OP_READ] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / (total_time[OP_READ]));
-    if(total_time[OP_WRITE])
-    printf( "HDD write-only bandwidth (min, max, average): (%.4lf, %.4lf, %.4lf) MB/s\n", Min_bandwidth_only[OP_WRITE], Max_bandwidth_only[OP_WRITE], total_volume[OP_WRITE] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / (total_time[OP_WRITE]));
+    printf( "HDD: %.4f\t\t\t, %.4f\n", hdd_next_available_time * 1.0 / 1000000000, (total_time[OPER_READ]+total_time[OPER_WRITE]) * 1.0 / 1000000000);
+    if (total_time[OPER_READ])
+    printf( "HDD read bandwidth including idle time (min, max, average): (%.4lf, %.4lf, %.4lf) MB/s\n", Min_bandwidth[OPER_READ], Max_bandwidth[OPER_READ], total_volume[OPER_READ] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / hdd_next_available_time);
+    if(total_time[OPER_WRITE])
+    printf( "HDD write bandwidth including idle time (min, max, average): (%.4lf, %.4lf, %.4lf) MB/s\n", Min_bandwidth[OPER_WRITE], Max_bandwidth[OPER_WRITE], total_volume[OPER_WRITE] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / hdd_next_available_time);
+    if (total_time[OPER_READ])
+    printf( "HDD read bandwidth excluding idle time (min, max, average): (%.4lf, %.4lf, %.4lf) MB/s\n", Min_bandwidth_woidle[OPER_READ], Max_bandwidth_woidle[OPER_READ], total_volume[OPER_READ] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / (total_time[OPER_READ]+total_time[OPER_WRITE]));
+    if(total_time[OPER_WRITE])
+    printf( "HDD write bandwidth excluding idle time (min, max, average): (%.4lf, %.4lf, %.4lf) MB/s\n", Min_bandwidth_woidle[OPER_WRITE], Max_bandwidth_woidle[OPER_WRITE], total_volume[OPER_WRITE] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / (total_time[OPER_READ]+total_time[OPER_WRITE]));
+    if (total_time[OPER_READ])
+    printf( "HDD read-only bandwidth (min, max, average): (%.4lf, %.4lf, %.4lf) MB/s\n", Min_bandwidth_only[OPER_READ], Max_bandwidth_only[OPER_READ], total_volume[OPER_READ] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / (total_time[OPER_READ]));
+    if(total_time[OPER_WRITE])
+    printf( "HDD write-only bandwidth (min, max, average): (%.4lf, %.4lf, %.4lf) MB/s\n", Min_bandwidth_only[OPER_WRITE], Max_bandwidth_only[OPER_WRITE], total_volume[OPER_WRITE] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / (total_time[OPER_WRITE]));
 
-    if (access_count[OP_READ])
-    printf( "HDD read request latency (min, max, average): (%llu, %llu, %llu)us\n",Min_latency[OP_READ]/1000000, Max_latency[OP_READ]/1000000,accumulated_latency[OP_READ]/access_count[OP_READ]/1000000);
-    if (access_count[OP_WRITE])
-    printf( "HDD write request latency (min, max, average): (%llu, %llu, %llu)us\n",Min_latency[OP_WRITE]/1000000, Max_latency[OP_WRITE]/1000000,accumulated_latency[OP_WRITE]/access_count[OP_WRITE]/1000000);
-    if (total_time[OP_READ])
-    printf( "HDD read IOPS including idle time (min, max, average): (%.4lf, %.4lf, %.4lf)\n", Min_IOPS[OP_READ], Max_IOPS[OP_READ], access_count[OP_READ] * 1.0 *1000 * 1000 * 1000 * 1000 / hdd_next_available_time);
-    if(total_time[OP_WRITE])
-    printf( "HDD write IOPS including idle time (min, max, average): (%.4lf, %.4lf, %.4lf)\n", Min_IOPS[OP_WRITE], Max_IOPS[OP_WRITE], access_count[OP_WRITE] * 1.0 *1000 * 1000 * 1000 * 1000 / hdd_next_available_time);
-    if (total_time[OP_READ])
-    printf( "HDD read IOPS excluding idle time (min, max, average): (%.4lf, %.4lf, %.4lf)\n", Min_IOPS_woidle[OP_READ], Max_IOPS_woidle[OP_READ], access_count[OP_READ] * 1.0 *1000 * 1000 * 1000 * 1000 / (total_time[OP_READ]+total_time[OP_WRITE]));
-    if(total_time[OP_WRITE])
-    printf( "HDD write IOPS excluding idle time (min, max, average): (%.4lf, %.4lf, %.4lf)\n", Min_IOPS_woidle[OP_WRITE], Max_IOPS_woidle[OP_WRITE], access_count[OP_WRITE] * 1.0 *1000 * 1000 * 1000 * 1000 / (total_time[OP_READ]+total_time[OP_WRITE]));
-    if (total_time[OP_READ])
-    printf( "HDD read-only IOPS (min, max, average): (%.4lf, %.4lf, %.4lf)\n", Min_IOPS_only[OP_READ], Max_IOPS_only[OP_READ], access_count[OP_READ] * 1.0 *1000 * 1000 * 1000 * 1000 / (total_time[OP_READ]));
-    if(total_time[OP_WRITE])
-    printf( "HDD write-only IOPS (min, max, average): (%.4lf, %.4lf, %.4lf)\n", Min_IOPS_only[OP_WRITE], Max_IOPS_only[OP_WRITE], access_count[OP_WRITE] * 1.0 *1000 * 1000 * 1000 * 1000 / (total_time[OP_WRITE]));
+    if (access_count[OPER_READ])
+    printf( "HDD read request latency (min, max, average): (%llu, %llu, %llu)us\n",Min_latency[OPER_READ]/1000000, Max_latency[OPER_READ]/1000000,accumulated_latency[OPER_READ]/access_count[OPER_READ]/1000000);
+    if (access_count[OPER_WRITE])
+    printf( "HDD write request latency (min, max, average): (%llu, %llu, %llu)us\n",Min_latency[OPER_WRITE]/1000000, Max_latency[OPER_WRITE]/1000000,accumulated_latency[OPER_WRITE]/access_count[OPER_WRITE]/1000000);
+    if (total_time[OPER_READ])
+    printf( "HDD read IOPS including idle time (min, max, average): (%.4lf, %.4lf, %.4lf)\n", Min_IOPS[OPER_READ], Max_IOPS[OPER_READ], access_count[OPER_READ] * 1.0 *1000 * 1000 * 1000 * 1000 / hdd_next_available_time);
+    if(total_time[OPER_WRITE])
+    printf( "HDD write IOPS including idle time (min, max, average): (%.4lf, %.4lf, %.4lf)\n", Min_IOPS[OPER_WRITE], Max_IOPS[OPER_WRITE], access_count[OPER_WRITE] * 1.0 *1000 * 1000 * 1000 * 1000 / hdd_next_available_time);
+    if (total_time[OPER_READ])
+    printf( "HDD read IOPS excluding idle time (min, max, average): (%.4lf, %.4lf, %.4lf)\n", Min_IOPS_woidle[OPER_READ], Max_IOPS_woidle[OPER_READ], access_count[OPER_READ] * 1.0 *1000 * 1000 * 1000 * 1000 / (total_time[OPER_READ]+total_time[OPER_WRITE]));
+    if(total_time[OPER_WRITE])
+    printf( "HDD write IOPS excluding idle time (min, max, average): (%.4lf, %.4lf, %.4lf)\n", Min_IOPS_woidle[OPER_WRITE], Max_IOPS_woidle[OPER_WRITE], access_count[OPER_WRITE] * 1.0 *1000 * 1000 * 1000 * 1000 / (total_time[OPER_READ]+total_time[OPER_WRITE]));
+    if (total_time[OPER_READ])
+    printf( "HDD read-only IOPS (min, max, average): (%.4lf, %.4lf, %.4lf)\n", Min_IOPS_only[OPER_READ], Max_IOPS_only[OPER_READ], access_count[OPER_READ] * 1.0 *1000 * 1000 * 1000 * 1000 / (total_time[OPER_READ]));
+    if(total_time[OPER_WRITE])
+    printf( "HDD write-only IOPS (min, max, average): (%.4lf, %.4lf, %.4lf)\n", Min_IOPS_only[OPER_WRITE], Max_IOPS_only[OPER_WRITE], access_count[OPER_WRITE] * 1.0 *1000 * 1000 * 1000 * 1000 / (total_time[OPER_WRITE]));
 
     printf( "***************************************************************\n");
   }
@@ -353,113 +340,113 @@ void HIL::get_parameter(enum layer_type layer, struct output_result &output)
       stats->PrintFinalStats( finishTick );
     }
     if (layer == FTL_HOST_LAYER){
-      ftl->PrintStats(finishTick, true);  // collect, and print stats for the last epoch
+      ftl->PrintStats(finishTick);  // collect, and print stats for the last epoch
     }
   }
   switch(layer){
     case HDD_LAYER:
-    access_count[OP_READ] > 0 ?
-    output.statistics[RD][CAPACITY][AVG] = total_volume[OP_READ]*1.0/access_count[OP_READ] :
+    access_count[OPER_READ] > 0 ?
+    output.statistics[RD][CAPACITY][AVG] = total_volume[OPER_READ]*1.0/access_count[OPER_READ] :
     output.statistics[RD][CAPACITY][AVG] = 0;
-    output.statistics[RD][CAPACITY][MIN] = Min_size[OP_READ];
-    output.statistics[RD][CAPACITY][MAX] = Max_size[OP_READ];
-    output.statistics[RD][CAPACITY][TOT] = total_volume[OP_READ];
-    output.statistics[RD][CAPACITY][COUNT] = access_count[OP_READ];
-    access_count[OP_WRITE] > 0?
-    output.statistics[WR][CAPACITY][AVG] = total_volume[OP_WRITE]*1.0/access_count[OP_WRITE] :
+    output.statistics[RD][CAPACITY][MIN] = Min_size[OPER_READ];
+    output.statistics[RD][CAPACITY][MAX] = Max_size[OPER_READ];
+    output.statistics[RD][CAPACITY][TOT] = total_volume[OPER_READ];
+    output.statistics[RD][CAPACITY][COUNT] = access_count[OPER_READ];
+    access_count[OPER_WRITE] > 0?
+    output.statistics[WR][CAPACITY][AVG] = total_volume[OPER_WRITE]*1.0/access_count[OPER_WRITE] :
     output.statistics[WR][CAPACITY][AVG] = 0;
-    output.statistics[WR][CAPACITY][MIN] = Min_size[OP_WRITE];
-    output.statistics[WR][CAPACITY][MAX] = Max_size[OP_WRITE];
-    output.statistics[WR][CAPACITY][TOT] = total_volume[OP_WRITE];
-    output.statistics[WR][CAPACITY][COUNT] = access_count[OP_WRITE];
+    output.statistics[WR][CAPACITY][MIN] = Min_size[OPER_WRITE];
+    output.statistics[WR][CAPACITY][MAX] = Max_size[OPER_WRITE];
+    output.statistics[WR][CAPACITY][TOT] = total_volume[OPER_WRITE];
+    output.statistics[WR][CAPACITY][COUNT] = access_count[OPER_WRITE];
     //HIL layer does not contain erase operation
-    (access_count[OP_READ] + access_count[OP_WRITE]) > 0 ?
-    output.statistics[ALL][CAPACITY][AVG] = (total_volume[OP_READ] + total_volume[OP_WRITE])*1.0/(access_count[OP_READ] + access_count[OP_WRITE]) :
+    (access_count[OPER_READ] + access_count[OPER_WRITE]) > 0 ?
+    output.statistics[ALL][CAPACITY][AVG] = (total_volume[OPER_READ] + total_volume[OPER_WRITE])*1.0/(access_count[OPER_READ] + access_count[OPER_WRITE]) :
     output.statistics[ALL][CAPACITY][AVG] = 0;
-    output.statistics[ALL][CAPACITY][MIN] = MIN(Min_size[OP_READ], Min_size[OP_WRITE]);
-    output.statistics[ALL][CAPACITY][MAX] = MAX(Max_size[OP_READ], Max_size[OP_WRITE]);
-    output.statistics[ALL][CAPACITY][TOT] = total_volume[OP_READ]+total_volume[OP_WRITE];
-    output.statistics[ALL][CAPACITY][COUNT] = access_count[OP_READ] + access_count[OP_WRITE];
+    output.statistics[ALL][CAPACITY][MIN] = MIN(Min_size[OPER_READ], Min_size[OPER_WRITE]);
+    output.statistics[ALL][CAPACITY][MAX] = MAX(Max_size[OPER_READ], Max_size[OPER_WRITE]);
+    output.statistics[ALL][CAPACITY][TOT] = total_volume[OPER_READ]+total_volume[OPER_WRITE];
+    output.statistics[ALL][CAPACITY][COUNT] = access_count[OPER_READ] + access_count[OPER_WRITE];
 
-    total_time[OP_READ] > 0 ?
-    output.statistics[RD][BANDWIDTH][AVG] = total_volume[OP_READ] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / (total_time[OP_READ]+total_time[OP_WRITE]):
+    total_time[OPER_READ] > 0 ?
+    output.statistics[RD][BANDWIDTH][AVG] = total_volume[OPER_READ] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / (total_time[OPER_READ]+total_time[OPER_WRITE]):
     output.statistics[RD][BANDWIDTH][AVG] = 0;
-    output.statistics[RD][BANDWIDTH][MIN] = Min_bandwidth_woidle[OP_READ];
-    output.statistics[RD][BANDWIDTH][MAX] = Max_bandwidth_woidle[OP_READ];
-    total_time[OP_WRITE] > 0 ?
-    output.statistics[WR][BANDWIDTH][AVG] = total_volume[OP_WRITE] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / (total_time[OP_READ]+total_time[OP_WRITE]) :
+    output.statistics[RD][BANDWIDTH][MIN] = Min_bandwidth_woidle[OPER_READ];
+    output.statistics[RD][BANDWIDTH][MAX] = Max_bandwidth_woidle[OPER_READ];
+    total_time[OPER_WRITE] > 0 ?
+    output.statistics[WR][BANDWIDTH][AVG] = total_volume[OPER_WRITE] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / (total_time[OPER_READ]+total_time[OPER_WRITE]) :
     output.statistics[WR][BANDWIDTH][AVG] = 0;
-    output.statistics[WR][BANDWIDTH][MIN] = Min_bandwidth_woidle[OP_WRITE];
-    output.statistics[WR][BANDWIDTH][MAX] = Max_bandwidth_woidle[OP_WRITE];
+    output.statistics[WR][BANDWIDTH][MIN] = Min_bandwidth_woidle[OPER_WRITE];
+    output.statistics[WR][BANDWIDTH][MAX] = Max_bandwidth_woidle[OPER_WRITE];
 
-    total_time[OP_READ] > 0 ?
-    output.statistics[RD][BANDWIDTH_WIDLE][AVG] = total_volume[OP_READ] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / (curTick):
+    total_time[OPER_READ] > 0 ?
+    output.statistics[RD][BANDWIDTH_WIDLE][AVG] = total_volume[OPER_READ] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / (currentTick):
     output.statistics[RD][BANDWIDTH_WIDLE][AVG] = 0;
-    output.statistics[RD][BANDWIDTH_WIDLE][MIN] = Min_bandwidth[OP_READ];
-    output.statistics[RD][BANDWIDTH_WIDLE][MAX] = Max_bandwidth[OP_READ];
-    total_time[OP_WRITE] > 0 ?
-    output.statistics[WR][BANDWIDTH_WIDLE][AVG] = total_volume[OP_WRITE] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / (curTick):
+    output.statistics[RD][BANDWIDTH_WIDLE][MIN] = Min_bandwidth[OPER_READ];
+    output.statistics[RD][BANDWIDTH_WIDLE][MAX] = Max_bandwidth[OPER_READ];
+    total_time[OPER_WRITE] > 0 ?
+    output.statistics[WR][BANDWIDTH_WIDLE][AVG] = total_volume[OPER_WRITE] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / (currentTick):
     output.statistics[WR][BANDWIDTH_WIDLE][AVG] = 0;
-    output.statistics[WR][BANDWIDTH_WIDLE][MIN] = Min_bandwidth[OP_WRITE];
-    output.statistics[WR][BANDWIDTH_WIDLE][MAX] = Max_bandwidth[OP_WRITE];
+    output.statistics[WR][BANDWIDTH_WIDLE][MIN] = Min_bandwidth[OPER_WRITE];
+    output.statistics[WR][BANDWIDTH_WIDLE][MAX] = Max_bandwidth[OPER_WRITE];
 
-    total_time[OP_READ] > 0 ?
-    output.statistics[RD][BANDWIDTH_OPER][AVG] = total_volume[OP_READ] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / total_time[OP_READ]:
+    total_time[OPER_READ] > 0 ?
+    output.statistics[RD][BANDWIDTH_OPER][AVG] = total_volume[OPER_READ] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / total_time[OPER_READ]:
     output.statistics[RD][BANDWIDTH_OPER][AVG] = 0;
-    output.statistics[RD][BANDWIDTH_OPER][MIN] = Min_bandwidth_only[OP_READ];
-    output.statistics[RD][BANDWIDTH_OPER][MAX] = Max_bandwidth_only[OP_READ];
-    total_time[OP_WRITE] > 0 ?
-    output.statistics[WR][BANDWIDTH_OPER][AVG] = total_volume[OP_WRITE] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / total_time[OP_WRITE]:
+    output.statistics[RD][BANDWIDTH_OPER][MIN] = Min_bandwidth_only[OPER_READ];
+    output.statistics[RD][BANDWIDTH_OPER][MAX] = Max_bandwidth_only[OPER_READ];
+    total_time[OPER_WRITE] > 0 ?
+    output.statistics[WR][BANDWIDTH_OPER][AVG] = total_volume[OPER_WRITE] * 1.0 / 1024 / 1024 *1000 * 1000 * 1000 * 1000 / total_time[OPER_WRITE]:
     output.statistics[WR][BANDWIDTH_OPER][AVG] = 0;
-    output.statistics[WR][BANDWIDTH_OPER][MIN] = Min_bandwidth_only[OP_WRITE];
-    output.statistics[WR][BANDWIDTH_OPER][MAX] = Max_bandwidth_only[OP_WRITE];
+    output.statistics[WR][BANDWIDTH_OPER][MIN] = Min_bandwidth_only[OPER_WRITE];
+    output.statistics[WR][BANDWIDTH_OPER][MAX] = Max_bandwidth_only[OPER_WRITE];
 
-    access_count[OP_READ] > 0 ?
-    output.statistics[RD][LATENCY][AVG] = accumulated_latency[OP_READ]/access_count[OP_READ]/1000000 :
+    access_count[OPER_READ] > 0 ?
+    output.statistics[RD][LATENCY][AVG] = accumulated_latency[OPER_READ]/access_count[OPER_READ]/1000000 :
     output.statistics[RD][LATENCY][AVG] = 0;
-    output.statistics[RD][LATENCY][MIN] = Min_latency[OP_READ]/1000000;
-    output.statistics[RD][LATENCY][MAX] = Max_latency[OP_READ]/1000000;
-    access_count[OP_WRITE] > 0 ?
-    output.statistics[WR][LATENCY][AVG] = accumulated_latency[OP_WRITE]/access_count[OP_WRITE]/1000000 :
+    output.statistics[RD][LATENCY][MIN] = Min_latency[OPER_READ]/1000000;
+    output.statistics[RD][LATENCY][MAX] = Max_latency[OPER_READ]/1000000;
+    access_count[OPER_WRITE] > 0 ?
+    output.statistics[WR][LATENCY][AVG] = accumulated_latency[OPER_WRITE]/access_count[OPER_WRITE]/1000000 :
     output.statistics[WR][LATENCY][AVG] = 0;
-    output.statistics[WR][LATENCY][MIN] = Min_latency[OP_WRITE]/1000000;
-    output.statistics[WR][LATENCY][MAX] = Max_latency[OP_WRITE]/1000000;
+    output.statistics[WR][LATENCY][MIN] = Min_latency[OPER_WRITE]/1000000;
+    output.statistics[WR][LATENCY][MAX] = Max_latency[OPER_WRITE]/1000000;
 
-    total_time[OP_READ] > 0 ?
-    output.statistics[RD][IOPS][AVG] = access_count[OP_READ] * 1.0 *1000 * 1000 * 1000 * 1000 / (total_time[OP_READ] + total_time[OP_WRITE]) :
+    total_time[OPER_READ] > 0 ?
+    output.statistics[RD][IOPS][AVG] = access_count[OPER_READ] * 1.0 *1000 * 1000 * 1000 * 1000 / (total_time[OPER_READ] + total_time[OPER_WRITE]) :
     output.statistics[RD][IOPS][AVG] = 0;
-    output.statistics[RD][IOPS][MIN] = Min_IOPS_woidle[OP_READ];
-    output.statistics[RD][IOPS][MAX] = Max_IOPS_woidle[OP_READ];
-    total_time[OP_WRITE] > 0 ?
-    output.statistics[WR][IOPS][AVG] = access_count[OP_WRITE] * 1.0 *1000 * 1000 * 1000 * 1000 / (total_time[OP_READ] + total_time[OP_WRITE]) :
+    output.statistics[RD][IOPS][MIN] = Min_IOPS_woidle[OPER_READ];
+    output.statistics[RD][IOPS][MAX] = Max_IOPS_woidle[OPER_READ];
+    total_time[OPER_WRITE] > 0 ?
+    output.statistics[WR][IOPS][AVG] = access_count[OPER_WRITE] * 1.0 *1000 * 1000 * 1000 * 1000 / (total_time[OPER_READ] + total_time[OPER_WRITE]) :
     output.statistics[WR][IOPS][AVG] = 0;
-    output.statistics[WR][IOPS][MIN] = Min_IOPS_woidle[OP_WRITE];
-    output.statistics[WR][IOPS][MAX] = Max_IOPS_woidle[OP_WRITE];
+    output.statistics[WR][IOPS][MIN] = Min_IOPS_woidle[OPER_WRITE];
+    output.statistics[WR][IOPS][MAX] = Max_IOPS_woidle[OPER_WRITE];
 
-    total_time[OP_READ] > 0 ?
-    output.statistics[RD][IOPS_WIDLE][AVG] = access_count[OP_READ] * 1.0 *1000 * 1000 * 1000 * 1000 / (curTick) :
+    total_time[OPER_READ] > 0 ?
+    output.statistics[RD][IOPS_WIDLE][AVG] = access_count[OPER_READ] * 1.0 *1000 * 1000 * 1000 * 1000 / (currentTick) :
     output.statistics[RD][IOPS_WIDLE][AVG] = 0;
-    output.statistics[RD][IOPS_WIDLE][MIN] = Min_IOPS[OP_READ];
-    output.statistics[RD][IOPS_WIDLE][MAX] = Max_IOPS[OP_READ];
-    total_time[OP_WRITE] > 0 ?
-    output.statistics[WR][IOPS_WIDLE][AVG] = access_count[OP_WRITE] * 1.0 *1000 * 1000 * 1000 * 1000 / (curTick) :
+    output.statistics[RD][IOPS_WIDLE][MIN] = Min_IOPS[OPER_READ];
+    output.statistics[RD][IOPS_WIDLE][MAX] = Max_IOPS[OPER_READ];
+    total_time[OPER_WRITE] > 0 ?
+    output.statistics[WR][IOPS_WIDLE][AVG] = access_count[OPER_WRITE] * 1.0 *1000 * 1000 * 1000 * 1000 / (currentTick) :
     output.statistics[WR][IOPS_WIDLE][AVG] = 0;
-    output.statistics[WR][IOPS_WIDLE][MIN] = Min_IOPS[OP_WRITE];
-    output.statistics[WR][IOPS_WIDLE][MAX] = Max_IOPS[OP_WRITE];
+    output.statistics[WR][IOPS_WIDLE][MIN] = Min_IOPS[OPER_WRITE];
+    output.statistics[WR][IOPS_WIDLE][MAX] = Max_IOPS[OPER_WRITE];
 
-    total_time[OP_READ] > 0 ?
-    output.statistics[RD][IOPS_OPER][AVG] = access_count[OP_READ] * 1.0 *1000 * 1000 * 1000 * 1000 /total_time[OP_READ] :
+    total_time[OPER_READ] > 0 ?
+    output.statistics[RD][IOPS_OPER][AVG] = access_count[OPER_READ] * 1.0 *1000 * 1000 * 1000 * 1000 /total_time[OPER_READ] :
     output.statistics[RD][IOPS_OPER][AVG] = 0;
-    output.statistics[RD][IOPS_OPER][MIN] = Min_IOPS_only[OP_READ];
-    output.statistics[RD][IOPS_OPER][MAX] = Max_IOPS_only[OP_READ];
-    total_time[OP_WRITE] > 0 ?
-    output.statistics[WR][IOPS_OPER][AVG] = access_count[OP_WRITE] * 1.0 *1000 * 1000 * 1000 * 1000 / total_time[OP_WRITE] :
+    output.statistics[RD][IOPS_OPER][MIN] = Min_IOPS_only[OPER_READ];
+    output.statistics[RD][IOPS_OPER][MAX] = Max_IOPS_only[OPER_READ];
+    total_time[OPER_WRITE] > 0 ?
+    output.statistics[WR][IOPS_OPER][AVG] = access_count[OPER_WRITE] * 1.0 *1000 * 1000 * 1000 * 1000 / total_time[OPER_WRITE] :
     output.statistics[WR][IOPS_OPER][AVG] = 0;
-    output.statistics[WR][IOPS_OPER][MIN] = Min_IOPS_only[OP_WRITE];
-    output.statistics[WR][IOPS_OPER][MAX] = Max_IOPS_only[OP_WRITE];
+    output.statistics[WR][IOPS_OPER][MIN] = Min_IOPS_only[OPER_WRITE];
+    output.statistics[WR][IOPS_OPER][MAX] = Max_IOPS_only[OPER_WRITE];
 
-    output.statistics[TOT][DEVICE_IDLE][TOT] = (curTick - total_time[OP_READ] - total_time[OP_WRITE]) / 1000 / 1000 / 1000;
-    output.statistics[TOT][DEVICE_BUSY][TOT] = (total_time[OP_READ] + total_time[OP_WRITE]) / 1000 / 1000 / 1000;
+    output.statistics[TOT][DEVICE_IDLE][TOT] = (currentTick - total_time[OPER_READ] - total_time[OPER_WRITE]) / 1000 / 1000 / 1000;
+    output.statistics[TOT][DEVICE_BUSY][TOT] = (total_time[OPER_READ] + total_time[OPER_WRITE]) / 1000 / 1000 / 1000;
 
     break;
 
@@ -514,34 +501,6 @@ void HIL::get_parameter(enum layer_type layer, struct output_result &output)
 
     break;
 
-    case FTL_PAL_LAYER:
-
-    output.statistics[RD][CAPACITY][COUNT] = ftl->que->pal_read_req_count;
-    output.statistics[WR][CAPACITY][COUNT] = ftl->que->pal_write_req_count;
-    output.statistics[ER][CAPACITY][COUNT] = ftl->que->pal_erase_req_count;
-
-    output.statistics[RD][CAPACITY][TOT] = ftl->que->pal_read_capacity / (2 * 1024); // convert sector to MB
-    output.statistics[WR][CAPACITY][TOT] = ftl->que->pal_write_capacity / (2 * 1024); // convert sector to MB
-
-    output.statistics[RD][LATENCY][AVG] = ftl->que->pal_read_lat_avg;
-    ftl->que->pal_read_lat_min == DBL_MAX ?
-    output.statistics[RD][LATENCY][MIN] = 0 :
-    output.statistics[RD][LATENCY][MIN] = ftl->que->pal_read_lat_min;
-    output.statistics[RD][LATENCY][MAX] = ftl->que->pal_read_lat_max;
-
-    output.statistics[WR][LATENCY][AVG] = ftl->que->pal_write_lat_avg;
-    ftl->que->pal_write_lat_min == DBL_MAX ?
-    output.statistics[WR][LATENCY][MIN] = 0 :
-    output.statistics[WR][LATENCY][MIN] = ftl->que->pal_write_lat_min;
-    output.statistics[WR][LATENCY][MAX] = ftl->que->pal_write_lat_max;
-
-    output.statistics[ER][LATENCY][AVG] = ftl->que->pal_erase_lat_avg;
-    ftl->que->pal_erase_lat_min == DBL_MAX ?
-    output.statistics[ER][LATENCY][MIN] = 0 :
-    output.statistics[ER][LATENCY][MIN] = ftl->que->pal_erase_lat_min;
-    output.statistics[ER][LATENCY][MAX] = ftl->que->pal_erase_lat_max;
-    break;
-
     case PAL_LAYER:
     for(unsigned i = 0; i < 4; i++){
       output.statistics[i][CAPACITY][AVG] = stats->Access_Capacity.vals[i].avg();
@@ -562,7 +521,7 @@ void HIL::get_parameter(enum layer_type layer, struct output_result &output)
       output.statistics[i][BANDWIDTH][MIN] = stats->Access_Bandwidth.vals[i].minval;
       output.statistics[i][BANDWIDTH][MAX] = stats->Access_Bandwidth.vals[i].maxval;
 
-      output.statistics[i][BANDWIDTH_WIDLE][AVG] = (stats->Access_Capacity.vals[i].sum)*1.0/MBYTE/((curTick-stats->sim_start_time_ps)*1.0/PSEC);
+      output.statistics[i][BANDWIDTH_WIDLE][AVG] = (stats->Access_Capacity.vals[i].sum)*1.0/MBYTE/((currentTick-stats->sim_start_time_ps)*1.0/PSEC);
       output.statistics[i][BANDWIDTH_WIDLE][MIN] = stats->Access_Bandwidth_widle.vals[i].minval;
       output.statistics[i][BANDWIDTH_WIDLE][MAX] = stats->Access_Bandwidth_widle.vals[i].maxval;
 
@@ -575,7 +534,7 @@ void HIL::get_parameter(enum layer_type layer, struct output_result &output)
       output.statistics[i][IOPS][MIN] = stats->Access_Iops.vals[i].minval;
       output.statistics[i][IOPS][MAX] = stats->Access_Iops.vals[i].maxval;
 
-      output.statistics[i][IOPS_WIDLE][AVG] = (stats->Access_Capacity.vals[i].cnt)*1.0/((curTick-stats->sim_start_time_ps)*1.0/PSEC);
+      output.statistics[i][IOPS_WIDLE][AVG] = (stats->Access_Capacity.vals[i].cnt)*1.0/((currentTick-stats->sim_start_time_ps)*1.0/PSEC);
       output.statistics[i][IOPS_WIDLE][MIN] = stats->Access_Iops_widle.vals[i].minval;
       output.statistics[i][IOPS_WIDLE][MAX] = stats->Access_Iops_widle.vals[i].maxval;
 
@@ -608,7 +567,6 @@ HIL::~HIL()
 {
   delete pal2;
   delete stats;
-  delete sim;
   delete ftl;
   delete param;
 }

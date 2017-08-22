@@ -29,13 +29,14 @@ class FTL {
   protected:
     Parameter *param;
 
-    FTLStats ftl_statistics;
     PAL2 *pal;
-    MappingTable *FTLmapping;
 
   public:
     FTL(Parameter *, PAL2 *);
     ~FTL();
+
+    FTLStats ftl_statistics;
+    MappingTable *FTLmapping;
 
     void initialize();
     Parameter * getParameter(){return param;}

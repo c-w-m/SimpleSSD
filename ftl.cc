@@ -12,6 +12,10 @@
 #include "ftl_statistics.hh"
 #include "PAL2.h"
 
+#ifndef MAX
+#define MAX(x, y)   ((x) > (y) ? (x) : (y))
+#endif
+
 FTL::FTL(Parameter *p, PAL2 *pal2) :
   param(p), pal(pal2) {
   FTLmapping = new HybridMapping(this);
@@ -49,7 +53,7 @@ Tick FTL::read(Addr lpn, size_t npages, Tick arrived) {
     finished = MAX(readInternal(ppn, arrived), finished);
   }
 
-  return finished - now;
+  return finished - arrived;
 }
 
 Tick FTL::write(Addr lpn, size_t npages, Tick arrived, bool init) {
@@ -69,7 +73,7 @@ Tick FTL::write(Addr lpn, size_t npages, Tick arrived, bool init) {
     FTLmapping->GarbageCollection();
   }
 
-  return finished - now;
+  return finished - arrived;
 }
 
 Tick FTL::trim(Addr lpn, size_t npages) {

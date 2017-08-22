@@ -34,7 +34,6 @@
 #include "debug/PAL2.hh"
 #endif
 
-
 #include <iostream>
 #include <string>
 #include <cstring>
@@ -42,6 +41,7 @@
 #include <cstdlib>
 #include <exception>
 #include <fstream>
+#include <map>
 using namespace std;
 
 #define OPER_ALL (OPER_NUM+1)
@@ -122,7 +122,7 @@ class PALStatistics
     void AddStall(uint8 oper, uint8 stall_kind, uint64 lat);
     #endif
 
-    PALStatistics(NVMeConfig *, Latency *);
+    PALStatistics(BaseConfig *, Latency *);
 
     ~PALStatistics();
 

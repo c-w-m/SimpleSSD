@@ -132,10 +132,14 @@ void MappingTable::PrintStats(){
   DPRINTF(FTLOut,  "FTL Map Total block erase count %d \n", map_block_erase_count);
   DPRINTF(FTLOut,  "FTL Map GC move count (read, write)  %d  %d \n", map_gc_move_read_count, map_gc_move_write_count);
   DPRINTF(FTLOut,  "FTL Map Bad block count %d \n", map_bad_block_count); // bad block count
-  if (map_gc_lat_min  == DBL_MAX)
-  DPRINTF(FTLOut,  "FTL Map GC latency (min , max , avg) : ( NA , NA , NA) us \n");
-  else
-  DPRINTF(FTLOut,  "FTL Map GC latency (min , max , avg) : ( %.2f , %.2f , %.2f) us \n", map_gc_lat_min, map_gc_lat_max, map_gc_lat_avg);
+
+  if (map_gc_lat_min == DBL_MAX) {
+    DPRINTF(FTLOut, "FTL Map GC latency (min , max , avg) : ( NA , NA , NA) us \n");
+  }
+  else {
+    DPRINTF(FTLOut, "FTL Map GC latency (min , max , avg) : ( %.2f , %.2f , %.2f) us \n", map_gc_lat_min, map_gc_lat_max, map_gc_lat_avg);
+  }
+
   DPRINTF(FTLOut,  "FTL Map free/used block count: %lld/%lld\n", map_free_block_count, map_used_block_count);
 }
 void MappingTable::ResetStats(){

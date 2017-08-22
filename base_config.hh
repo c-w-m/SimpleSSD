@@ -23,6 +23,7 @@
 #define __BASE_CONFIG_HH__
 
 #include <cinttypes>
+#include <string>
 
 #include "SimpleSSD_types.h"
 

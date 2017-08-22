@@ -17,9 +17,11 @@
  * Authors: Jie Zhang <jie@camelab.org>
  */
 
-#include "arch/isa_traits.hh"
 #include "PAL2.h"
-#include "debug/PAL2.hh"
+
+#ifndef SIMPLESSD_STANDALONE
+#include "debug/PAL.hh"
+#endif
 
 PAL2::PAL2(PALStatistics* statistics, BaseConfig *c, Latency *l)
 {
@@ -33,7 +35,7 @@ PAL2::PAL2(PALStatistics* statistics, BaseConfig *c, Latency *l)
   {
     RearrangedSizes[i] = OriginalSizes[ gconf->AddrSeq[i] ];
 
-    DPRINTF(PAL2,"PAL: [%d] ORI(%s): %u --> REARR(%s): %u\n", i, ADDR_STRINFO[ i ], OriginalSizes[ i ], ADDR_STRINFO[ gconf->AddrSeq[i] ], RearrangedSizes[i]); //Use DPRINTF here
+    DPRINTF(PAL,"PAL: [%d] ORI(%s): %u --> REARR(%s): %u\n", i, ADDR_STRINFO[ i ], OriginalSizes[ i ], ADDR_STRINFO[ gconf->AddrSeq[i] ], RearrangedSizes[i]); //Use DPRINTF here
   }
 
   ChTimeSlots = new TimeSlot*[gconf->NumChannel];
@@ -459,16 +461,16 @@ void PAL2::TimelineScheduling(Command& req)
     if (1)
     {
 # if DBG_PRINT_REQUEST
-      DPRINTF(PAL2,"PAL: %s PPN 0x%lX ch%02d die%05d : REQTime  %lu\n",
+      DPRINTF(PAL,"PAL: %s PPN 0x%lX ch%02d die%05d : REQTime  %lu\n",
         OPER_STRINFO[req.operation], req.ppn, reqCPD.Channel, reqDieIdx, req.arrived); //Use DPRINTF here
       printCPDPBP(&reqCPD);
-      DPRINTF(PAL2,"PAL: %s PPN 0x%lX ch%02d die%05d : DMA0 %llu ~ %llu (%llu) , MEM  %llu ~ %llu (%llu) , DMA1 %llu ~ %llu (%llu)\n",
+      DPRINTF(PAL,"PAL: %s PPN 0x%lX ch%02d die%05d : DMA0 %llu ~ %llu (%llu) , MEM  %llu ~ %llu (%llu) , DMA1 %llu ~ %llu (%llu)\n",
         OPER_STRINFO[req.operation], req.ppn, reqCPD.Channel, reqDieIdx,
         tsDMA0->StartTick, tsDMA0->EndTick, (tsDMA0->EndTick - tsDMA0->StartTick + 1),
         tsMEM->StartTick,  tsMEM->EndTick,  (tsMEM->EndTick  - tsMEM->StartTick + 1)-(tsDMA0->EndTick - tsDMA0->StartTick + 1)-(tsDMA1->EndTick - tsDMA1->StartTick + 1),
         tsDMA1->StartTick, tsDMA1->EndTick, (tsDMA1->EndTick - tsDMA1->StartTick + 1)); //Use DPRINTF here
 
-      DPRINTF(PAL2,"PAL: %s PPN 0x%lX ch%02d die%05d : REQ~DMA0start(%llu), DMA0~DMA1end(%llu)\n",
+      DPRINTF(PAL,"PAL: %s PPN 0x%lX ch%02d die%05d : REQ~DMA0start(%llu), DMA0~DMA1end(%llu)\n",
         OPER_STRINFO[req.operation], req.ppn, reqCPD.Channel, reqDieIdx, (tsDMA0->StartTick-1 - req.arrived + 1),
         (tsDMA1->EndTick - tsDMA0->StartTick + 1) ); //Use DPRINTF here
 # endif
@@ -1084,8 +1086,8 @@ void PAL2::printCPDPBP(CPDPBP* pCPDPBP)
 {
   uint32* pCPDPBP_IDX = ((uint32*)pCPDPBP);
 
-  DPRINTF(PAL2,"PAL:    %7s | %7s | %7s | %7s | %7s | %7s\n", ADDR_STRINFO[ gconf->AddrSeq[0] ], ADDR_STRINFO[ gconf->AddrSeq[1] ], ADDR_STRINFO[ gconf->AddrSeq[2] ], ADDR_STRINFO[ gconf->AddrSeq[3] ], ADDR_STRINFO[ gconf->AddrSeq[4] ], ADDR_STRINFO[ gconf->AddrSeq[5] ]); //Use DPRINTF here
-  DPRINTF(PAL2,"PAL:    %7u | %7u | %7u | %7u | %7u | %7u\n", pCPDPBP_IDX[ gconf->AddrSeq[0] ], pCPDPBP_IDX[ gconf->AddrSeq[1] ], pCPDPBP_IDX[ gconf->AddrSeq[2] ], pCPDPBP_IDX[ gconf->AddrSeq[3] ], pCPDPBP_IDX[ gconf->AddrSeq[4] ], pCPDPBP_IDX[ gconf->AddrSeq[5] ]); //Use DPRINTF here
+  DPRINTF(PAL,"PAL:    %7s | %7s | %7s | %7s | %7s | %7s\n", ADDR_STRINFO[ gconf->AddrSeq[0] ], ADDR_STRINFO[ gconf->AddrSeq[1] ], ADDR_STRINFO[ gconf->AddrSeq[2] ], ADDR_STRINFO[ gconf->AddrSeq[3] ], ADDR_STRINFO[ gconf->AddrSeq[4] ], ADDR_STRINFO[ gconf->AddrSeq[5] ]); //Use DPRINTF here
+  DPRINTF(PAL,"PAL:    %7u | %7u | %7u | %7u | %7u | %7u\n", pCPDPBP_IDX[ gconf->AddrSeq[0] ], pCPDPBP_IDX[ gconf->AddrSeq[1] ], pCPDPBP_IDX[ gconf->AddrSeq[2] ], pCPDPBP_IDX[ gconf->AddrSeq[3] ], pCPDPBP_IDX[ gconf->AddrSeq[4] ], pCPDPBP_IDX[ gconf->AddrSeq[5] ]); //Use DPRINTF here
 }
 
 void PAL2::PPNdisassemble(uint64* pPPN, CPDPBP* pCPDPBP)
@@ -1135,7 +1137,7 @@ void PAL2::PPNdisassemble(uint64* pPPN, CPDPBP* pCPDPBP)
   }
 
   #if DBG_PRINT_PPN
-  DPRINTF(PAL2,"PAL:     0x%llX (%llu) ==>\n", *pPPN,*pPPN); //Use DPRINTF here
+  DPRINTF(PAL,"PAL:     0x%llX (%llu) ==>\n", *pPPN,*pPPN); //Use DPRINTF here
   printCPDPBP(pCPDPBP);
   #endif
 }
@@ -1160,6 +1162,6 @@ void PAL2::AssemblePPN(CPDPBP* pCPDPBP, uint64* pPPN)
 
   #if DBG_PRINT_PPN
   printCPDPBP(pCPDPBP);
-  DPRINTF(PAL2,"PAL    ==> 0x%llx (%llu)\n", *pPPN,*pPPN); //Use DPRINTF here
+  DPRINTF(PAL,"PAL    ==> 0x%llx (%llu)\n", *pPPN,*pPPN); //Use DPRINTF here
   #endif
 }

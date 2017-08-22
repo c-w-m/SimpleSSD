@@ -83,9 +83,15 @@ public: \
 void set##propName(const propType newVal) { propName = newVal; }; \
 propType get##propName() const { return propName; };
 
-#define printa(fmt...) do {  printf(fmt);   if(outfp)fprintf(outfp,fmt);} while(0);
-#define printo(fmt...) do {  if(!outfp)printf(fmt); if(outfp)fprintf(outfp,fmt);} while(0);
-#define printft(fmt...) do { printf("    "); printf(fmt); } while(0);
+#ifdef _MSC_VER
+#define printa(fmt, ...)    do { printf(fmt, __VA_ARGS__); if (outfp) fprintf(outfp, fmt, __VA_ARGS__); } while(0);
+#define printo(fmt, ...)    do { if (!outfp) printf(fmt, __VA_ARGS__); if(outfp) fprintf(outfp, fmt, __VA_ARGS__); } while(0);
+#define printft(fmt, ...)   do { printf("    "); printf(fmt, __VA_ARGS__); } while(0);
+#else
+#define printa(fmt...)    do { printf(fmt); if (outfp) fprintf(outfp, fmt); } while(0);
+#define printo(fmt...)    do { if (!outfp) printf(fmt); if(outfp) fprintf(outfp, fmt); } while(0);
+#define printft(fmt...)   do { printf("    "); printf(fmt); } while(0);
+#endif
 
 //#define ERR_EXIT(fmt...) {printf(fmt); std::terminate();}
 #define SAFEDIV(left,right) ((right)==0?0:(left)/(right))

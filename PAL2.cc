@@ -567,7 +567,7 @@ uint8_t PAL2::VerifyTimeLines(uint8_t print_on)
         while (tsDBG)
         {
 
-          printf("%llu~%llu, ", tsDBG->StartTick, tsDBG->EndTick);
+          printf("%" PRIu64 "~%" PRIu64 ", ", tsDBG->StartTick, tsDBG->EndTick);
           tsDBG = tsDBG->Next;
         }
         printf("\n");
@@ -621,7 +621,7 @@ uint8_t PAL2::VerifyTimeLines(uint8_t print_on)
         while (tsDBG)
         {
 
-          printf("%llu~%llu, ", tsDBG->StartTick, tsDBG->EndTick);
+          printf("%" PRIu64 "~%" PRIu64 ", ", tsDBG->StartTick, tsDBG->EndTick);
           tsDBG = tsDBG->Next;
         }
         printf("\n");

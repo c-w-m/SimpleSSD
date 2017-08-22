@@ -69,7 +69,7 @@ void PALStatistics::CounterOper::printstat(const char* namestr)
   DPRINTF(PAL, "OPER, COUNT\n");
   for (int i=0;i<OPER_ALL;i++)
   {
-    DPRINTF(PAL, "%s, %llu\n",
+    DPRINTF(PAL, "%s, %" PRIu64 "\n",
     OPER_STR[i],
     cnts[i].cnt);
   }
@@ -174,7 +174,7 @@ void PALStatistics::ValueOper::printstat(const char* namestr) //This is only use
     }
     else
     {
-      DPRINTF(PAL, "%s, %llu, %llu, %llu, %llu, %llu\n",
+      DPRINTF(PAL, "%s, %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 "\n",
       OPER_STR[i],
       (uint64_t)vals[i].avg(),
       (uint64_t)vals[i].cnt, (uint64_t)vals[i].sum,
@@ -330,7 +330,7 @@ void PALStatistics::ValueOper::printstat_latency(const char* namestr)
     }
     else
     {
-      DPRINTF(PAL, "%s latency (min, max, average): %llu us, %llu us, %llu us\n",
+      DPRINTF(PAL, "%s latency (min, max, average): %" PRIu64 " us, %" PRIu64 " us, %" PRIu64 " us\n",
       OPER_STR[i],
       (uint64_t)(vals[i].minval*1.0/1000000),
       (uint64_t)(vals[i].maxval*1.0/1000000),
@@ -692,8 +692,8 @@ void PALStatistics::PrintStats(uint64_t sim_time_ps)
   uint64_t elapsed_time_ps = (sim_time_ps - sim_start_time_ps) + 1;
   if (LastExecutionTime == 0)
   LastExecutionTime = sim_start_time_ps;
-  DPRINTF(PAL, "Execution time = %llu\n",sim_time_ps);
-  DPRINTF(PAL, "Last Execution time = %llu\n",LastExecutionTime);
+  DPRINTF(PAL, "Execution time = %" PRIu64 "\n",sim_time_ps);
+  DPRINTF(PAL, "Last Execution time = %" PRIu64 "\n",LastExecutionTime);
   if (sim_start_time_ps >= sim_time_ps) //abnormal case
   {
     elapsed_time_ps = sim_time_ps + 1;
@@ -708,10 +708,10 @@ void PALStatistics::PrintStats(uint64_t sim_time_ps)
   #define TRANSFER_TOTAL_MB ( (long double)(Access_Capacity.vals[OPER_READ].sum + Access_Capacity.vals[OPER_WRITE].sum)/MBYTE )
 
 
-  fDPRINTF(PAL, "Sim.Time :  %Lf Sec. , %llu ps\n", SIM_TIME_SEC, elapsed_time_ps);
+  fDPRINTF(PAL, "Sim.Time :  %Lf Sec. , %" PRIu64 " ps\n", SIM_TIME_SEC, elapsed_time_ps);
   fDPRINTF(PAL, "Transferred :  %Lf MB\n", TRANSFER_TOTAL_MB);
   fDPRINTF(PAL, "Performance: %Lf MB/Sec\n", (long double)TRANSFER_TOTAL_MB/SIM_TIME_SEC);
-  fDPRINTF(PAL, "Busy Sim.Time: %Lf Sec. , %llu ps\n", BUSY_TIME_SEC, ExactBusyTime);
+  fDPRINTF(PAL, "Busy Sim.Time: %Lf Sec. , %" PRIu64 " ps\n", BUSY_TIME_SEC, ExactBusyTime);
   fDPRINTF(PAL, "Busy Performance: %Lf MB/Sec\n", (long double)TRANSFER_TOTAL_MB/BUSY_TIME_SEC);
   #endif
 

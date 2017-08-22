@@ -36,7 +36,7 @@ void FTL::initialize(){
       return;
     }
     if (to_fill_page_number != 0) {
-      write (i * param->page_per_block, to_fill_page_number, true);
+      write (i * param->page_per_block, to_fill_page_number, 0, true);
     }
   }
   std::cout << "Initialization done! " << std::endl;

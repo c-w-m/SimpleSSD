@@ -121,17 +121,17 @@ HIL::SSDoperation(Addr address, int pgNo, Tick TransTick, bool writeOp)
 
   slpn = sector_address / lbaratio;
   off = sector_address % lbaratio;
-  nlp = (pgNo * 8 + off + lbaratio - 1) / lbaratio;
+  nlp = (pgNo + off + lbaratio - 1) / lbaratio;
 
   if(writeOp){
     #if DBG_PRINT_REQUEST
-    printf( "HIL: disk[%d] Write operation Tick: %" PRIu64 " Address: %#" PRIx64 " size: %d Bytes: %u\n", disk_number, TransTick, address, pgNo*8, pgNo*4096);
+    printf( "HIL: disk[%d] Write operation Tick: %" PRIu64 " Address: %#" PRIx64 " size: %d Bytes: %u\n", disk_number, TransTick, address, pgNo, pgNo*512);
     #endif
     //************************ statistics ************************************************//
-    access_count[OPER_WRITE]++; total_volume[OPER_WRITE]+=pgNo*4096;
-    if (pgNo*4096 < Min_size[OPER_WRITE]) Min_size[OPER_WRITE] = pgNo*4096;
-    if (pgNo*4096 > Max_size[OPER_WRITE]) Max_size[OPER_WRITE] = pgNo*4096;
-    sample_access_count[OPER_WRITE]++; sample_total_volume[OPER_WRITE] += pgNo*4096;
+    access_count[OPER_WRITE]++; total_volume[OPER_WRITE]+=pgNo*512;
+    if (pgNo*512 < Min_size[OPER_WRITE]) Min_size[OPER_WRITE] = pgNo*512;
+    if (pgNo*512 > Max_size[OPER_WRITE]) Max_size[OPER_WRITE] = pgNo*512;
+    sample_access_count[OPER_WRITE]++; sample_total_volume[OPER_WRITE] += pgNo*512;
     //*************************************************************************************//
     if(SSD != 0){
       delay = ftl->write(slpn, nlp, TransTick);
@@ -152,13 +152,13 @@ HIL::SSDoperation(Addr address, int pgNo, Tick TransTick, bool writeOp)
     }
   } else {
     #if DBG_PRINT_REQUEST
-    printf( "HIL: disk[%d] Read operation Tick: %" PRIu64 " Address: %#" PRIx64 " size: %d Bytes: %lu\n", disk_number, TransTick, address, pgNo*8, pgNo*4096);
+    printf( "HIL: disk[%d] Read operation Tick: %" PRIu64 " Address: %#" PRIx64 " size: %d Bytes: %lu\n", disk_number, TransTick, address, pgNo, pgNo*512);
     #endif
     //************************ statistics ************************************************//
-    access_count[OPER_READ]++; total_volume[OPER_READ]+=pgNo*4096;
-    if (pgNo*4096 < Min_size[OPER_READ]) Min_size[OPER_READ] = pgNo*4096;
-    if (pgNo*4096 > Max_size[OPER_READ]) Max_size[OPER_READ] = pgNo*4096;
-    sample_access_count[OPER_READ]++; sample_total_volume[OPER_READ] += pgNo*4096;
+    access_count[OPER_READ]++; total_volume[OPER_READ]+=pgNo*512;
+    if (pgNo*512 < Min_size[OPER_READ]) Min_size[OPER_READ] = pgNo*512;
+    if (pgNo*512 > Max_size[OPER_READ]) Max_size[OPER_READ] = pgNo*512;
+    sample_access_count[OPER_READ]++; sample_total_volume[OPER_READ] += pgNo*512;
     //*************************************************************************************//
     if(SSD != 0){
       delay = ftl->read(slpn, nlp, TransTick);

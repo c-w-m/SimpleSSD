@@ -64,6 +64,7 @@ HIL::HIL(int dn, int SSDenable, BaseConfig SSDConfig ) : cfg(SSDConfig)
     param->mapping_K = cfg.FTLMapK;
     param->mapping_N = cfg.FTLMapN;
     param->erase_cycle = cfg.FTLEraseCycle;
+    param->page_byte = cfg.SizePage;
 
     stats = new PALStatistics(&cfg, lat);
     pal2 = new PAL2(stats, &cfg, lat);
@@ -123,7 +124,7 @@ HIL::SSDoperation(Addr address, int pgNo, Tick TransTick, bool writeOp)
 
   if(writeOp){
     #if DBG_PRINT_REQUEST
-    printf( "HIL: disk[%d] Write operation Tick: %lu Address: %#x size: %d Bytes: %lu\n", disk_number, TransTick, address, pgNo*8, pgNo*4096);
+    printf( "HIL: disk[%d] Write operation Tick: %" PRIu64 " Address: %#" PRIx64 " size: %d Bytes: %u\n", disk_number, TransTick, address, pgNo*8, pgNo*4096);
     #endif
     //************************ statistics ************************************************//
     access_count[OPER_WRITE]++; total_volume[OPER_WRITE]+=pgNo*4096;
@@ -150,7 +151,7 @@ HIL::SSDoperation(Addr address, int pgNo, Tick TransTick, bool writeOp)
     }
   } else {
     #if DBG_PRINT_REQUEST
-    printf( "HIL: disk[%d] Read operation Tick: %lu Address: %#x size: %d Bytes: %lu\n", disk_number, TransTick, address, pgNo*8, pgNo*4096);
+    printf( "HIL: disk[%d] Read operation Tick: %" PRIu64 " Address: %#" PRIx64 " size: %d Bytes: %lu\n", disk_number, TransTick, address, pgNo*8, pgNo*4096);
     #endif
     //************************ statistics ************************************************//
     access_count[OPER_READ]++; total_volume[OPER_READ]+=pgNo*4096;
@@ -245,12 +246,12 @@ HIL::setLatency(Addr sector_address, Tick delay)
   if(iDelay == delayMap.end()){
     delayMap.insert(std::pair<Addr, Tick>(address, delay));
     #if DBG_PRINT_REQUEST
-    printf( "HIL: Delay duration: %lu |  Address: %#x\n", delay, address);
+    printf( "HIL: Delay duration: %" PRIu64 " |  Address: %#" PRIx64 "\n", delay, address);
     #endif
   }else {
     iDelay->second += delay;
     #if DBG_PRINT_REQUEST
-    printf( "HIL: Delay duration: %lu |  Address: %#x\n", delay, address);
+    printf( "HIL: Delay duration: %" PRIu64 " |  Address: %#" PRIx64 "\n", delay, address);
     #endif
   }
   dlMap[address] = delay;

@@ -85,35 +85,35 @@ void FTLStats::print_epoch_stats(Tick sim_time){
 
   collect_epoch_stats(epoch_number);
 
-  DPRINTF(FTLOut, "FTL Host epoch %d , time: %lld \n", epoch_number, sim_time);
+  DPRINTF(FTLOut, "FTL Host epoch %d , time: %lf \n", epoch_number, sim_time);
   DPRINTF(FTLOut, "FTL Host read count %d \n", (int) host_epoch_read_count.Get() );
-  DPRINTF(FTLOut, "FTL Host read size %lld KB\n", host_epoch_read_size.Get());
-  DPRINTF(FTLOut, "FTL Host read latency %lld us\n", host_epoch_read_latency.Get());
-  DPRINTF(FTLOut, "FTL Host read capacity %lld KB \n", host_epoch_read_capacity.Get());
+  DPRINTF(FTLOut, "FTL Host read size %lf KB\n", host_epoch_read_size.Get());
+  DPRINTF(FTLOut, "FTL Host read latency %lf us\n", host_epoch_read_latency.Get());
+  DPRINTF(FTLOut, "FTL Host read capacity %lf KB \n", host_epoch_read_capacity.Get());
   DPRINTF(FTLOut, "FTL Host write count %d \n", (int)host_epoch_write_count.Get());
-  DPRINTF(FTLOut, "FTL Host write size %lld KB\n", host_epoch_write_size.Get());
-  DPRINTF(FTLOut, "FTL Host write latency %lld us\n", host_epoch_write_latency.Get());
-  DPRINTF(FTLOut, "FTL Host write capacity %lld KB\n", host_epoch_write_capacity.Get());
+  DPRINTF(FTLOut, "FTL Host write size %lf KB\n", host_epoch_write_size.Get());
+  DPRINTF(FTLOut, "FTL Host write latency %lf us\n", host_epoch_write_latency.Get());
+  DPRINTF(FTLOut, "FTL Host write capacity %lf KB\n", host_epoch_write_capacity.Get());
 
   // BW
-  DPRINTF(FTLOut, "FTL Host read  BW (active): %lld MB/s \n", host_epoch_read_BW_active.Get());
-  DPRINTF(FTLOut, "FTL Host write BW (active): %lld MB/s \n", host_epoch_write_BW_active.Get());
-  DPRINTF(FTLOut, "FTL Host rw    BW (active): %lld MB/s \n", host_epoch_rw_BW_active.Get());
-  DPRINTF(FTLOut, "FTL Host read  BW (total ): %lld MB/s \n", host_epoch_read_BW_total.Get());
-  DPRINTF(FTLOut, "FTL Host write BW (total ): %lld MB/s \n", host_epoch_write_BW_total.Get());
-  DPRINTF(FTLOut, "FTL Host rw    BW (total ): %lld MB/s \n", host_epoch_rw_BW_total.Get());
-  DPRINTF(FTLOut, "FTL Host read  BW (only  ): %lld MB/s \n", host_epoch_read_BW_only.Get());
-  DPRINTF(FTLOut, "FTL Host write BW (only  ): %lld MB/s \n", host_epoch_write_BW_only.Get());
+  DPRINTF(FTLOut, "FTL Host read  BW (active): %lf MB/s \n", host_epoch_read_BW_active.Get());
+  DPRINTF(FTLOut, "FTL Host write BW (active): %lf MB/s \n", host_epoch_write_BW_active.Get());
+  DPRINTF(FTLOut, "FTL Host rw    BW (active): %lf MB/s \n", host_epoch_rw_BW_active.Get());
+  DPRINTF(FTLOut, "FTL Host read  BW (total ): %lf MB/s \n", host_epoch_read_BW_total.Get());
+  DPRINTF(FTLOut, "FTL Host write BW (total ): %lf MB/s \n", host_epoch_write_BW_total.Get());
+  DPRINTF(FTLOut, "FTL Host rw    BW (total ): %lf MB/s \n", host_epoch_rw_BW_total.Get());
+  DPRINTF(FTLOut, "FTL Host read  BW (only  ): %lf MB/s \n", host_epoch_read_BW_only.Get());
+  DPRINTF(FTLOut, "FTL Host write BW (only  ): %lf MB/s \n", host_epoch_write_BW_only.Get());
 
   // IOPS
-  DPRINTF(FTLOut, "FTL Host read  IOPS (active): %lld \n", host_epoch_read_IOPS_active.Get());
-  DPRINTF(FTLOut, "FTL Host write IOPS (active): %lld \n", host_epoch_write_IOPS_active.Get());
-  DPRINTF(FTLOut, "FTL Host rw    IOPS (active): %lld \n", host_epoch_rw_IOPS_active.Get());
-  DPRINTF(FTLOut, "FTL Host read  IOPS (total ): %lld \n", host_epoch_read_IOPS_total.Get());
-  DPRINTF(FTLOut, "FTL Host write IOPS (total ): %lld \n", host_epoch_write_IOPS_total.Get());
-  DPRINTF(FTLOut, "FTL Host rw    IOPS (total ): %lld \n", host_epoch_rw_IOPS_total.Get());
-  DPRINTF(FTLOut, "FTL Host read  IOPS (only  ): %lld \n", host_epoch_read_IOPS_only.Get());
-  DPRINTF(FTLOut, "FTL Host write IOPS (only  ): %lld \n", host_epoch_write_IOPS_only.Get());
+  DPRINTF(FTLOut, "FTL Host read  IOPS (active): %lf \n", host_epoch_read_IOPS_active.Get());
+  DPRINTF(FTLOut, "FTL Host write IOPS (active): %lf \n", host_epoch_write_IOPS_active.Get());
+  DPRINTF(FTLOut, "FTL Host rw    IOPS (active): %lf \n", host_epoch_rw_IOPS_active.Get());
+  DPRINTF(FTLOut, "FTL Host read  IOPS (total ): %lf \n", host_epoch_read_IOPS_total.Get());
+  DPRINTF(FTLOut, "FTL Host write IOPS (total ): %lf \n", host_epoch_write_IOPS_total.Get());
+  DPRINTF(FTLOut, "FTL Host rw    IOPS (total ): %lf \n", host_epoch_rw_IOPS_total.Get());
+  DPRINTF(FTLOut, "FTL Host read  IOPS (only  ): %lf \n", host_epoch_read_IOPS_only.Get());
+  DPRINTF(FTLOut, "FTL Host write IOPS (only  ): %lf \n", host_epoch_write_IOPS_only.Get());
 
   reset_epoch_stats(epoch_number);
 }

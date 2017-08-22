@@ -46,12 +46,17 @@ Tick FTL::read(Addr lpn, size_t npages, Tick arrived) {
   Tick finished = 0;
   Addr ppn;
 
-  ftl_statistics.read_req_arrive(curTick());
+  ftl_statistics.read_req_arrive(arrived);
 
   for (size_t i = 0; i < npages; i++) {
     FTLmapping->read(lpn + i, ppn);
     finished = MAX(readInternal(ppn, arrived), finished);
   }
+
+  Command cmd = Command(arrived, lpn, OPER_READ, param->page_byte * npages);
+  cmd.finished = finished;
+
+  ftl_statistics.updateStats(&cmd);
 
   return finished - arrived;
 }
@@ -60,7 +65,7 @@ Tick FTL::write(Addr lpn, size_t npages, Tick arrived, bool init) {
   Tick finished = 0;
   Addr ppn;
 
-  ftl_statistics.write_req_arrive(curTick());
+  ftl_statistics.write_req_arrive(arrived);
 
   for (size_t i = 0; i < npages; i++) {
     FTLmapping->write(lpn + i, ppn);
@@ -72,6 +77,11 @@ Tick FTL::write(Addr lpn, size_t npages, Tick arrived, bool init) {
   if (FTLmapping->need_gc()) {
     FTLmapping->GarbageCollection();
   }
+
+  Command cmd = Command(arrived, lpn, OPER_WRITE, param->page_byte * npages);
+  cmd.finished = finished;
+
+  ftl_statistics.updateStats(&cmd);
 
   return finished - arrived;
 }

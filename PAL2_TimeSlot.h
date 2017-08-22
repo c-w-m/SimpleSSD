@@ -22,6 +22,7 @@
 
 #include "SimpleSSD_types.h"
 
+#include <cinttypes>
 #include <iostream>
 #include <string>
 #include <cstring>
@@ -34,9 +35,9 @@ using namespace std;
 class TimeSlot
 {
     public:
-        TimeSlot(uint64 startTick, uint64 duration);
-        uint64 StartTick;
-        uint64 EndTick;
+        TimeSlot(uint64_t startTick, uint64_t duration);
+        uint64_t StartTick;
+        uint64_t EndTick;
         TimeSlot* Next;
 };
 

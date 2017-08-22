@@ -461,16 +461,16 @@ void PAL2::TimelineScheduling(Command& req)
     if (1)
     {
 # if DBG_PRINT_REQUEST
-      DPRINTF(PAL,"PAL: %s PPN 0x%lX ch%02d die%05d : REQTime  %lu\n",
+      DPRINTF(PAL,"PAL: %s PPN 0x%" PRIX64 " ch%02d die%05d : REQTime  %" PRIu64 "\n",
         OPER_STRINFO[req.operation], req.ppn, reqCPD.Channel, reqDieIdx, req.arrived); //Use DPRINTF here
       printCPDPBP(&reqCPD);
-      DPRINTF(PAL,"PAL: %s PPN 0x%lX ch%02d die%05d : DMA0 %llu ~ %llu (%llu) , MEM  %llu ~ %llu (%llu) , DMA1 %llu ~ %llu (%llu)\n",
+      DPRINTF(PAL,"PAL: %s PPN 0x%" PRIX64 " ch%02d die%05d : DMA0 %" PRIu64 " ~ %" PRIu64 " (%" PRIu64 ") , MEM  %" PRIu64 " ~ %" PRIu64 " (%" PRIu64 ") , DMA1 %" PRIu64 " ~ %" PRIu64 " (%" PRIu64 ")\n",
         OPER_STRINFO[req.operation], req.ppn, reqCPD.Channel, reqDieIdx,
         tsDMA0->StartTick, tsDMA0->EndTick, (tsDMA0->EndTick - tsDMA0->StartTick + 1),
         tsMEM->StartTick,  tsMEM->EndTick,  (tsMEM->EndTick  - tsMEM->StartTick + 1)-(tsDMA0->EndTick - tsDMA0->StartTick + 1)-(tsDMA1->EndTick - tsDMA1->StartTick + 1),
         tsDMA1->StartTick, tsDMA1->EndTick, (tsDMA1->EndTick - tsDMA1->StartTick + 1)); //Use DPRINTF here
 
-      DPRINTF(PAL,"PAL: %s PPN 0x%lX ch%02d die%05d : REQ~DMA0start(%llu), DMA0~DMA1end(%llu)\n",
+      DPRINTF(PAL,"PAL: %s PPN 0x%" PRIX64 " ch%02d die%05d : REQ~DMA0start(%" PRIu64 "), DMA0~DMA1end(%" PRIu64 ")\n",
         OPER_STRINFO[req.operation], req.ppn, reqCPD.Channel, reqDieIdx, (tsDMA0->StartTick-1 - req.arrived + 1),
         (tsDMA1->EndTick - tsDMA0->StartTick + 1) ); //Use DPRINTF here
 # endif

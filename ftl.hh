@@ -40,8 +40,8 @@ class FTL {
     void initialize();
     Parameter * getParameter(){return param;}
 
-    Tick read(Addr lpn, size_t npages);
-    Tick write(Addr lpn, size_t npages, bool init = false);
+    Tick read(Addr lpn, size_t npages, Tick arrived = curTick());
+    Tick write(Addr lpn, size_t npages, Tick arrived = curTick(), bool init = false);
     Tick trim(Addr lpn, size_t npages);
 
     void translate(Addr lpn, CPDPBP *pa);

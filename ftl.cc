@@ -38,24 +38,22 @@ void FTL::initialize(){
   std::cout << "Initialization done! " << std::endl;
 }
 
-Tick FTL::read(Addr lpn, size_t npages) {
-  Tick totalDelay = 0;
-  Tick now = curTick();
+Tick FTL::read(Addr lpn, size_t npages, Tick arrived) {
+  Tick finished = 0;
   Addr ppn;
 
   ftl_statistics.read_req_arrive(curTick());
 
   for (size_t i = 0; i < npages; i++) {
     FTLmapping->read(lpn + i, ppn);
-    totalDelay += readInternal(ppn, now);
+    finished = MAX(readInternal(ppn, arrived), finished);
   }
 
-  return totalDelay;
+  return finished - now;
 }
 
-Tick FTL::write(Addr lpn, size_t npages, bool init) {
-  Tick totalDelay = 0;
-  Tick now = curTick();
+Tick FTL::write(Addr lpn, size_t npages, Tick arrived, bool init) {
+  Tick finished = 0;
   Addr ppn;
 
   ftl_statistics.write_req_arrive(curTick());
@@ -63,7 +61,7 @@ Tick FTL::write(Addr lpn, size_t npages, bool init) {
   for (size_t i = 0; i < npages; i++) {
     FTLmapping->write(lpn + i, ppn);
     if (!init) {
-      totalDelay += writeInternal(ppn, now);
+      finished = MAX(writeInternal(ppn, arrived), finished);
     }
   }
 
@@ -71,7 +69,7 @@ Tick FTL::write(Addr lpn, size_t npages, bool init) {
     FTLmapping->GarbageCollection();
   }
 
-  return totalDelay;
+  return finished - now;
 }
 
 Tick FTL::trim(Addr lpn, size_t npages) {
@@ -92,7 +90,7 @@ Tick FTL::readInternal(Addr ppn, Tick now, bool flag) {
 
   pal->submit(cmd);
 
-  return cmd.finished - cmd.arrived;
+  return cmd.finished;
 }
 
 Tick FTL::writeInternal(Addr ppn, Tick now, bool flag) {
@@ -101,7 +99,7 @@ Tick FTL::writeInternal(Addr ppn, Tick now, bool flag) {
 
   pal->submit(cmd);
 
-  return cmd.finished - cmd.arrived;
+  return cmd.finished;
 }
 
 Tick FTL::eraseInternal(Addr ppn, Tick now) {
@@ -109,7 +107,7 @@ Tick FTL::eraseInternal(Addr ppn, Tick now) {
 
   pal->submit(cmd);
 
-  return cmd.finished - cmd.arrived;
+  return cmd.finished;
 }
 
 void FTL::PrintStats(Tick sim_time) {

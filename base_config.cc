@@ -172,6 +172,8 @@ int BaseConfig::defaultHandler(void *context, const char* section, const char* n
       pThis->AddrRemap[toInt(value)] = ADDR_CHANNEL;
     }
   }
+
+  return 1;
 }
 
 int64_t BaseConfig::toInt(const char *str) {

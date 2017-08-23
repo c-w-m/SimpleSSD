@@ -24,6 +24,7 @@
 
 #include <cinttypes>
 #include <string>
+#include <cstring>
 
 #include "SimpleSSD_types.h"
 #include "ini.h"

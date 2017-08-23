@@ -1,6 +1,7 @@
 #ifndef __FTL_STATISTICS_HH__
 #define __FTL_STATISTICS_HH__
 
+#include <cinttypes>
 #include <iostream>
 #include <vector>
 #include <utility>

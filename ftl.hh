@@ -19,6 +19,9 @@
 #include "ftl_statistics.hh"
 #include "ftl_command.hh"
 
+#define __STDC_FORMAT_MACROS 1
+
+#include <inttypes.h>
 #include <cinttypes>
 #include <cfloat>
 #include <ctime>

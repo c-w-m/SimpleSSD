@@ -39,7 +39,6 @@ class BaseConfig {
     uint32_t NumPage;
     uint32_t SizePage;
     uint32_t DMAMHz;
-    uint8_t EnableDMAPreemption;
 
     /** FTL Configuration area **/
     uint8_t FTLMapping;

@@ -26,9 +26,21 @@
 #include <string>
 
 #include "SimpleSSD_types.h"
+#include "ini.h"
+
+#define MATCH_SECTION(str)  (strcmp(section, str) == 0)
+#define MATCH_NAME(str)     (strcmp(name, str) == 0)
+#define MATCH_VALUE(str)    (strcmp(value, str) == 0)
 
 class BaseConfig {
+  protected:
+    static int defaultHandler(void *, const char *, const char *, const char *);
+    static int64_t toInt(const char *);
+    static double toDouble(const char *);
+
   public:
+    BaseConfig(std::string);
+
     /** SSD Configuration area **/
     uint8_t NANDType;
     uint32_t NumChannel;

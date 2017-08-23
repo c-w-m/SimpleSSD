@@ -31,7 +31,7 @@
 #include "base/trace.hh"
 
 #ifndef SIMPLESSD_STANDALONE
-#include "debug/PAL2.hh"
+#include "debug/PAL.hh"
 #endif
 
 #include <iostream>

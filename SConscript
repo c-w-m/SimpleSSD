@@ -34,6 +34,7 @@ Source('PAL2.cc')
 Source('PAL2_TimeSlot.cc')
 Source('PALStatistics.cc')
 Source('base_config.cc')
+Source('ini.c')
 
 DebugFlag('FTLOut')
 DebugFlag('PAL')

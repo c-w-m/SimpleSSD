@@ -9,6 +9,7 @@
 #ifndef __FTL_3__MappingTable__
 #define __FTL_3__MappingTable__
 
+#include <cinttypes>
 #include <iostream>
 #include <math.h>
 #include "ftl_defs.hh"

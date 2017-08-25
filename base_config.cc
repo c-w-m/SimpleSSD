@@ -122,17 +122,7 @@ int BaseConfig::defaultHandler(void *context, const char* section, const char* n
     }
   }
   else if (MATCH_SECTION("ftl")) {
-    if (MATCH_NAME("FTLMapping")) {
-      switch (toInt(value)) {
-        case 0:   pThis->FTLMapping = FTL_PAGE_MAPPING;     break;
-        case 1:   pThis->FTLMapping = FTL_BLOCK_MAPPING;    break;
-        case 2:   pThis->FTLMapping = FTL_HYBRID_MAPPING;   break;
-        default:
-          fatal("config: Unknown FTL mapping: %s\n", value);
-          break;
-      }
-    }
-    else if (MATCH_NAME("FTLOP")) {
+    if (MATCH_NAME("FTLOP")) {
       pThis->FTLOP = toDouble(value);
     }
     else if (MATCH_NAME("FTLGCThreshold")) {

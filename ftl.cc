@@ -82,10 +82,12 @@ Tick FTL::write(Addr lpn, size_t npages, Tick arrived, bool init) {
     FTLmapping->GarbageCollection();
   }
 
-  Command cmd = Command(arrived, lpn, OPER_WRITE, param->page_byte * npages);
-  cmd.finished = finished;
+  if (!init) {
+    Command cmd = Command(arrived, lpn, OPER_WRITE, param->page_byte * npages);
+    cmd.finished = finished;
 
-  ftl_statistics.updateStats(&cmd);
+    ftl_statistics.updateStats(&cmd);
+  }
 
   return finished - arrived;
 }

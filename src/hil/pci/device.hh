@@ -20,8 +20,6 @@
 #ifndef __HIL_PCI_DEVICE__
 #define __HIL_PCI_DEVICE__
 
-#include <cinttypes>
-
 #include "base/types.hh"
 #include "src/config.hh"
 #include "src/hil/pci/def.hh"
@@ -30,40 +28,39 @@ namespace SimpleSSD {
 
 namespace PCI {
 
+class Host {
+ public:
+  /* Functions for handling DMA accesses from Device */
+  virtual uint64_t readDMA(uint64_t, uint64_t, uint8_t *);
+  virtual uint64_t writeDMA(uint64_t, uint64_t, uint8_t *);
+
+  /* Functions for handling Pin-based Interrupt from Device */
+  virtual void postInterrupt();
+  virtual void clearInterrupt();
+};
+
 class Device {
- private:
-  union MSIXTable {
-    uint8_t data[16];
-    struct {
-      uint32_t addrLow;
-      uint32_t addrHigh;
-      uint32_t messageData;
-      uint32_t vectorControl;
-    };
-  };
-
-  union MSIXPBAEntry {
-    uint8_t data[8];
-    uint64_t mask;
-  };
-
-  INTERRUPT_MODE mode;
-
-  uint32_t interruptStatus;
-  uint32_t interruptStatusOld;
-
-  uint16_t allocatedVectors;
-
-  Addr tableBaseAddr;
-  int tableSize;
-  Addr pbaBaseAddr;
-  int pbaSize;
-
-  MSIXTable *pMSIXTable;
-  MSIXPBAEntry *pMSIXPBAEntry;
+ protected:
+  Config configuration;
 
  public:
   Device();
+
+  /* Functions for access PCI configuration region */
+  virtual uint64_t readConfig(uint64_t, uint64_t, uint8_t *);
+  virtual uint64_t writeConfig(uint64_t, uint64_t, uint8_t *);
+
+  /* Functions for access BAR region */
+  virtual uint64_t read(uint64_t, uint64_t, uint8_t *);
+  virtual uint64_t write(uint64_t, uint64_t, uint8_t *);
+
+  /* Functions for DMA */
+  virtual uint64_t readDMA(uint64_t, uint64_t, uint8_t *);
+  virtual uint64_t writeDMA(uint64_t, uint64_t, uint8_t *);
+
+  /* Functions for Pin-based Interrupt */
+  virtual void postInterrupt();
+  virtual void clearInterrupt();
 };
 
 }  // namespace PCI

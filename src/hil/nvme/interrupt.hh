@@ -22,7 +22,9 @@
 
 #include <cinttypes>
 
-#include "def.hh"
+#include "base/types.hh"
+#include "src/config.hh"
+#include "src/snl/nvme/def.hh"
 
 namespace SimpleSSD {
 
@@ -30,12 +32,38 @@ namespace NVMe {
 
 class Interrupt {
  private:
+  union MSIXTable {
+    uint8_t data[16];
+    struct {
+      uint32_t addrLow;
+      uint32_t addrHigh;
+      uint32_t messageData;
+      uint32_t vectorControl;
+    };
+  };
+
+  union MSIXPBAEntry {
+    uint8_t data[8];
+    uint64_t mask;
+  };
+
   INTERRUPT_MODE mode;
 
   uint32_t interruptStatus;
   uint32_t interruptStatusOld;
 
   uint16_t allocatedVectors;
+
+  Addr tableBaseAddr;
+  int tableSize;
+  Addr pbaBaseAddr;
+  int pbaSize;
+
+  MSIXTable *pMSIXTable;
+  MSIXPBAEntry *pMSIXPBAEntry;
+
+ public:
+  Interrupt();
 };
 
 }  // namespace NVMe

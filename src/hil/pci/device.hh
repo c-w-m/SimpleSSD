@@ -17,20 +17,20 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SNL_NVME_INTERRUPT__
-#define __SNL_NVME_INTERRUPT__
+#ifndef __HIL_PCI_DEVICE__
+#define __HIL_PCI_DEVICE__
 
 #include <cinttypes>
 
 #include "base/types.hh"
 #include "src/config.hh"
-#include "src/snl/nvme/def.hh"
+#include "src/hil/pci/def.hh"
 
 namespace SimpleSSD {
 
-namespace NVMe {
+namespace PCI {
 
-class Interrupt {
+class Device {
  private:
   union MSIXTable {
     uint8_t data[16];
@@ -63,10 +63,10 @@ class Interrupt {
   MSIXPBAEntry *pMSIXPBAEntry;
 
  public:
-  Interrupt();
+  Device();
 };
 
-}  // namespace NVMe
+}  // namespace PCI
 
 }  // namespace SimpleSSD
 

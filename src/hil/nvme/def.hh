@@ -17,14 +17,12 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SNL_NVME_DEF__
-#define __SNL_NVME_DEF__
+#ifndef __HIL_NVME_DEF__
+#define __HIL_NVME_DEF__
 
 namespace SimpleSSD {
 
 namespace NVMe {
-
-typedef enum { INTERRUPT_PIN, INTERRUPT_MSI, INTERRUPT_MSIX } INTERRUPT_MODE;
 
 typedef enum {
   PRIORITY_URGENT,

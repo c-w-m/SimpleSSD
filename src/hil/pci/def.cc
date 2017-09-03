@@ -25,7 +25,7 @@ namespace SimpleSSD {
 
 namespace PCI {
 
-Configuration::Configuration() {
+Config::Config() {
   memset(data, 0, SIZE_CONFIG);
 }
 

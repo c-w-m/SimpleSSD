@@ -46,7 +46,7 @@ typedef enum {
   ID_PXCAP = 0x10,
 } PCI_CAP_ID;
 
-union Configuration {
+union Config {
   uint8_t data[64];
   struct {
     uint16_t vendorID;
@@ -71,7 +71,7 @@ union Configuration {
     uint8_t maximumLatency;
   };
 
-  Configuration();
+  Config();
 };
 
 union PCIPowerManagement {

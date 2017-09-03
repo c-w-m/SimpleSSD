@@ -17,6 +17,12 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * @file "def.hh"
+ *
+ * Definition for PCI or PCI Express structures.
+ */
+
 #ifndef __HIL_PCI_DEF__
 #define __HIL_PCI_DEF__
 
@@ -26,8 +32,10 @@ namespace SimpleSSD {
 
 namespace PCI {
 
+/** Interrupt modes used in PCI/PCIe */
 typedef enum { INTERRUPT_PIN, INTERRUPT_MSI, INTERRUPT_MSIX } INTERRUPT_MODE;
 
+/** Size of capabilities used in PCI/PCIe */
 typedef enum {
   SIZE_CONFIG = 64,
   SIZE_PMCAP = 6,
@@ -39,6 +47,7 @@ typedef enum {
   SIZE_MSIX_PBA = 8,
 } PCI_SIZE;
 
+/** Capability ID used in PCI/PCIe */
 typedef enum {
   ID_PMCAP = 0x01,
   ID_MSI = 0x05,
@@ -46,6 +55,7 @@ typedef enum {
   ID_PXCAP = 0x10,
 } PCI_CAP_ID;
 
+/** PCI Configuration structure */
 union Config {
   uint8_t data[64];
   struct {
@@ -74,6 +84,7 @@ union Config {
   Config();
 };
 
+/** PCI Power Management Capability structure */
 union PCIPowerManagement {
   uint8_t data[6];
   struct {
@@ -86,6 +97,7 @@ union PCIPowerManagement {
   PCIPowerManagement();
 };
 
+/** MSI Capability structure */
 union MSI {
   uint8_t data[24];
   struct {
@@ -102,6 +114,7 @@ union MSI {
   MSI();
 };
 
+/** MSI-X Capability structure */
 union MSIX {
   uint8_t data[12];
   struct {
@@ -115,6 +128,7 @@ union MSIX {
   MSIX();
 };
 
+/** MSI-X Table Entry structure */
 union MSIXTableEntry {
   uint8_t data[16];
   struct {
@@ -127,6 +141,7 @@ union MSIXTableEntry {
   MSIXTableEntry();
 };
 
+/** MSI-X PBA Entry structure */
 union MSIXPBAEntry {
   uint8_t data[8];
   uint64_t mask;
@@ -134,6 +149,7 @@ union MSIXPBAEntry {
   MSIXPBAEntry();
 };
 
+/** PCI Express Capability structure */
 union PCIExpress {
   uint8_t data[60];
   struct {

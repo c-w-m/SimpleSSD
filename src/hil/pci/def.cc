@@ -17,6 +17,12 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * @file "def.cc"
+ *
+ * Declaration for PCI or PCI Express structures.
+ */
+
 #include "src/hil/pci/def.hh"
 
 #include <cstring>

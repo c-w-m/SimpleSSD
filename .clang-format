@@ -20,4 +20,5 @@ BraceWrapping:
   IndentBraces:    false
 BreakBeforeBraces: Custom
 DerivePointerAlignment: false
+PointerAlignment: Right
 ...

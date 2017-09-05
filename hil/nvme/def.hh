@@ -20,9 +20,32 @@
 #ifndef __HIL_NVME_DEF__
 #define __HIL_NVME_DEF__
 
+#include <cinttypes>
+
 namespace SimpleSSD {
 
 namespace NVMe {
+
+typedef union _RegisterTable {
+  uint8_t data[64];
+  struct {
+    uint64_t capabilities;
+    uint32_t version;
+    uint32_t interruptMaskSet;
+    uint32_t interruptMaskClear;
+    uint32_t configuration;
+    uint32_t reserved;
+    uint32_t status;
+    uint32_t subsystemReset;
+    uint32_t adminQueueAttributes;
+    uint64_t adminSQueueBaseAddress;
+    uint64_t adminCQueueBaseAddress;
+    uint32_t memoryBufferLocation;
+    uint32_t memoryBufferSize;
+  };
+
+  _RegisterTable();
+} RegisterTable;
 
 typedef enum {
   PRIORITY_URGENT,

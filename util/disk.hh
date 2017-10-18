@@ -23,11 +23,12 @@
 #include <cinttypes>
 #include <fstream>
 #include <string>
+#include <unordered_map>
 
 namespace SimpleSSD {
 
 class Disk {
- private:
+ protected:
   std::string filename;
   uint64_t diskSize;
   uint64_t realSize;
@@ -38,6 +39,21 @@ class Disk {
  public:
   Disk();
   ~Disk();
+
+  virtual uint64_t open(std::string, uint32_t);
+  virtual void close();
+
+  virtual uint16_t read(uint64_t, uint16_t, uint8_t *);
+  virtual uint16_t write(uint64_t, uint16_t, uint8_t *);
+};
+
+class CoWDisk : public Disk {
+ private:
+  std::unordered_map<uint64_t, std::string> table;
+
+ public:
+  CoWDisk();
+  ~CoWDisk();
 
   uint64_t open(std::string, uint32_t);
   void close();

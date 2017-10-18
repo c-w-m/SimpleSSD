@@ -17,8 +17,8 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __HIL_UTIL_BASE_CONFIG__
-#define __HIL_UTIL_BASE_CONFIG__
+#ifndef __UTIL_BASE_CONFIG__
+#define __UTIL_BASE_CONFIG__
 
 #include <cinttypes>
 #include <string>

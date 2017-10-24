@@ -25,6 +25,8 @@
 
 namespace SimpleSSD {
 
+#define ALLOC_UNIT 64
+
 /**
  * This vector uses calloc/free to allocate memory
  * So if you pass object (not pointer), constructor will not called
@@ -39,17 +41,16 @@ class Vector {
  public:
   Vector();
   Vector(uint64_t);
+  ~Vector();
 
   T &at(uint64_t);
   T &operator[](uint64_t);
-  const T &operator[](uint64_t) const;
 
   uint64_t size();
   void resize(uint64_t);
 
   void push_back(T &);
-  T &pop_back();
-  const T &pop_back() const;
+  T pop_back();
 
   void insert(uint64_t, T &);
   void erase(uint64_t);

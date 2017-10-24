@@ -20,10 +20,10 @@
 #ifndef __UTIL_VECTOR__
 #define __UTIL_VECTOR__
 
-#include <cinttypes>
-#include <cstring>
 #include <cerrno>
+#include <cinttypes>
 #include <cstdlib>
+#include <cstring>
 
 namespace SimpleSSD {
 
@@ -41,7 +41,7 @@ class Vector {
   uint64_t capacity;
 
  public:
-  Vector(){
+  Vector() {
     data = (T *)calloc(ALLOC_UNIT, sizeof(T));
 
     if (data == NULL) {
@@ -86,13 +86,9 @@ class Vector {
     }
   }
 
-  T &operator[](uint64_t idx) {
-    return this->at(idx);
-  }
+  T &operator[](uint64_t idx) { return this->at(idx); }
 
-  uint64_t size() {
-    return length;
-  }
+  uint64_t size() { return length; }
 
   void resize(uint64_t count) {
     if (count >= capacity) {

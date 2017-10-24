@@ -27,7 +27,7 @@ namespace SimpleSSD {
 namespace NVMe {
 
 typedef enum {
-  NVME_DMA_DELAY = BASE_NVME,
+  NVME_DMA_DELAY,
   NVME_QUEUE_INTERVAL,
   NVME_MAX_IO_CQUEUE,
   NVME_MAX_IO_SQUEUE,
@@ -40,7 +40,7 @@ typedef enum {
   NVME_DISK_IMAGE_PATH,
 } NVME_CONFIG;
 
-class Config {
+class Config : public BaseConfig {
  private:
   std::string dmaDelay;
   std::string queueInterval;
@@ -58,6 +58,7 @@ class Config {
   Config();
 
   bool setConfig(const char *, const char *);
+  void update();
 
   int32_t readInt(uint32_t);
   float readFloat(uint32_t);

@@ -32,7 +32,7 @@ class Disk {
   std::string filename;
   uint64_t diskSize;
   uint64_t realSize;
-  uint32_t sectorsize;
+  uint32_t sectorSize;
 
   std::fstream disk;
 

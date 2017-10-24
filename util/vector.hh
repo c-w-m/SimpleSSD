@@ -22,6 +22,8 @@
 
 #include <cinttypes>
 #include <cstring>
+#include <cerrno>
+#include <cstdlib>
 
 namespace SimpleSSD {
 
@@ -39,21 +41,117 @@ class Vector {
   uint64_t capacity;
 
  public:
-  Vector();
-  Vector(uint64_t);
-  ~Vector();
+  Vector(){
+    data = (T *)calloc(ALLOC_UNIT, sizeof(T));
 
-  T &at(uint64_t);
-  T &operator[](uint64_t);
+    if (data == NULL) {
+      errno = -ENOMEM;
+    }
+    else {
+      errno = 0;
+      length = 0;
+      capacity = ALLOC_UNIT;
+    }
+  }
 
-  uint64_t size();
-  void resize(uint64_t);
+  Vector(uint64_t count) {
+    capacity = (count / ALLOC_UNIT + 1) * ALLOC_UNIT;
+    length = count;
 
-  void push_back(T &);
-  T pop_back();
+    data = (T *)calloc(capacity, sizeof(T));
 
-  void insert(uint64_t, T &);
-  void erase(uint64_t);
+    if (data == NULL) {
+      errno = -ENOMEM;
+    }
+    else {
+      errno = 0;
+    }
+  }
+
+  ~Vector() {
+    errno = 0;
+    free(data);
+  }
+
+  T &at(uint64_t idx) {
+    if (idx < length) {
+      errno = 0;
+
+      return data[idx];
+    }
+    else {
+      errno = -ERANGE;
+
+      return NULL;
+    }
+  }
+
+  T &operator[](uint64_t idx) {
+    return this->at(idx);
+  }
+
+  uint64_t size() {
+    return length;
+  }
+
+  void resize(uint64_t count) {
+    if (count >= capacity) {
+      capacity = (count / ALLOC_UNIT + 1) * ALLOC_UNIT;
+
+      T *ptr = (T *)realloc(data, capacity * sizeof(T));
+
+      if (ptr == NULL) {
+        errno = -ENOMEM;
+        capacity = (length / ALLOC_UNIT + 1) * ALLOC_UNIT;
+      }
+      else {
+        errno = 0;
+        data = ptr;
+        memset(data + length, 0, capacity - length);
+      }
+    }
+
+    length = count;
+  }
+
+  void push_back(T &val) {
+    data[length++] = val;
+
+    resize(length);
+  }
+
+  T pop_back() {
+    if (length > 0) {
+      T val = data[--length];
+      data[length] = NULL;
+
+      return val;
+    }
+    else {
+      errno = -ERANGE;
+
+      return NULL;
+    }
+  }
+
+  void insert(uint64_t idx, T &val) {
+    resize(length + 1);
+
+    if (errno == 0) {
+      memmove(data + idx, data + idx + 1, (length - idx - 1) * sizeof(T));
+      data[idx] = val;
+    }
+  }
+
+  void erase(uint64_t idx) {
+    if (idx < length) {
+      memmove(data + idx + 1, data + idx, (length-- - idx - 1) * sizeof(T));
+      data[length] = NULL;
+    }
+    else {
+      errno = -ERANGE;
+    }
+  }
 };
 
 }  // namespace SimpleSSD

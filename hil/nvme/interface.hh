@@ -17,35 +17,19 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __HIL_NVME_CONTROLLER__
-#define __HIL_NVME_CONTROLLER__
+#ifndef __HIL_NVME_INTERFACE__
+#define __HIL_NVME_INTERFACE__
 
-#include "hil/nvme/def.hh"
-#include "hil/nvme/dma.hh"
-#include "hil/nvme/queue.hh"
-#include "hil/nvme/interface.hh"
-#include "util/list.hh"
+#include <cinttypes>
 
 namespace SimpleSSD {
 
 namespace NVMe {
 
-class Controller {
- private:
-  Interface *parent;
-  Subsystem *subsystem;
-
-  DMAScheduler *dmaEngine;
-
-  RegisterTable registers;
-  uint64_t sqstride;
-  uint64_t cqstride;
-  bool adminQueueInited;
-  uint16_t arbitration;
-
+class Interface {
  public:
-  Controller(NVMeInterface *);
-  ~Controller();
+  virtual void updateInterrupt(uint16_t, bool) = 0;
+  virtual void getVendorID(uint16_t &, uint16_t &) = 0;
 };
 
 }  // namespace NVMe

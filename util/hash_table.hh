@@ -26,22 +26,74 @@
 
 namespace SimpleSSD {
 
-template <typename T1, typename T2>
+template <typename KeyType, typename ValueType>
 class HashTable {
  private:
-  List<T2> *hashTable;
-  std::function<uint64_t(T1 &, bool)> hashFunction;
-  std::function<bool(T1 &, T1 &)> compareFunction;
+  struct Item {
+    KeyType key;
+    ValueType value;
+  };
+
+  List<Item> *hashTable;
+  std::function<uint64_t(KeyType &, bool)> hashFunction;
+  std::function<bool(KeyType &, KeyType &)> compareFunction;  // True if a >= b
 
  public:
-  HashTable(std::function<uint64_t(T1, bool)> &,
-            std::function<bool(T1 &, T1 &)> &);
+  HashTable(std::function<uint64_t(KeyType, bool)> &hf,
+            std::function<bool(KeyType &, KeyType &)> &cf)
+      : hashFunction(hf), compareFunction(cf) {
+    uint64_t max = hashFunction(NULL, true);
 
-  bool set(T1 &, T2 &);
-  bool remove(T1 &, T2 &);
+    hashTable = new List<Item>[max]();
+  }
 
-  T2 &get(T1 &);
-  const T2 &get(T1 &) const;
+  ~HashTable() { delete hashTable; }
+
+  void set(KeyType &key, ValueType &val) {
+    uint64_t bucket = hashFunction(key, false);
+    auto iter = hashTable[bucket].begin();
+    Item item;
+
+    for (; iter != nullptr; iter++) {
+      if (compareFunction(iter->val().key, key)) {
+        if (iter->val().key == key) {
+          iter->val().value = val;
+        }
+        else {
+          item.key = key;
+          item.value = val;
+
+          hashTable[bucket].insert(iter, item);
+        }
+
+        break;
+      }
+    }
+  }
+
+  bool remove(KeyType &key) {
+    uint64_t bucket = hashFunction(key, false);
+    auto iter = hashTable[bucket].begin();
+
+    for (; iter != nullptr; iter++) {
+      if (iter->val().key == key) {
+        hashTable[bucket].erase(iter);
+
+        break;
+      }
+    }
+  }
+
+  ValueType &get(KeyType &key) {
+    uint64_t bucket = hashFunction(key, false);
+    auto iter = hashTable[bucket].begin();
+
+    for (; iter != nullptr; iter++) {
+      if (iter->val().key == key) {
+        return iter->val().value;
+      }
+    }
+  }
 };
 
 }  // namespace SimpleSSD

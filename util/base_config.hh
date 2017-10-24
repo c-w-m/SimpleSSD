@@ -21,15 +21,19 @@
 #define __UTIL_BASE_CONFIG__
 
 #include <cinttypes>
+#include <cstring>
 #include <string>
 
 namespace SimpleSSD {
 
+#define MATCH_SECTION(str) (strcmp(section, str) == 0)
+#define MATCH_NAME(str) (strcmp(name, str) == 0)
+#define MATCH_VALUE(str) (strcmp(value, str) == 0)
+
 class BaseConfig {
  public:
-  BaseConfig();
-
   virtual bool setConfig(const char *, const char *) = 0;
+  virtual void update() = 0;
 
   virtual int32_t readInt(uint32_t) = 0;
   virtual float readFloat(uint32_t) = 0;

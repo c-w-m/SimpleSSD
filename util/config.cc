@@ -17,27 +17,38 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __UTIL_CONFIG_READER__
-#define __UTIL_CONFIG_READER__
-
-#include <cinttypes>
-#include <string>
-
-#include "hil/nvme/config.hh"
-#include "lib/ini/ini.h"
+#include "util/config.hh"
 
 namespace SimpleSSD {
 
-class ConfigReader {
- private:
-  static int parserHandler(void *, const char *, const char *, const char *);
+namespace Config {
 
- public:
-  NVMe::Config nvmeConfig;
+const char SECTION_NVME[] = "nvme";
+const char SECTION_FTL[] = "ftl";
+const char SECTION_ICL[] = "cache";
 
-  bool init(std::string);
-};
+}  // namespace Config
+
+bool ConfigReader::init(std::string file) {
+  if (ini_parse(file.c_str(), parserHandler, this) < 0) {
+    return false;
+  }
+
+  // Update all
+  nvmeConfig.update();
+
+  return true;
+}
+
+int ConfigReader::parserHandler(void *context, const char *section,
+                                const char *name, const char *value) {
+  ConfigReader *pThis = (ConfigReader *)context;
+
+  if (MATCH_SECTION(Config::SECTION_NVME)) {
+    pThis->nvmeConfig.setConfig(name, value);
+  }
+
+  return 1;
+}
 
 }  // namespace SimpleSSD
-
-#endif

@@ -25,20 +25,16 @@
 
 namespace SimpleSSD {
 
-typedef enum {
-  BASE_NVME = 0,
-} CONFIG_BASE;
-
 class BaseConfig {
  public:
   BaseConfig();
 
-  virtual bool setConfig(const char *, const char *);
+  virtual bool setConfig(const char *, const char *) = 0;
 
-  virtual int32_t readInt(uint32_t);
-  virtual float readFloat(uint32_t);
-  virtual std::string readString(uint32_t);
-  virtual bool readBoolean(uint32_t);
+  virtual int32_t readInt(uint32_t) = 0;
+  virtual float readFloat(uint32_t) = 0;
+  virtual std::string readString(uint32_t) = 0;
+  virtual bool readBoolean(uint32_t) = 0;
 };
 
 }  // namespace SimpleSSD

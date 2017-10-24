@@ -44,7 +44,7 @@ class Controller {
   uint16_t arbitration;
 
  public:
-  Controller(NVMeInterface *);
+  Controller(Interface *);
   ~Controller();
 };
 

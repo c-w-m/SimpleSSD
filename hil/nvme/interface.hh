@@ -30,6 +30,9 @@ class Interface {
  public:
   virtual void updateInterrupt(uint16_t, bool) = 0;
   virtual void getVendorID(uint16_t &, uint16_t &) = 0;
+
+  virtual void dmaRead(uint64_t, uint64_t, uint8_t *) = 0;
+  virtual void dmaWrite(uint64_t, uint64_t, uint8_t *) = 0;
 };
 
 }  // namespace NVMe

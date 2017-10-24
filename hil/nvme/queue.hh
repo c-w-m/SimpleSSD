@@ -82,7 +82,7 @@ typedef struct _SQEntryWrapper {
 typedef struct _CQEntryWrapper {
   CQEntry entry;
 
-  Tick submitAt;
+  uint64_t submitAt;
 
   uint16_t cqID;
 
@@ -121,7 +121,7 @@ class CQueue : public Queue {
  public:
   CQueue(uint16_t, bool, uint16_t, uint16_t);
 
-  Tick setData(CQEntry *, Tick = curTick());
+  uint64_t setData(CQEntry *, uint64_t);
   uint16_t incHead();
   void setHead(uint16_t);
   bool intrruptEnabled();
@@ -138,7 +138,7 @@ class SQueue : public Queue {
 
   uint16_t getCQID();
   void setTail(uint16_t);
-  Tick getData(SQEntry *, Tick = curTick());
+  uint64_t getData(SQEntry *, uint64_t);
   uint8_t getPriority();
 };
 

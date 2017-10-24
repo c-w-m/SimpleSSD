@@ -20,14 +20,9 @@
 #ifndef __HIL_NVME_DMA__
 #define __HIL_NVME_DMA__
 
-#include "base/types.hh"
 #include "hil/nvme/config.hh"
-#include "hil/nvme/controller.hh"
+#include "hil/nvme/interface.hh"
 #include "util/vector.hh"
-
-#ifndef SIMPLESSD_STANDALONE
-#include "sim/core.hh"
-#endif
 
 namespace SimpleSSD {
 
@@ -35,22 +30,24 @@ namespace NVMe {
 
 class DMAScheduler {
  private:
-  Tick lastReadEndAt;
-  Tick lastWriteEndAt;
-  double psPerByte;
+  Interface *interface;
+
+  uint64_t lastReadEndAt;
+  uint64_t lastWriteEndAt;
+  float psPerByte;
 
  public:
-  DMAScheduler(Controller *, Config *);
+  DMAScheduler(Interface *, Config *);
 
-  Tick read(uint64_t, uint64_t, uint8_t *, Tick = curTick());
-  Tick write(uint64_t, uint64_t, uint8_t *, Tick = curTick());
+  uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t);
+  uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t);
 };
 
 struct PRP {
-  Addr addr;
+  uint64_t addr;
   uint64_t size;
 
-  PRP(Addr, uint64_t);
+  PRP(uint64_t, uint64_t);
 };
 
 class PRPList {
@@ -59,15 +56,15 @@ class PRPList {
   Vector<PRP *> prpList;
   uint64_t totalSize;
 
-  void getPRPListFromPRP(Addr, uint64_t);
+  void getPRPListFromPRP(uint64_t, uint64_t);
 
  public:
   PRPList();
-  PRPList(DMAScheduler *, Addr, Addr, uint64_t);
-  PRPList(DMAScheduler *, Addr, uint64_t, bool);
+  PRPList(DMAScheduler *, uint64_t, uint64_t, uint64_t);
+  PRPList(DMAScheduler *, uint64_t, uint64_t, bool);
 
-  Tick read(uint64_t, uint64_t, uint8_t *, Tick = curTick());
-  Tick write(uint64_t, uint64_t, uint8_t *, Tick = curTick());
+  uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t);
+  uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t);
 };
 
 }  // namespace NVMe

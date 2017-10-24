@@ -58,7 +58,7 @@ class List {
       return tmp;
     }
 
-    T &operator*() { return value; }
+    T &val() { return value; }
   };
 
   friend class Iterator;
@@ -137,7 +137,7 @@ class List {
       tail = iter;
     }
 
-    iter->value = val;
+    memcpy(&iter->value, &val, sizeof(T));
     length++;
 
     return iter;

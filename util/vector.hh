@@ -111,15 +111,15 @@ class Vector {
   }
 
   void push_back(T &val) {
-    data[length++] = val;
-
-    resize(length);
+    insert(length, val);
   }
 
   T pop_back() {
     if (length > 0) {
-      T val = data[--length];
-      data[length] = NULL;
+      T val;
+
+      memcpy(&val, data + length - 1, sizeof(T));
+      erase(length - 1);
 
       return val;
     }
@@ -135,14 +135,14 @@ class Vector {
 
     if (errno == 0) {
       memmove(data + idx, data + idx + 1, (length - idx - 1) * sizeof(T));
-      data[idx] = val;
+      memcpy(data + idx, &val, sizeof(T));
     }
   }
 
   void erase(uint64_t idx) {
     if (idx < length) {
       memmove(data + idx + 1, data + idx, (length-- - idx - 1) * sizeof(T));
-      data[length] = NULL;
+      memset(data + length, 0, sizeof(T));
     }
     else {
       errno = -ERANGE;

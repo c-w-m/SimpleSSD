@@ -110,6 +110,7 @@ class Queue {
   uint16_t getHead();
   uint16_t getTail();
   uint16_t getSize();
+  void setBase(PRPList *, uint64_t);
 };
 
 class CQueue : public Queue {
@@ -124,7 +125,7 @@ class CQueue : public Queue {
   uint64_t setData(CQEntry *, uint64_t);
   uint16_t incHead();
   void setHead(uint16_t);
-  bool intrruptEnabled();
+  bool interruptEnabled();
   uint16_t getInterruptVector();
 };
 

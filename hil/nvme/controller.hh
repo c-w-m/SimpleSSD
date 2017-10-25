@@ -20,10 +20,11 @@
 #ifndef __HIL_NVME_CONTROLLER__
 #define __HIL_NVME_CONTROLLER__
 
+#include "hil/nvme/config.hh"
 #include "hil/nvme/def.hh"
 #include "hil/nvme/dma.hh"
-#include "hil/nvme/queue.hh"
 #include "hil/nvme/interface.hh"
+#include "hil/nvme/queue.hh"
 #include "util/list.hh"
 
 namespace SimpleSSD {
@@ -53,20 +54,44 @@ typedef union _RegisterTable {
 
 class Controller {
  private:
-  Interface *parent;
-  Subsystem *subsystem;
+  Interface *parent;     //!< NVMe::Interface passed from constructor
+  Subsystem *subsystem;  //!< NVMe::Subsystem allocate in constructor
 
-  DMAScheduler *dmaEngine;
+  DMAScheduler *dmaEngine;  //!< DMA engine allocate in constructor
 
-  RegisterTable registers;
-  uint64_t sqstride;
-  uint64_t cqstride;
-  bool adminQueueInited;
-  uint16_t arbitration;
+  RegisterTable registers;  //!< Table for NVMe Controller Registers
+  uint64_t sqstride;        //!< Calculated SQ Stride
+  uint64_t cqstride;        //!< Calculated CQ stride
+  bool adminQueueInited;    //!< Flag for initialization of Admin CQ/SQ
+  uint16_t arbitration;     //!< Selected Arbitration Mechanism
+  uint32_t interruptMask;   //!< Variable to store current interrupt mask
+
+  CQueue *pCQueue;  //!< Completion Queue array
+  SQueue *pSQueue;  //!< Submission Queue array
+
+  List<SQEntryWrapper *> lSQFIFO;  //!< Internal FIFO queue for submission
+  List<CQEntryWrapper *> lCQFIFO;  //!< Internal FIFO queue for completion
 
  public:
-  Controller(Interface *);
+  Controller(Interface *, Config *);
   ~Controller();
+
+  uint64_t readRegister(uint64_t, uint64_t, uint8_t *, uint64_t);
+  uint64_t writeRegister(uint64_t, uint64_t, uint8_t *, uint64_t);
+  uint64_t ringCQHeadDoorbell(uint16_t, uint16_t, uint64_t);
+  uint64_t ringSQHeadDoorbell(uint16_t, uint16_t, uint64_t);
+
+  void clearInterrupt(uint16_t);
+  void updateInterrupt(uint16_t, bool);
+
+  int createCQueue(uint16_t, uint16_t, uint16_t, bool, bool, uint64_t);
+  int createSQueue(uint16_t, uint16_t, uint16_t, uint8_t, bool, uint64_t);
+  int deleteCQueue(uint16_t);
+  int deleteSQueue(uint16_t);
+  int abort(uint16_t, uint16_t);
+  void identify(uint8_t *);
+
+  void collectSQueue();
 };
 
 }  // namespace NVMe

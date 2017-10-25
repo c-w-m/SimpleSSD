@@ -76,14 +76,12 @@ class Vector {
   T &at(uint64_t idx) {
     if (idx < length) {
       errno = 0;
-
-      return data[idx];
     }
     else {
       errno = -ERANGE;
-
-      return NULL;
     }
+
+    return data[idx];
   }
 
   T &operator[](uint64_t idx) { return this->at(idx); }
@@ -110,7 +108,7 @@ class Vector {
     length = count;
   }
 
-  void push_back(T &val) {
+  void push_back(T val) {
     insert(length, val);
   }
 
@@ -126,11 +124,11 @@ class Vector {
     else {
       errno = -ERANGE;
 
-      return NULL;
+      return T();
     }
   }
 
-  void insert(uint64_t idx, T &val) {
+  void insert(uint64_t idx, T val) {
     resize(length + 1);
 
     if (errno == 0) {

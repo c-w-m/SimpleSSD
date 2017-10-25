@@ -73,11 +73,11 @@ class List {
 
   uint64_t size() { return length; }
 
-  void push_back(T &val) {
+  void push_back(T val) {
     insert(nullptr, val);
   }
 
-  T &pop_back() {
+  T pop_back() {
     if (length > 0) {
       Iterator *iter = tail;
       T ret = iter->value;
@@ -88,15 +88,16 @@ class List {
     }
     else {
       errno = -ERANGE;
-      return NULL;
+
+      return T();
     }
   }
 
-  void push_front(T &val) {
+  void push_front(T val) {
     insert(head, val);
   }
 
-  T &pop_front() {
+  T pop_front() {
     if (length > 0) {
       Iterator *iter = head;
       T ret = iter->value;
@@ -107,7 +108,7 @@ class List {
     }
     else {
       errno = -ERANGE;
-      return NULL;
+      return T();
     }
   }
 
@@ -115,7 +116,7 @@ class List {
 
   Iterator *end() { return nullptr; }
 
-  Iterator *insert(Iterator *next, T &val) {
+  Iterator *insert(Iterator *next, T val) {
     Iterator *iter = new Iterator();
 
     if (next != nullptr) {

@@ -18,12 +18,285 @@
  */
 
 #include "hil/nvme/dma.hh"
+#include "util/minmax.hh"
 
 namespace SimpleSSD {
 
 namespace NVMe {
 
-DMAScheduler::DMAScheduler(Interface *intr, Config *conf) : interface(intr) {}
+DMAScheduler::DMAScheduler(Interface *intr, Config *conf)
+    : interface(intr), lastReadEndAt(0), lastWriteEndAt(0) {
+  psPerByte = conf->readFloat(NVME_DMA_DELAY);
+}
+
+uint64_t DMAScheduler::read(uint64_t addr, uint64_t length, uint8_t *buffer,
+                            uint64_t &tick) {
+  uint64_t delay = (uint64_t)(psPerByte * length + 0.5);
+
+  // DMA Scheduling
+  if (tick == 0) {
+    tick = lastReadEndAt;
+  }
+
+  if (lastReadEndAt <= tick) {
+    lastReadEndAt = tick + delay;
+  }
+  else {
+    uint64_t diff = lastReadEndAt - tick;
+    lastReadEndAt += delay;
+    tick += diff;
+  }
+
+  // Read data
+  // DPRINTF(NVMeDMA, "DMAPORT | READ  | %016" PRIX64 " + %" PRIX64 "\n",
+  // dmaAddr + offset, size);
+
+  if (buffer) {
+    interface->dmaRead(addr, length, buffer);
+
+    // // Print data
+    // if (size <= 64) {
+    //   DPRINTF(NVMeDMA, "DMAPORT | READ  | ----------------\n");
+    //   for (int i = 0; i < size / 8; i++) {
+    //     DPRINTF(NVMeDMA, "DMAPORT | READ  | %016" PRIX64 "\n", *((uint64_t
+    //     *)buffer + i));
+    //   }
+    //   DPRINTF(NVMeDMA, "DMAPORT | READ  | ----------------\n");
+    // }
+  }
+
+  return tick + delay;
+}
+
+uint64_t DMAScheduler::write(uint64_t addr, uint64_t length, uint8_t *buffer,
+                             uint64_t &tick) {
+  uint64_t delay = (uint64_t)(psPerByte * length + 0.5);
+
+  // DMA Scheduling
+  if (tick == 0) {
+    tick = lastWriteEndAt;
+  }
+
+  if (lastWriteEndAt <= tick) {
+    lastWriteEndAt = tick + delay;
+  }
+  else {
+    uint64_t diff = lastWriteEndAt - tick;
+    lastWriteEndAt += delay;
+    tick += diff;
+  }
+
+  // Read data
+  // DPRINTF(NVMeDMA, "DMAPORT | READ  | %016" PRIX64 " + %" PRIX64 "\n",
+  // dmaAddr + offset, size);
+
+  if (buffer) {
+    interface->dmaWrite(addr, length, buffer);
+
+    // // Print data
+    // if (size <= 64) {
+    //   DPRINTF(NVMeDMA, "DMAPORT | READ  | ----------------\n");
+    //   for (int i = 0; i < size / 8; i++) {
+    //     DPRINTF(NVMeDMA, "DMAPORT | READ  | %016" PRIX64 "\n", *((uint64_t
+    //     *)buffer + i));
+    //   }
+    //   DPRINTF(NVMeDMA, "DMAPORT | READ  | ----------------\n");
+    // }
+  }
+
+  return tick + delay;
+}
+
+PRP::PRP() : addr(0), size(0) {}
+
+PRP::PRP(uint64_t address, uint64_t s) : addr(address), size(s) {}
+
+PRPList::PRPList(DMAScheduler *dma, uint64_t ps, uint64_t prp1, uint64_t prp2,
+                 uint64_t size)
+    : dmaEngine(dma), totalSize(size), pagesize(ps) {
+  uint64_t prp1Size = getPRPSize(prp1);
+  uint64_t prp2Size = getPRPSize(prp2);
+
+  // Determine PRP1 and PRP2
+  if (totalSize <= pagesize) {
+    if (totalSize <= prp1Size) {
+      // PRP1 is PRP pointer, PRP2 is not used
+      prpList.push_back(PRP(prp1, totalSize));
+    }
+    else {
+      // PRP1 is PRP pointer, PRP2 is PRP pointer
+      prpList.push_back(PRP(prp1, prp1Size));
+      prpList.push_back(PRP(prp2, prp2Size));
+
+      if (prp1Size + prp2Size < totalSize) {
+        // TODO: panic("prp_list: Invalid DPTR size\n");
+      }
+    }
+  }
+  else if (totalSize <= pagesize * 2) {
+    if (prp1Size == pagesize) {
+      // PRP1 is PRP pointer, PRP2 is PRP pointer
+      prpList.push_back(PRP(prp1, prp1Size));
+      prpList.push_back(PRP(prp2, prp2Size));
+
+      if (prp1Size + prp2Size < totalSize) {
+        // TODO: panic("prp_list: Invalid DPTR size\n");
+      }
+    }
+    else {
+      // PRP1 is PRP pointer, PRP2 is PRP list
+      prpList.push_back(PRP(prp1, prp1Size));
+      getPRPListFromPRP(prp2, totalSize - prp1Size);
+    }
+  }
+  else {
+    // PRP1 is PRP pointer, PRP2 is PRP list
+    prpList.push_back(PRP(prp1, prp1Size));
+    getPRPListFromPRP(prp2, totalSize - prp1Size);
+  }
+}
+
+PRPList::PRPList(DMAScheduler *dma, uint64_t ps, uint64_t base, uint64_t size,
+                 bool cont)
+    : dmaEngine(dma), totalSize(size), pagesize(ps) {
+  if (cont) {
+    prpList.push_back(PRP(base, size));
+  }
+  else {
+    getPRPListFromPRP(base, size);
+  }
+}
+
+void PRPList::getPRPListFromPRP(uint64_t base, uint64_t size) {
+  uint64_t currentSize = 0;
+  uint8_t *buffer = nullptr;
+
+  // Get PRP size
+  uint64_t prpSize = getPRPSize(base);
+
+  // Allocate buffer
+  buffer = (uint8_t *)malloc(prpSize);
+
+  if (buffer) {
+    uint64_t listPRP;
+    uint64_t listPRPSize;
+    uint64_t tick = 0;
+
+    // Read PRP
+    dmaEngine->read(base, prpSize, buffer, tick);
+
+    for (size_t i = 0; i < prpSize; i += 8) {
+      listPRP = *((uint64_t *)(buffer + i));
+      listPRPSize = getPRPSize(listPRP);
+      currentSize += listPRPSize;
+
+      if (listPRP == 0) {
+        // TODO: panic("prp_list: Invalid PRP in PRP List\n");
+      }
+
+      prpList.push_back(PRP(listPRP, listPRPSize));
+
+      if (currentSize >= size) {
+        break;
+      }
+    }
+
+    free(buffer);
+
+    if (currentSize < size) {
+      // PRP list ends but size is not full
+      // Last item of PRP list is pointer of another PRP list
+      listPRP = prpList.pop_back().addr;
+
+      getPRPListFromPRP(listPRP, size - currentSize);
+    }
+  }
+  else {
+    // TODO: panic("prp_list: ENOMEM\n");
+  }
+}
+
+uint64_t PRPList::getPRPSize(uint64_t addr) {
+  return pagesize - (addr & (pagesize - 1));
+}
+
+uint64_t PRPList::read(uint64_t offset, uint64_t length, uint8_t *buffer,
+                       uint64_t &tick) {
+  uint64_t finishedAt = 0;
+  uint64_t totalRead = 0;
+  uint64_t currentOffset = 0;
+  uint64_t read;
+  uint64_t vsize = prpList.size();
+  bool begin = false;
+
+  for (uint64_t i = 0; i < vsize; i++) {
+    if (begin) {
+      read = MIN(prpList.at(i).size, length - totalRead);
+      finishedAt =
+          dmaEngine->read(prpList.at(i).addr, read,
+                          buffer ? buffer + totalRead : NULL, finishedAt);
+      totalRead += read;
+
+      if (totalRead == length) {
+        break;
+      }
+    }
+
+    if (!begin && currentOffset + prpList.at(i).size > offset) {
+      begin = true;
+      totalRead = offset - currentOffset;
+      read = MIN(prpList.at(i).size - totalRead, length);
+      finishedAt = dmaEngine->read(prpList.at(i).addr, read, buffer, tick);
+      totalRead = read;
+    }
+
+    currentOffset += prpList.at(i).size;
+  }
+
+  // TODO: DPRINTF(NVMeDMA, "DMAPORT | READ  | Tick %" PRIu64 "\n",
+  // totalDMATime);
+
+  return finishedAt;
+}
+
+uint64_t PRPList::write(uint64_t offset, uint64_t length, uint8_t *buffer,
+                        uint64_t &tick) {
+  uint64_t finishedAt = 0;
+  uint64_t totalWritten = 0;
+  uint64_t currentOffset = 0;
+  uint64_t written;
+  uint64_t vsize = prpList.size();
+  bool begin = false;
+
+  for (uint64_t i = 0; i < vsize; i++) {
+    if (begin) {
+      written = MIN(prpList.at(i).size, length - totalWritten);
+      finishedAt =
+          dmaEngine->write(prpList.at(i).addr, written,
+                          buffer ? buffer + totalWritten : NULL, finishedAt);
+      totalWritten += written;
+
+      if (totalWritten == length) {
+        break;
+      }
+    }
+
+    if (!begin && currentOffset + prpList.at(i).size > offset) {
+      begin = true;
+      totalWritten = offset - currentOffset;
+      written = MIN(prpList.at(i).size - totalWritten, length);
+      finishedAt = dmaEngine->write(prpList.at(i).addr, written, buffer, tick);
+      totalWritten = written;
+    }
+
+    currentOffset += prpList.at(i).size;
+  }
+
+  // TODO: DPRINTF(NVMeDMA, "DMAPORT | WRITE | Tick %" PRIu64 "\n",
+  // totalDMATime);
+
+  return finishedAt;
+}
 
 }  // namespace NVMe
 

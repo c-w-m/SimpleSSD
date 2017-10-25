@@ -39,32 +39,34 @@ class DMAScheduler {
  public:
   DMAScheduler(Interface *, Config *);
 
-  uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t);
-  uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t);
+  uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t &);
+  uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t &);
 };
 
 struct PRP {
   uint64_t addr;
   uint64_t size;
 
+  PRP();
   PRP(uint64_t, uint64_t);
 };
 
 class PRPList {
  private:
   DMAScheduler *dmaEngine;
-  Vector<PRP *> prpList;
+  Vector<PRP> prpList;
   uint64_t totalSize;
+  uint64_t pagesize;
 
   void getPRPListFromPRP(uint64_t, uint64_t);
+  uint64_t getPRPSize(uint64_t);
 
  public:
-  PRPList();
-  PRPList(DMAScheduler *, uint64_t, uint64_t, uint64_t);
-  PRPList(DMAScheduler *, uint64_t, uint64_t, bool);
+  PRPList(DMAScheduler *, uint64_t, uint64_t, uint64_t, uint64_t);
+  PRPList(DMAScheduler *, uint64_t, uint64_t, uint64_t, bool);
 
-  uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t);
-  uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t);
+  uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t &);
+  uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t &);
 };
 
 }  // namespace NVMe

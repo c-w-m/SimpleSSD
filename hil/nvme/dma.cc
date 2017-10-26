@@ -18,7 +18,7 @@
  */
 
 #include "hil/nvme/dma.hh"
-#include "util/minmax.hh"
+#include "util/algorithm.hh"
 
 namespace SimpleSSD {
 

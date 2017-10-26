@@ -17,15 +17,23 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __UTIL_MINMAX__
-#define __UTIL_MINMAX__
+#ifndef __UTIL_ALGORITHM__
+#define __UTIL_ALGORITHM__
+
+#include <cinttypes>
 
 #ifndef MIN
-#define MIN(x, y)   ((x) > (y) ? (y) : (x))
+#define MIN(x, y) ((x) > (y) ? (y) : (x))
 #endif
 
 #ifndef MAX
-#define MAX(x, y)   ((x) > (y) ? (x) : (y))
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
 #endif
+
+namespace SimpleSSD {
+
+template <typename T>
+uint8_t popcount(T value);
+}
 
 #endif

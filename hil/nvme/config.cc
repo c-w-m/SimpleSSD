@@ -29,7 +29,7 @@ const char NAME_QUEUE_INTERVAL[] = "QueueInterval";
 const char NAME_MAX_IO_CQUEUE[] = "MaxIOCQueue";
 const char NAME_MAX_IO_SQUEUE[] = "MaxIOSQueue";
 const char NAME_WRR_HIGH[] = "WRRHigh";
-const char NAME_WRR_MID[] = "WRRMedium";
+const char NAME_WRR_MEDIUM[] = "WRRMedium";
 const char NAME_ENABLE_DEFAULT_NAMESPACE[] = "DefaultNamespace";
 const char NAME_LBA_SIZE[] = "LBASize";
 const char NAME_ENABLE_DISK_IMAGE[] = "EnableDiskImage";
@@ -42,7 +42,7 @@ Config::Config() {
   maxIOCQueue = 16;
   maxIOSQueue = 16;
   wrrHigh = 2;
-  wrrMidium = 2;
+  wrrMedium = 2;
   lbaSize = 512;
   enableDefaultNamespace = true;
   enableDiskImage = false;
@@ -68,8 +68,8 @@ bool Config::setConfig(const char *name, const char *value) {
   else if (MATCH_NAME(NAME_WRR_HIGH)) {
     wrrHigh = (uint16_t)strtoul(value, nullptr, 10);
   }
-  else if (MATCH_NAME(NAME_WRR_MID)) {
-    wrrMidium = (uint16_t)strtoul(value, nullptr, 10);
+  else if (MATCH_NAME(NAME_WRR_MEDIUM)) {
+    wrrMedium = (uint16_t)strtoul(value, nullptr, 10);
   }
   else if (MATCH_NAME(NAME_ENABLE_DEFAULT_NAMESPACE)) {
     enableDefaultNamespace = convertBool(value);
@@ -112,8 +112,8 @@ int64_t Config::readInt(uint32_t idx) {
     case NVME_WRR_HIGH:
       ret = wrrHigh;
       break;
-    case NVME_WRR_MID:
-      ret = wrrMidium;
+    case NVME_WRR_MEDIUM:
+      ret = wrrMedium;
       break;
   }
 

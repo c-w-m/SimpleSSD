@@ -32,7 +32,7 @@ typedef enum {
   NVME_MAX_IO_CQUEUE,
   NVME_MAX_IO_SQUEUE,
   NVME_WRR_HIGH,
-  NVME_WRR_MID,
+  NVME_WRR_MEDIUM,
   NVME_ENABLE_DEFAULT_NAMESPACE,
   NVME_LBA_SIZE,
   NVME_ENABLE_DISK_IMAGE,
@@ -47,7 +47,7 @@ class Config : public BaseConfig {
   uint16_t maxIOCQueue;         //!< Default: 16
   uint16_t maxIOSQueue;         //!< Default: 16
   uint16_t wrrHigh;             //!< Default: 2
-  uint16_t wrrMidium;           //!< Default: 2
+  uint16_t wrrMedium;           //!< Default: 2
   uint64_t lbaSize;             //!< Default: 512
   bool enableDefaultNamespace;  //!< Default: True
   bool enableDiskImage;         //!< Default: False

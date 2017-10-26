@@ -21,6 +21,8 @@
 
 namespace SimpleSSD {
 
+namespace HIL {
+
 namespace NVMe {
 
 SQEntry::_SQEntry() {
@@ -32,7 +34,7 @@ CQEntry::_CQEntry() {
 }
 
 SQEntryWrapper::_SQEntryWrapper(SQEntry &sqdata, uint16_t sqid, uint16_t cqid,
-                               uint16_t sqhead)
+                                uint16_t sqhead)
     : entry(sqdata), sqID(sqid), cqID(cqid), sqHead(sqhead) {}
 
 CQEntryWrapper::_CQEntryWrapper(SQEntryWrapper &sqew) {
@@ -172,5 +174,7 @@ uint64_t SQueue::getData(SQEntry *entry, uint64_t tick) {
 }
 
 }  // namespace NVMe
+
+}  // namespace HIL
 
 }  // namespace SimpleSSD

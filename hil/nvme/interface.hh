@@ -24,6 +24,8 @@
 
 namespace SimpleSSD {
 
+namespace HIL {
+
 namespace NVMe {
 
 class Interface {
@@ -39,6 +41,8 @@ class Interface {
 };
 
 }  // namespace NVMe
+
+}  // namespace HIL
 
 }  // namespace SimpleSSD
 

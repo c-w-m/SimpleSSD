@@ -27,6 +27,8 @@
 
 namespace SimpleSSD {
 
+namespace HIL {
+
 namespace NVMe {
 
 class DMAScheduler {
@@ -71,6 +73,8 @@ class PRPList {
 };
 
 }  // namespace NVMe
+
+}  // namespace HIL
 
 }  // namespace SimpleSSD
 

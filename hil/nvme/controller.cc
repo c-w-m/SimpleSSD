@@ -21,6 +21,8 @@
 
 namespace SimpleSSD {
 
+namespace HIL {
+
 namespace NVMe {
 
 RegisterTable::_RegisterTable() {
@@ -1175,5 +1177,7 @@ bool Controller::checkQueue(SQueue *pQueue, std::list<SQEntryWrapper> &fifo,
 }
 
 }  // namespace NVMe
+
+}  // namespace HIL
 
 }  // namespace SimpleSSD

@@ -24,6 +24,8 @@
 
 namespace SimpleSSD {
 
+namespace HIL {
+
 namespace NVMe {
 
 typedef enum {
@@ -70,6 +72,8 @@ class Config : public BaseConfig {
 };
 
 }  // namespace NVMe
+
+}  // namespace HIL
 
 }  // namespace SimpleSSD
 

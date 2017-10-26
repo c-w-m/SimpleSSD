@@ -24,6 +24,8 @@
 
 namespace SimpleSSD {
 
+namespace HIL {
+
 namespace NVMe {
 
 typedef union _SQEntry {
@@ -144,6 +146,8 @@ class SQueue : public Queue {
 };
 
 }  // namespace NVMe
+
+}  // namespace HIL
 
 }  // namespace SimpleSSD
 

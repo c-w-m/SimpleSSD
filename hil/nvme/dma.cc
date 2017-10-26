@@ -22,6 +22,8 @@
 
 namespace SimpleSSD {
 
+namespace HIL {
+
 namespace NVMe {
 
 DMAScheduler::DMAScheduler(Interface *intr, Config *conf)
@@ -270,7 +272,8 @@ uint64_t PRPList::write(uint64_t offset, uint64_t length, uint8_t *buffer,
     if (begin) {
       written = MIN(iter.size, length - totalWritten);
       finishedAt =
-          dmaEngine->write(iter.addr, written, buffer ? buffer + totalWritten : NULL, finishedAt);
+          dmaEngine->write(iter.addr, written,
+                           buffer ? buffer + totalWritten : NULL, finishedAt);
       totalWritten += written;
 
       if (totalWritten == length) {
@@ -296,5 +299,7 @@ uint64_t PRPList::write(uint64_t offset, uint64_t length, uint8_t *buffer,
 }
 
 }  // namespace NVMe
+
+}  // namespace HIL
 
 }  // namespace SimpleSSD

@@ -22,6 +22,8 @@
 
 namespace SimpleSSD {
 
+namespace HIL {
+
 namespace NVMe {
 
 const char NAME_DMA_DELAY[] = "DMADelay";
@@ -198,5 +200,7 @@ bool Config::readBoolean(uint32_t idx) {
 }
 
 }  // namespace NVMe
+
+}  // namespace HIL
 
 }  // namespace SimpleSSD

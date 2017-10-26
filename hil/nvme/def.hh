@@ -26,6 +26,8 @@
 
 namespace SimpleSSD {
 
+namespace HIL {
+
 namespace NVMe {
 
 typedef struct {
@@ -239,6 +241,8 @@ typedef enum {
 } MEDIA_ERROR_CODE;
 
 }  // namespace NVMe
+
+}  // namespace HIL
 
 }  // namespace SimpleSSD
 

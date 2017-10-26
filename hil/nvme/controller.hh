@@ -31,6 +31,8 @@
 
 namespace SimpleSSD {
 
+namespace HIL {
+
 namespace NVMe {
 
 typedef union _RegisterTable {
@@ -104,6 +106,8 @@ class Controller {
 };
 
 }  // namespace NVMe
+
+}  // namespace HIL
 
 }  // namespace SimpleSSD
 

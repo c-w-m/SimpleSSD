@@ -31,6 +31,9 @@ namespace SimpleSSD {
 #define MATCH_VALUE(str) (strcmp(value, str) == 0)
 
 class BaseConfig {
+ protected:
+  bool convertBool(const char *);
+
  public:
   virtual bool setConfig(const char *, const char *) = 0;
   virtual void update() = 0;

@@ -19,15 +19,27 @@
 
 #include "util/config.hh"
 
+#ifdef _MSC_VER
+#define strcasecmp _stricmp
+#else
+#include <strings.h>
+#endif
+
 namespace SimpleSSD {
 
-namespace Config {
-
 const char SECTION_NVME[] = "nvme";
-const char SECTION_FTL[] = "ftl";
-const char SECTION_ICL[] = "cache";
+// const char SECTION_FTL[] = "ftl";
+// const char SECTION_ICL[] = "cache";
 
-}  // namespace Config
+bool BaseConfig::convertBool(const char *value) {
+  bool ret = false;
+
+  if (strcasecmp(value, "true") == 0 || strtoul(value, nullptr, 10)) {
+    ret = true;
+  }
+
+  return ret;
+}
 
 bool ConfigReader::init(std::string file) {
   if (ini_parse(file.c_str(), parserHandler, this) < 0) {
@@ -44,7 +56,7 @@ int ConfigReader::parserHandler(void *context, const char *section,
                                 const char *name, const char *value) {
   ConfigReader *pThis = (ConfigReader *)context;
 
-  if (MATCH_SECTION(Config::SECTION_NVME)) {
+  if (MATCH_SECTION(SECTION_NVME)) {
     pThis->nvmeConfig.setConfig(name, value);
   }
 

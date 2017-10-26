@@ -60,7 +60,8 @@ class Config : public BaseConfig {
   bool setConfig(const char *, const char *);
   void update();
 
-  int32_t readInt(uint32_t);
+  int64_t readInt(uint32_t);
+  uint64_t readUint(uint32_t);
   float readFloat(uint32_t);
   std::string readString(uint32_t);
   bool readBoolean(uint32_t);

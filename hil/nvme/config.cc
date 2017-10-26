@@ -99,6 +99,96 @@ void Config::update() {
   }
 }
 
+int64_t Config::readInt(uint32_t idx) {
+  int64_t ret = 0;
+
+  switch (idx) {
+    case NVME_MAX_IO_CQUEUE:
+      ret = maxIOCQueue;
+      break;
+    case NVME_MAX_IO_SQUEUE:
+      ret = maxIOSQueue;
+      break;
+    case NVME_WRR_HIGH:
+      ret = wrrHigh;
+      break;
+    case NVME_WRR_MID:
+      ret = wrrMidium;
+      break;
+  }
+
+  return ret;
+}
+
+uint64_t Config::readUint(uint32_t idx) {
+  uint64_t ret = 0;
+
+  switch (idx) {
+    case NVME_QUEUE_INTERVAL:
+      ret = queueInterval;
+      break;
+    case NVME_MAX_IO_CQUEUE:
+      ret = maxIOCQueue;
+      break;
+    case NVME_MAX_IO_SQUEUE:
+      ret = maxIOSQueue;
+      break;
+    case NVME_WRR_HIGH:
+      ret = wrrHigh;
+      break;
+    case NVME_WRR_MID:
+      ret = wrrMidium;
+      break;
+    case NVME_LBA_SIZE:
+      ret = lbaSize;
+      break;
+  }
+
+  return ret;
+}
+
+float Config::readFloat(uint32_t idx) {
+  float ret = 0;
+
+  switch (idx) {
+    case NVME_DMA_DELAY:
+      ret = dmaDelay;
+      break;
+  }
+
+  return ret;
+}
+
+std::string Config::readString(uint32_t idx) {
+  std::string ret = 0;
+
+  switch (idx) {
+    case NVME_DISK_IMAGE_PATH:
+      ret = diskImagePath;
+      break;
+  }
+
+  return ret;
+}
+
+bool Config::readBoolean(uint32_t idx) {
+  bool ret = 0;
+
+  switch (idx) {
+    case NVME_ENABLE_DEFAULT_NAMESPACE:
+      ret = enableDefaultNamespace;
+      break;
+    case NVME_ENABLE_DISK_IMAGE:
+      ret = enableDiskImage;
+      break;
+    case NVME_STRICT_DISK_SIZE:
+      ret = strictDiskSize;
+      break;
+  }
+
+  return ret;
+}
+
 }  // namespace NVMe
 
 }  // namespace SimpleSSD

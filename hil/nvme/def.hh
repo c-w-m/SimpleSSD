@@ -22,9 +22,18 @@
 
 #include <cinttypes>
 
+#include "hil/nvme/config.hh"
+
 namespace SimpleSSD {
 
 namespace NVMe {
+
+typedef struct {
+  Config *conf;
+  uint64_t memoryPageSize;
+  uint8_t memoryPageSizeOrder;
+  uint16_t maxQueueEntry;
+} ConfigData;
 
 typedef enum {
   PRIORITY_URGENT,

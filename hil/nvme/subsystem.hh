@@ -20,4 +20,20 @@
 #ifndef __HIL_NVME_SUBSYSTEM__
 #define __HIL_NVME_SUBSYSTEM__
 
+#include "hil/nvme/controller.hh"
+
+namespace SimpleSSD {
+
+namespace NVMe {
+
+class Subsystem {
+ public:
+  Subsystem(Controller *, ConfigData *);
+  ~Subsystem();
+};
+
+}  // namespace NVMe
+
+}  // namespace SimpleSSD
+
 #endif

@@ -56,23 +56,25 @@ typedef union _RegisterTable {
 
 class Controller {
  private:
-  Interface *parent;     //!< NVMe::Interface passed from constructor
-  Subsystem *subsystem;  //!< NVMe::Subsystem allocate in constructor
+  Interface *pParent;     //!< NVMe::Interface passed from constructor
+  Subsystem *pSubsystem;  //!< NVMe::Subsystem allocate in constructor
 
-  DMAScheduler *dmaEngine;  //!< DMA engine allocate in constructor
+  DMAScheduler *pDmaEngine;  //!< DMA engine allocate in constructor
 
-  RegisterTable registers;  //!< Table for NVMe Controller Registers
-  uint64_t sqstride;        //!< Calculated SQ Stride
-  uint64_t cqstride;        //!< Calculated CQ stride
-  bool adminQueueInited;    //!< Flag for initialization of Admin CQ/SQ
-  uint16_t arbitration;     //!< Selected Arbitration Mechanism
-  uint32_t interruptMask;   //!< Variable to store current interrupt mask
+  RegisterTable registers;   //!< Table for NVMe Controller Registers
+  uint64_t sqstride;         //!< Calculated SQ Stride
+  uint64_t cqstride;         //!< Calculated CQ stride
+  uint8_t adminQueueInited;  //!< Flag for initialization of Admin CQ/SQ
+  uint16_t arbitration;      //!< Selected Arbitration Mechanism
+  uint32_t interruptMask;    //!< Variable to store current interrupt mask
 
-  CQueue *pCQueue;  //!< Completion Queue array
-  SQueue *pSQueue;  //!< Submission Queue array
+  CQueue **ppCQueue;  //!< Completion Queue array
+  SQueue **ppSQueue;  //!< Submission Queue array
 
   std::list<SQEntryWrapper> lSQFIFO;  //!< Internal FIFO queue for submission
   std::list<CQEntryWrapper> lCQFIFO;  //!< Internal FIFO queue for completion
+
+  ConfigData cfgdata;
 
  public:
   Controller(Interface *, Config *);
@@ -81,11 +83,12 @@ class Controller {
   uint64_t readRegister(uint64_t, uint64_t, uint8_t *, uint64_t);
   uint64_t writeRegister(uint64_t, uint64_t, uint8_t *, uint64_t);
   uint64_t ringCQHeadDoorbell(uint16_t, uint16_t, uint64_t);
-  uint64_t ringSQHeadDoorbell(uint16_t, uint16_t, uint64_t);
+  uint64_t ringSQTailDoorbell(uint16_t, uint16_t, uint64_t);
 
   void clearInterrupt(uint16_t);
   void updateInterrupt(uint16_t, bool);
 
+  void submit(CQEntryWrapper &);
   int createCQueue(uint16_t, uint16_t, uint16_t, bool, bool, uint64_t);
   int createSQueue(uint16_t, uint16_t, uint16_t, uint8_t, bool, uint64_t);
   int deleteCQueue(uint16_t);

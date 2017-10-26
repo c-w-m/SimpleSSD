@@ -22,12 +22,12 @@
 
 #include <list>
 
-#include "hil/nvme/config.hh"
 #include "hil/nvme/def.hh"
 #include "hil/nvme/dma.hh"
 #include "hil/nvme/interface.hh"
 #include "hil/nvme/queue.hh"
 #include "hil/nvme/subsystem.hh"
+#include "util/config.hh"
 
 namespace SimpleSSD {
 
@@ -75,9 +75,12 @@ class Controller {
   std::list<CQEntryWrapper> lCQFIFO;  //!< Internal FIFO queue for completion
 
   ConfigData cfgdata;
+  Config &conf;
+
+  static bool checkQueue(SQueue *, std::list<SQEntryWrapper> &, uint64_t &);
 
  public:
-  Controller(Interface *, Config *);
+  Controller(Interface *, ConfigReader *);
   ~Controller();
 
   uint64_t readRegister(uint64_t, uint64_t, uint8_t *, uint64_t);
@@ -96,7 +99,8 @@ class Controller {
   int abort(uint16_t, uint16_t);
   void identify(uint8_t *);
 
-  void collectSQueue();
+  uint64_t collectSQueue(uint64_t);
+  uint64_t work(uint64_t);
 };
 
 }  // namespace NVMe

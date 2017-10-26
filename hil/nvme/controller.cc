@@ -27,14 +27,17 @@ RegisterTable::_RegisterTable() {
   memset(data, 0, 64);
 }
 
-Controller::Controller(Interface *intrface, Config *conf)
-    : pParent(intrface), adminQueueInited(false), interruptMask(0) {
-  pDmaEngine = new DMAScheduler(pParent, conf);
+Controller::Controller(Interface *intrface, ConfigReader *c)
+    : pParent(intrface),
+      adminQueueInited(false),
+      interruptMask(0),
+      conf(c->nvmeConfig) {
+  pDmaEngine = new DMAScheduler(pParent, &conf);
 
   // Allocate array for Command Queues
-  ppCQueue = (CQueue **)calloc(conf->readUint(NVME_MAX_IO_CQUEUE) + 1,
+  ppCQueue = (CQueue **)calloc(conf.readUint(NVME_MAX_IO_CQUEUE) + 1,
                                sizeof(CQueue *));
-  ppSQueue = (SQueue **)calloc(conf->readUint(NVME_MAX_IO_SQUEUE) + 1,
+  ppSQueue = (SQueue **)calloc(conf.readUint(NVME_MAX_IO_SQUEUE) + 1,
                                sizeof(SQueue *));
 
   // [Bits ] Name  : Description                     : Current Setting
@@ -53,7 +56,7 @@ Controller::Controller(Interface *intrface, Config *conf)
   registers.capabilities = 0x0020002028010FFF;
   registers.version = 0x00010201;  // NVMe 1.2.1
 
-  cfgdata.conf = conf;
+  cfgdata.conf = c;
   cfgdata.maxQueueEntry = (registers.capabilities & 0xFFFF) + 1;
 
   pSubsystem = new Subsystem(this, &cfgdata);
@@ -62,15 +65,13 @@ Controller::Controller(Interface *intrface, Config *conf)
 Controller::~Controller() {
   delete pSubsystem;
 
-  for (uint16_t i = 0; i < cfgdata.conf->readUint(NVME_MAX_IO_CQUEUE) + 1;
-       i++) {
+  for (uint16_t i = 0; i < conf.readUint(NVME_MAX_IO_CQUEUE) + 1; i++) {
     if (ppCQueue[i]) {
       delete ppCQueue[i];
     }
   }
 
-  for (uint16_t i = 0; i < cfgdata.conf->readUint(NVME_MAX_IO_SQUEUE) + 1;
-       i++) {
+  for (uint16_t i = 0; i < conf.readUint(NVME_MAX_IO_SQUEUE) + 1; i++) {
     if (ppSQueue[i]) {
       delete ppSQueue[i];
     }
@@ -188,8 +189,7 @@ uint64_t Controller::writeRegister(uint64_t offset, uint64_t size,
         if (registers.configuration & 0x00000001) {
           registers.status |= 0x00000001;
 
-          pParent->enableController(
-              cfgdata.conf->readUint(NVME_QUEUE_INTERVAL));
+          pParent->enableController(conf.readUint(NVME_QUEUE_INTERVAL));
         }
         // If EN = 0, Set CSTS.RDY = 0
         else {
@@ -346,8 +346,7 @@ void Controller::clearInterrupt(uint16_t interruptVector) {
   uint16_t notFinished = 0;
 
   // Check all queues associated with same interrupt vector are processed
-  for (uint16_t i = 0; i < cfgdata.conf->readUint(NVME_MAX_IO_CQUEUE) + 1;
-       i++) {
+  for (uint16_t i = 0; i < conf.readUint(NVME_MAX_IO_CQUEUE) + 1; i++) {
     if (ppCQueue[i]) {
       if (ppCQueue[i]->getInterruptVector() == interruptVector) {
         notFinished += ppCQueue[i]->getItemCount();
@@ -429,7 +428,7 @@ int Controller::deleteCQueue(uint16_t cqid) {
   int ret = 0;  // Success
 
   if (ppCQueue[cqid] != NULL && cqid > 0) {
-    for (uint16_t i = 1; i < cfgdata.conf->readUint(NVME_MAX_IO_CQUEUE) + 1; i++) {
+    for (uint16_t i = 1; i < conf.readUint(NVME_MAX_IO_CQUEUE) + 1; i++) {
       if (ppSQueue[i]) {
         if (ppSQueue[i]->getCQID() == cqid) {
           ret = 2;  // Invalid Queue Deletion
@@ -459,7 +458,7 @@ int Controller::deleteSQueue(uint16_t sqid) {
     // Create abort response
     uint16_t sqHead = ppSQueue[sqid]->getHead();
     uint16_t status = 0x8000 | (TYPE_GENERIC_COMMAND_STATUS << 9) |
-                     (STATUS_ABORT_DUE_TO_SQ_DELETE << 1);
+                      (STATUS_ABORT_DUE_TO_SQ_DELETE << 1);
 
     // Abort all commands in SQueue
     for (auto iter = lSQFIFO.begin(); iter != lSQFIFO.end(); iter++) {
@@ -498,7 +497,7 @@ int Controller::abort(uint16_t sqid, uint16_t cid) {
       // Create abort response
       sqHead = ppSQueue[sqid]->getHead();
       status = 0x8000 | (TYPE_GENERIC_COMMAND_STATUS << 9) |
-                       (STATUS_ABORT_REQUESTED << 1);
+               (STATUS_ABORT_REQUESTED << 1);
 
       // Submit abort
       CQEntryWrapper wrapper(*iter);
@@ -518,9 +517,661 @@ int Controller::abort(uint16_t sqid, uint16_t cid) {
   return ret;
 }
 
-void Controller::identify(uint8_t *data) {}
+void Controller::identify(uint8_t *data) {
+  uint16_t vid, ssvid;
+  uint64_t totalSize = cfgdata.conf->getNVMCapacity();
+  uint64_t unallocated = totalSize - pSubsystem->allocatedNVMCapacity();
+  uint32_t nn = pSubsystem->validNamespaceCount();
 
-void Controller::collectSQueue() {}
+  pParent->getVendorID(vid, ssvid);
+
+  /** Controller Capabilities and Features **/
+  {
+    // PCI Vendor ID
+    memcpy(data + 0x0000, &vid, 2);
+
+    // PCI Subsystem Vendor ID
+    memcpy(data + 0x0002, &ssvid, 2);
+
+    // Serial Number
+    strncpy((char *)data + 0x0004, "00000000000000000000", 0x14);
+
+    // Model Number
+    strncpy((char *)data + 0x0018, "gem5 NVMe Controller by Donghyun Gouk   ",
+            0x28);
+
+    // Firmware Revision
+    strncpy((char *)data + 0x0040, "v01.0000", 0x08);
+
+    // Recommended Arbitration Burst
+    data[0x0048] = 0x00;
+
+    // IEEE OUI Identifier (Same as Inter 750)
+    {
+      data[0x0049] = 0xE4;
+      data[0x004A] = 0xD2;
+      data[0x004B] = 0x5C;
+    }
+
+    // Controller Multi-Path I/O and Namespace Sharing Capabilities
+    // [Bits ] Description
+    // [07:03] Reserved
+    // [02:02] 1 for SR-IOV Virtual Function, 0 for PCI (Physical) Function
+    // [01:01] 1 for more than one host may connected to NVM subsystem
+    // [00:00] 1 for NVM subsystem may has more than one NVM subsystem port
+    data[0x004C] = 0x00;
+
+    // Maximum Data Transfer Size
+    data[0x004D] = 0x00;  // No limit
+
+    // Controller ID
+    {
+      data[0x004E] = 0x00;
+      data[0x004F] = 0x00;
+    }
+
+    // Version
+    {
+      data[0x0050] = 0x01;
+      data[0x0051] = 0x02;
+      data[0x0052] = 0x01;
+      data[0x0053] = 0x00;
+    }  // NVM Express 1.2.1 Compliant Controller
+
+    // RTD3 Resume Latency
+    {
+      data[0x0054] = 0x00;
+      data[0x0055] = 0x00;
+      data[0x0056] = 0x00;
+      data[0x0057] = 0x00;
+    }  // Not reported
+
+    // RTD3 Enter Latency
+    {
+      data[0x0058] = 0x00;
+      data[0x0059] = 0x00;
+      data[0x005A] = 0x00;
+      data[0x005B] = 0x00;
+    }  // Not repotred
+
+    // Optional Asynchronous Events Supported
+    {
+      // [Bits ] Description
+      // [31:10] Reserved
+      // [09:09] 1 for Support Firmware Activation Notice
+      // [08:08] 1 for Support Namespace Attributes Notice
+      // [07:00] Reserved
+      data[0x005C] = 0x00;
+      data[0x005D] = 0x00;
+      data[0x005E] = 0x00;
+      data[0x005F] = 0x00;
+    }
+
+    // Controller Attributes
+    {
+      // [Bits ] Description
+      // [31:01] Reserved
+      // [00:00] 1 for Support 128-bit Host Identifier
+      data[0x0060] = 0x00;
+      data[0x0061] = 0x00;
+      data[0x0062] = 0x00;
+      data[0x0063] = 0x00;
+    }
+    memset(data + 0x0064, 0, 156);  // Reserved
+  }
+
+  /** Admin Command Set Attributes & Optional Controller Capabilities **/
+  {
+    // Optional Admin Command Support
+    {
+      // [Bits ] Description
+      // [15:04] Reserved
+      // [03:03] 1 for Support Namespace Management and Namespace Attachment
+      //         commands
+      // [02:02] 1 for Support Firmware Commit and Firmware Image Download
+      //         commands
+      // [01:01] 1 for Support Format NVM command
+      // [00:00] 1 for Support Security Send and Security Receive commands
+      data[0x0100] = 0x08;
+      data[0x0101] = 0x00;
+    }
+
+    // Abort Command Limit
+    data[0x0102] = 0x03;  // Recommanded value is 4 (3 + 1)
+
+    // Asynchronous Event Request Limit
+    data[0x0103] = 0x03;  // Recommanded value is 4 (3 + 1))
+
+    // Firmware Updates
+    // [Bits ] Description
+    // [07:05] Reserved
+    // [04:04] 1 for Support firmware activation without a reset
+    // [03:01] The number of firmware slot
+    // [00:00] 1 for First firmware slot is read only, 0 for read/write
+    data[0x0104] = 0x00;
+
+    // Log Page Attributes
+    // [Bits ] Description
+    // [07:03] Reserved
+    // [02:02] 1 for Support extended data for Get Log Page command
+    // [01:01] 1 for Support Command Effects log page
+    // [00:00] 1 for Support S.M.A.R.T. / Health information log page per
+    //         namespace basis
+    data[0x0105] = 0x01;
+
+    // Error Log Page Entries, 0's based value
+    data[0x0106] = 0x63;  // 64 entries
+
+    // Number of Power States Support, 0's based value
+    data[0x0107] = 0x00;  // 1 states
+
+    // Admin Vendor Specific Command Configuration
+    // [Bits ] Description
+    // [07:01] Reserved
+    // [00:00] 1 for all vendor specific commands use the format at Figure 12.
+    //         0 for format is vendor specific
+    data[0x0108] = 0x00;
+
+    // Autonomous Power State Transition Attributes
+    // [Bits ] Description
+    // [07:01] Reserved
+    // [00:00] 1 for Support autonomous power state transitions
+    data[0x0109] = 0x00;
+
+    // Warning Composite Temperature Threshold
+    {
+      data[0x010A] = 0x00;
+      data[0x010B] = 0x00;
+    }
+
+    // Critical Composite Temperature Threshold
+    {
+      data[0x010C] = 0x00;
+      data[0x010D] = 0x00;
+    }
+
+    // Maximum Time for Firmware Activation
+    {
+      data[0x010E] = 0x00;
+      data[0x010F] = 0x00;
+    }
+
+    // Host Memory Buffer Preferred Size
+    {
+      data[0x0110] = 0x00;
+      data[0x0111] = 0x00;
+      data[0x0112] = 0x00;
+      data[0x0113] = 0x00;
+    }
+
+    // Host Memory Buffer Minimum Size
+    {
+      data[0x0114] = 0x00;
+      data[0x0115] = 0x00;
+      data[0x0116] = 0x00;
+      data[0x0117] = 0x00;
+    }
+
+    // Total NVM Capacity
+    {
+      memcpy(data + 0x118, &totalSize, 8);
+      memset(data + 0x120, 0, 8);
+    }
+
+    // Unallocated NVM Capacity
+    {
+      memcpy(data + 0x118, &unallocated, 8);
+      memset(data + 0x120, 0, 8);
+    }
+
+    // Replay Protected Memory Block Support
+    {
+      // [Bits ] Description
+      // [31:24] Access Size
+      // [23:16] Total Size
+      // [15:06] Reserved
+      // [05:03] Authentication Method
+      // [02:00] Number of RPMB Units
+      data[0x0138] = 0x00;
+      data[0x0139] = 0x00;
+      data[0x013A] = 0x00;
+      data[0x013B] = 0x00;
+    }
+
+    // Reserved
+    memset(data + 0x013C, 0, 4);
+
+    // Keep Alive Support
+    {
+      data[0x0140] = 0x00;
+      data[0x0141] = 0x00;
+    }
+
+    // Reserved
+    memset(data + 0x0142, 0, 190);
+  }
+
+  /** NVM Command Set Attributes **/
+  {
+    // Submission Queue Entry Size
+    // [Bits ] Description
+    // [07:04] Maximum Submission Queue Entry Size
+    // [03:00] Minimum Submission Queue Entry Size
+    data[0x0200] = 0x66;  // 64Bytes, 64Bytes
+
+    // Completion Queue Entry Size
+    // [Bits ] Description
+    // [07:04] Maximum Completion Queue Entry Size
+    // [03:00] Minimum Completion Queue Entry Size
+    data[0x0201] = 0x44;  // 16Bytes, 16Bytes
+
+    // Maximum  Outstanding Commands
+    {
+      data[0x0202] = 0x00;
+      data[0x0203] = 0x00;
+    }
+
+    // Number of Namespaces
+    memcpy(data + 0x0204, &nn, 4);
+
+    // Optional NVM Command Support
+    {
+      // [Bits ] Description
+      // [15:06] Reserved
+      // [05:05] 1 for Support reservations
+      // [04:04] 1 for Support Save field in Set Features command and Select
+      //         field in Get Features command
+      // [03:03] 1 for Support Write Zeros command
+      // [02:02] 1 for Support Dataset Management command
+      // [01:01] 1 for Support Write Uncorrectable command
+      // [00:00] 1 for Support Compare command
+      data[0x0208] = 0x04;
+      data[0x0209] = 0x00;
+    }
+
+    // Fused Operation Support
+    {
+      // [Bits ] Description
+      // [15:01] Reserved
+      // [00:00] 1 for Support Compare and Write fused operation
+      data[0x020A] = 0x00;
+      data[0x020B] = 0x00;
+    }
+
+    // Format NVM Attributes
+    // [Bits ] Description
+    // [07:03] Reserved
+    // [02:02] 1 for Support cryptographic erase
+    // [01:01] 1 for Support cryptographic erase performed on all namespaces,
+    //         0 for namespace basis
+    // [00:00] 1 for Format on specific namespace results on format on all
+    //         namespaces, 0 for namespace basis
+    data[0x020C] = 0x00;
+
+    // Volatile Write Cache
+    // [Bits ] Description
+    // [07:01] Reserved
+    // [00:00] 1 for volatile write cache is present
+    data[0x020D] = nvmeConfig.WriteCaching ? 0x01 : 0x00;
+
+    // Atomic Write Unit Normal
+    {
+      data[0x020E] = 0x00;
+      data[0x020F] = 0x00;
+    }
+
+    // Atomic Write Unit Power Fail
+    {
+      data[0x0210] = 0x00;
+      data[0x0211] = 0x00;
+    }
+
+    // NVM Vendor Specific Command Configuration
+    // [Bits ] Description
+    // [07:01] Reserved
+    // [00:00] 1 for all vendor specific commands use the format at Figure 12.
+    //         0 for format is vendor specific
+    data[0x0212] = 0x00;
+
+    // Reserved
+    data[0x0213] = 0x00;
+
+    // Atomic Compare & Write Unit
+    {
+      data[0x0214] = 0x00;
+      data[0x0215] = 0x00;
+    }
+
+    // Reserved
+    memset(data + 0x0216, 0, 2);
+
+    // SGL Support
+    {
+      // [Bits ] Description
+      // [31:21] Reserved
+      // [20:20] 1 for Support Address field in SGL Data Block
+      // [19:19] 1 for Support MPTR containing SGL descriptor
+      // [18:18] 1 for Support MPTR/DPTR containing SGL with larger than amouont
+      //         of data to be trasferred
+      // [17:17] 1 for Support byte aligned contiguous physical buffer of
+      //         metadata is supported
+      // [16:16] 1 for Support SGL Bit Bucket descriptor
+      // [15:03] Reserved
+      // [02:02] 1 for Support Keyed SGL Data Block descriptor
+      // [01:01] Reserved
+      // [00:00] 1 for Support SGLs in NVM Command Set
+      data[0x0218] = 0x00;
+      data[0x0219] = 0x00;
+      data[0x021A] = 0x00;
+      data[0x021B] = 0x00;
+    }
+
+    // Reserved
+    memset(data + 0x021C, 0, 228);
+
+    // NVM Subsystem NVMe Qualified Name
+    {
+      memset(data + 0x300, 0, 0x100);
+      strncpy((char *)data + 0x0300,
+              "nqn.2014-08.org.nvmexpress:uuid:270a1c70-962c-4116-6f1e340b9321",
+              0x44);
+    }
+
+    // Reserved
+    memset(data + 0x0400, 0, 768);
+
+    // NVMe over Fabric
+    memset(data + 0x0700, 0, 256);
+  }
+
+  /** Power State Descriptors **/
+  // Power State 0
+  /// Descriptor
+  {
+    // Maximum Power
+    {
+      data[0x0800] = 0xC4;
+      data[0x0801] = 0x09;
+    }
+
+    // Reserved
+    data[0x0802] = 0x00;
+
+    // [Bits ] Description
+    // [31:26] Reserved
+    // [25:25] Non-Operational State
+    // [24:24] Max Power Scale
+    data[0x0803] = 0x00;
+
+    // Entry Latency
+    {
+      data[0x0804] = 0x00;
+      data[0x0805] = 0x00;
+      data[0x0806] = 0x00;
+      data[0x0807] = 0x00;
+    }
+
+    // Exit Latency
+    {
+      data[0x0808] = 0x00;
+      data[0x0809] = 0x00;
+      data[0x080A] = 0x00;
+      data[0x080B] = 0x00;
+    }
+
+    // [Bits   ] Description
+    // [103:101] Reserved
+    // [100:096] Relative Read Throughput
+    data[0x080C] = 0x00;
+
+    // [Bits   ] Description
+    // [111:109] Reserved
+    // [108:104] Relative Read Latency
+    data[0x080D] = 0x00;
+
+    // [Bits   ] Description
+    // [119:117] Reserved
+    // [116:112] Relative Write Throughput
+    data[0x080E] = 0x00;
+
+    // [Bits   ] Description
+    // [127:125] Reserved
+    // [124:120] Relative Write Latency
+    data[0x080E] = 0x00;
+
+    // Idle Power
+    {
+      data[0x080F] = 0x00;
+      data[0x0810] = 0x00;
+    }
+
+    // [Bits   ] Description
+    // [151:150] Idle Power Scale
+    // [149:144] Reserved
+    data[0x0811] = 0x00;
+
+    // Reserved
+    data[0x0812] = 0x00;
+
+    // Active Power
+    {
+      data[0x0813] = 0x00;
+      data[0x0814] = 0x00;
+    }
+
+    // [Bits   ] Description
+    // [183:182] Active Power Scale
+    // [181:179] Reserved
+    // [178:176] Active Power Workload
+    data[0x0815] = 0x00;
+
+    // Reserved
+    memset(data + 0x0816, 0, 9);
+  }
+
+  // PSD1 ~ PSD31
+  memset(data + 0x0820, 0, 992);
+
+  // Vendor specific area
+  memset(data + 0x0C00, 0, 1024);
+}
+
+uint64_t Controller::collectSQueue(uint64_t tick) {
+  static uint16_t sqcount = conf.readUint(NVME_MAX_IO_SQUEUE) + 1;
+  static uint16_t wrrHigh = conf.readUint(NVME_WRR_HIGH);
+  static uint16_t wrrMedium = conf.readUint(NVME_WRR_MEDIUM);
+
+  // Check ready
+  if (!(registers.status & 0x00000001)) {
+    return tick;
+  }
+
+  // Round robin
+  if (arbitration == ROUND_ROBIN) {
+    SQueue *pQueue;
+
+    uint16_t updated = 0;
+
+    while (true) {
+      for (uint16_t i = 0; i < sqcount; i++) {
+        pQueue = ppSQueue[i];
+
+        if (pQueue) {
+          if (checkQueue(pQueue, lSQFIFO, tick)) {
+            updated++;
+          }
+        }
+      }
+
+      if (updated == 0) {
+        break;
+      }
+
+      updated = 0;
+    }
+  }
+  // Weighted round robin
+  else if (arbitration == WEIGHTED_ROUND_ROBIN) {
+    SQueue *pQueue;
+
+    uint16_t updated = 0;
+
+    // Collect all Admin Commands
+    pQueue = ppSQueue[0];
+
+    while (true) {
+      if (!checkQueue(pQueue, lSQFIFO, tick)) {
+        break;
+      }
+    }
+
+    // Round robin all urgent command queues
+    while (true) {
+      for (uint16_t i = 1; i < sqcount; i++) {
+        pQueue = ppSQueue[i];
+
+        if (pQueue) {
+          if (pQueue->getPriority() == PRIORITY_URGENT) {
+            if (checkQueue(pQueue, lSQFIFO, tick)) {
+              updated++;
+            }
+          }
+        }
+      }
+
+      if (updated == 0) {
+        break;
+      }
+
+      updated = 0;
+    }
+
+    // Weighted Round robin
+    uint32_t total_updated = 0;
+
+    while (true) {
+      // Round robin all high-priority command queues
+      for (uint16_t i = 1; i < sqcount; i++) {
+        pQueue = ppSQueue[i];
+
+        if (pQueue) {
+          if (pQueue->getPriority() == PRIORITY_HIGH) {
+            if (checkQueue(pQueue, lSQFIFO, tick)) {
+              updated++;
+              total_updated++;
+
+              if (updated == wrrHigh) {
+                updated = 0;
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      // Round robin all medium-priority command queues
+      for (uint16_t i = 1; i < sqcount; i++) {
+        pQueue = ppSQueue[i];
+
+        if (pQueue) {
+          if (pQueue->getPriority() == PRIORITY_MEDIUM) {
+            if (checkQueue(pQueue, lSQFIFO, tick)) {
+              updated++;
+              total_updated++;
+
+              if (updated == wrrMedium) {
+                updated = 0;
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      // Round robin all low-priority command queues
+      for (uint16_t i = 1; i < sqcount; i++) {
+        pQueue = ppSQueue[i];
+
+        if (pQueue) {
+          if (pQueue->getPriority() == PRIORITY_MEDIUM) {
+            if (checkQueue(pQueue, lSQFIFO, tick)) {
+              total_updated++;
+
+              break;
+            }
+          }
+        }
+      }
+
+      // Check finished
+      if (total_updated == 0) {
+        break;
+      }
+
+      total_updated = 0;
+    }
+  }
+  else {
+    // panic("nvme_ctrl: Invalid arbitration method\n");
+  }
+
+  return tick;
+}
+
+uint64_t Controller::work(uint64_t tick) {
+  // Check ready
+  if (!(registers.status & 0x00000001)) {
+    return tick;
+  }
+
+  // Check CQFIFO
+  if (lCQFIFO.size() > 0) {
+    CQueue *pQueue;
+
+    for (auto iter = lCQFIFO.begin(); iter != lCQFIFO.end(); iter++) {
+      if (iter->submitAt <= tick) {
+        pQueue = ppCQueue[iter->cqID];
+
+        // Write CQ
+        tick = pQueue->setData(&iter->entry, tick);
+
+        // Delete entry
+        iter = lCQFIFO.erase(iter);
+
+        // Collect interrupt vector
+        if (pQueue->interruptEnabled()) {
+          // Update interrupt
+          updateInterrupt(pQueue->getInterruptVector(), true);
+        }
+      }
+    }
+  }
+
+  // Check SQFIFO
+  if (lSQFIFO.size() > 0) {
+    SQEntryWrapper front = lSQFIFO.front();
+    lSQFIFO.pop_front();
+
+    pSubsystem->submitCommand(front);
+  }
+
+  return tick;
+}
+
+bool Controller::checkQueue(SQueue *pQueue, std::list<SQEntryWrapper> &fifo,
+                            uint64_t &tick) {
+  SQEntry entry;
+
+  if (pQueue->getItemCount() > 0) {
+    tick = pQueue->getData(&entry, tick);
+    fifo.push_back(SQEntryWrapper(entry, pQueue->getID(), pQueue->getHead(),
+                                  pQueue->getCQID()));
+
+    return true;
+  }
+
+  return false;
+}
 
 }  // namespace NVMe
 

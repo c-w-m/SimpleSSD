@@ -42,17 +42,17 @@ typedef enum {
 
 class Config : public BaseConfig {
  private:
-  std::string dmaDelay;
-  std::string queueInterval;
-  std::string maxIOCQueue;
-  std::string maxIOSQueue;
-  std::string wrrHigh;
-  std::string wrrMidium;
-  std::string enableDefaultNamespace;
-  std::string lbaSize;
-  std::string enableDiskImage;
-  std::string strictDiskSize;
-  std::string diskImagePath;
+  uint64_t queueInterval;       //!< Default: 1000000
+  float dmaDelay;               //!< Default: 256.90625 (PCIe 3.0 x4)
+  uint16_t maxIOCQueue;         //!< Default: 16
+  uint16_t maxIOSQueue;         //!< Default: 16
+  uint16_t wrrHigh;             //!< Default: 2
+  uint16_t wrrMidium;           //!< Default: 2
+  uint64_t lbaSize;             //!< Default: 512
+  bool enableDefaultNamespace;  //!< Default: True
+  bool enableDiskImage;         //!< Default: False
+  bool strictDiskSize;          //!< Default: False
+  std::string diskImagePath;    //!< Default: ""
 
  public:
   Config();

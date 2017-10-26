@@ -189,7 +189,8 @@ uint64_t Controller::writeRegister(uint64_t offset, uint64_t size,
         if (registers.configuration & 0x00000001) {
           registers.status |= 0x00000001;
 
-          pParent->enableController(conf.readUint(NVME_QUEUE_INTERVAL));
+          pParent->enableController(conf.readUint(NVME_QUEUE_INTERVAL),
+                                    conf.readUint(NVME_WORK_INTERVAL));
         }
         // If EN = 0, Set CSTS.RDY = 0
         else {

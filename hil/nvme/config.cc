@@ -26,6 +26,7 @@ namespace NVMe {
 
 const char NAME_DMA_DELAY[] = "DMADelay";
 const char NAME_QUEUE_INTERVAL[] = "QueueInterval";
+const char NAME_WORK_INTERVAL[] = "WorkInterval";
 const char NAME_MAX_IO_CQUEUE[] = "MaxIOCQueue";
 const char NAME_MAX_IO_SQUEUE[] = "MaxIOSQueue";
 const char NAME_WRR_HIGH[] = "WRRHigh";
@@ -38,6 +39,7 @@ const char NAME_DISK_IMAGE_PATH[] = "DiskImageFile";
 
 Config::Config() {
   queueInterval = 1000000;
+  workInterval = 50000;
   dmaDelay = 256.90625f;
   maxIOCQueue = 16;
   maxIOSQueue = 16;
@@ -58,6 +60,9 @@ bool Config::setConfig(const char *name, const char *value) {
   }
   else if (MATCH_NAME(NAME_QUEUE_INTERVAL)) {
     queueInterval = strtoul(value, nullptr, 10);
+  }
+  else if (MATCH_NAME(NAME_WORK_INTERVAL)) {
+    workInterval = strtoul(value, nullptr, 10);
   }
   else if (MATCH_NAME(NAME_MAX_IO_CQUEUE)) {
     maxIOCQueue = (uint16_t)strtoul(value, nullptr, 10);
@@ -95,7 +100,7 @@ bool Config::setConfig(const char *name, const char *value) {
 
 void Config::update() {
   if (popcount(lbaSize) != 1) {
-    // TODO: invalud lba size
+    // TODO: invalid lba size
   }
 }
 
@@ -127,6 +132,9 @@ uint64_t Config::readUint(uint32_t idx) {
     case NVME_QUEUE_INTERVAL:
       ret = queueInterval;
       break;
+    case NVME_WORK_INTERVAL:
+      ret = workInterval;
+      break;
     case NVME_MAX_IO_CQUEUE:
       ret = maxIOCQueue;
       break;
@@ -136,8 +144,8 @@ uint64_t Config::readUint(uint32_t idx) {
     case NVME_WRR_HIGH:
       ret = wrrHigh;
       break;
-    case NVME_WRR_MID:
-      ret = wrrMidium;
+    case NVME_WRR_MEDIUM:
+      ret = wrrMedium;
       break;
     case NVME_LBA_SIZE:
       ret = lbaSize;

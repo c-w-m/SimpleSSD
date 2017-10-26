@@ -33,6 +33,9 @@ class Interface {
 
   virtual void dmaRead(uint64_t, uint64_t, uint8_t *) = 0;
   virtual void dmaWrite(uint64_t, uint64_t, uint8_t *) = 0;
+
+  virtual void enableController(uint64_t) = 0;
+  virtual void disableController() = 0;
 };
 
 }  // namespace NVMe

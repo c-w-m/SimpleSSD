@@ -34,6 +34,7 @@ class HIL {
 
  public:
   HIL(ConfigReader *);
+  ~HIL();
 
   uint64_t read(uint64_t, uint64_t, uint64_t);
   uint64_t write(uint64_t, uint64_t, uint64_t);

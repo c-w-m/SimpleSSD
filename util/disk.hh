@@ -38,7 +38,7 @@ class Disk {
 
  public:
   Disk();
-  ~Disk();
+  virtual ~Disk();
 
   virtual uint64_t open(std::string, uint32_t);
   virtual void close();

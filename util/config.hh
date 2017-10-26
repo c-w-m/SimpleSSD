@@ -36,6 +36,8 @@ class ConfigReader {
   NVMe::Config nvmeConfig;
 
   bool init(std::string);
+
+  uint64_t getNVMCapacity();
 };
 
 }  // namespace SimpleSSD

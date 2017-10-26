@@ -17,9 +17,6 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __HIL_NVME_NAMESPACE__
-#define __HIL_NVME_NAMESPACE__
-
 #include "hil/nvme/subsystem.hh"
 
 namespace SimpleSSD {
@@ -28,20 +25,43 @@ namespace HIL {
 
 namespace NVMe {
 
-class Namespace {
- private:
-  Subsystem *pParent;
+Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
+    : pParent(ctrl),
+      pDisk(nullptr),
+      pCfgdata(cfg),
+      conf(cfg->conf->nvmeConfig) {
+  if (conf.readBoolean(NVME_ENABLE_DISK_IMAGE)) {
+    if (conf.readBoolean(NVME_USE_COW_DISK)) {
+      pDisk = new CoWDisk();
+    }
+    else {
+      pDisk = new Disk();
+    }
 
-  ConfigData *pCfgdata;
+    // TODO
+  }
 
- public:
-  Namespace(Subsystem *, ConfigData *);
-};
+  if (conf.readBoolean(NVME_ENABLE_DEFAULT_NAMESPACE)) {
+    // TODO
+  }
+
+  pHIL = new HIL(cfg->conf);
+}
+
+Subsystem::~Subsystem() {
+  if (pDisk) {
+    delete pDisk;
+  }
+
+  for (auto &iter : lNamespaces) {
+    delete iter;
+  }
+
+  delete pHIL;
+}
 
 }  // namespace NVMe
 
 }  // namespace HIL
 
 }  // namespace SimpleSSD
-
-#endif

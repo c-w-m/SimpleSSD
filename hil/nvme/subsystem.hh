@@ -20,19 +20,62 @@
 #ifndef __HIL_NVME_SUBSYSTEM__
 #define __HIL_NVME_SUBSYSTEM__
 
+#include "hil/hil.hh"
 #include "hil/nvme/controller.hh"
+#include "hil/nvme/namespace.hh"
+#include "util/disk.hh"
 
 namespace SimpleSSD {
 
+namespace HIL {
+
 namespace NVMe {
 
+typedef union _HealthInfo {
+  uint8_t data[0x200];
+  struct {
+    uint8_t status;
+    uint16_t temperature;
+    uint8_t availableSpare;
+    uint8_t spareThreshold;
+    uint8_t lifeUsed;
+    uint8_t reserved[26];
+    uint64_t readL;
+    uint64_t readH;
+    uint64_t writeL;
+    uint64_t writeH;
+    uint64_t readCommandL;
+    uint64_t readCommandH;
+    uint64_t writeCommandL;
+    uint64_t writeCommandH;
+  };
+
+  _HealthInfo();
+} HealthInfo;
+
 class Subsystem {
+ private:
+  Controller *pParent;
+  HIL *pHIL;
+  Disk *pDisk;
+
+  std::list<Namespace *> lNamespaces;
+
+  ConfigData *pCfgdata;
+  Config &conf;
+
  public:
   Subsystem(Controller *, ConfigData *);
   ~Subsystem();
+
+  uint64_t submitCommand(SQEntryWrapper &, uint64_t);
+  uint64_t allocatedNVMCapacity();
+  uint32_t validNamespaceCount();
 };
 
 }  // namespace NVMe
+
+}  // namespace HIL
 
 }  // namespace SimpleSSD
 

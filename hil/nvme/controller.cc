@@ -1155,7 +1155,7 @@ uint64_t Controller::work(uint64_t tick) {
     SQEntryWrapper front = lSQFIFO.front();
     lSQFIFO.pop_front();
 
-    pSubsystem->submitCommand(front);
+    tick = pSubsystem->submitCommand(front, tick);
   }
 
   return tick;

@@ -20,4 +20,28 @@
 #ifndef __ICL_CACHE__
 #define __ICL_CACHE__
 
+#include "ftl/ftl.hh"
+#include "util/config.hh"
+
+namespace SimpleSSD {
+
+namespace ICL {
+
+class Cache {
+ private:
+  ConfigReader *conf;
+
+ public:
+  Cache(ConfigReader *);
+
+  uint64_t read(uint64_t, uint64_t, uint64_t);
+  uint64_t write(uint64_t, uint64_t, uint64_t);
+  uint64_t flush(uint64_t, uint64_t, uint64_t);
+  uint64_t trim(uint64_t, uint64_t, uint64_t);
+};
+
+}  // namespace ICL
+
+}  // namespace SimpleSSD
+
 #endif

@@ -23,7 +23,13 @@ namespace SimpleSSD {
 
 namespace HIL {
 
-HIL::HIL(ConfigReader *c) : conf(c) {}
+HIL::HIL(ConfigReader *c) : conf(c) {
+  cache = new ICL::Cache(conf);
+}
+
+HIL::~HIL() {
+  delete cache;
+}
 
 }  // namespace HIL
 

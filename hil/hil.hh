@@ -30,6 +30,7 @@ namespace HIL {
 class HIL {
  private:
   ConfigReader *conf;
+  ICL::Cache *cache;
 
  public:
   HIL(ConfigReader *);

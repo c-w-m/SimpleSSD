@@ -41,6 +41,7 @@ typedef enum {
   NVME_ENABLE_DISK_IMAGE,
   NVME_STRICT_DISK_SIZE,
   NVME_DISK_IMAGE_PATH,
+  NVME_USE_COW_DISK
 } NVME_CONFIG;
 
 class Config : public BaseConfig {
@@ -56,6 +57,7 @@ class Config : public BaseConfig {
   bool enableDefaultNamespace;  //!< Default: True
   bool enableDiskImage;         //!< Default: False
   bool strictDiskSize;          //!< Default: False
+  bool useCopyOnWriteDisk;      //!< Default: False
   std::string diskImagePath;    //!< Default: ""
 
  public:

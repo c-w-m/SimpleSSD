@@ -38,6 +38,7 @@ const char NAME_LBA_SIZE[] = "LBASize";
 const char NAME_ENABLE_DISK_IMAGE[] = "EnableDiskImage";
 const char NAME_STRICT_DISK_SIZE[] = "StrickSizeCheck";
 const char NAME_DISK_IMAGE_PATH[] = "DiskImageFile";
+const char NAME_USE_COW_DISK[] = "UseCopyOnWriteDisk";
 
 Config::Config() {
   queueInterval = 1000000;
@@ -52,6 +53,7 @@ Config::Config() {
   enableDiskImage = false;
   strictDiskSize = false;
   diskImagePath = "";
+  useCopyOnWriteDisk = false;
 }
 
 bool Config::setConfig(const char *name, const char *value) {
@@ -92,6 +94,9 @@ bool Config::setConfig(const char *name, const char *value) {
   }
   else if (MATCH_NAME(NAME_DISK_IMAGE_PATH)) {
     diskImagePath = value;
+  }
+  else if (MATCH_NAME(NAME_USE_COW_DISK)) {
+    useCopyOnWriteDisk = convertBool(value);
   }
   else {
     ret = false;
@@ -193,6 +198,9 @@ bool Config::readBoolean(uint32_t idx) {
       break;
     case NVME_STRICT_DISK_SIZE:
       ret = strictDiskSize;
+      break;
+    case NVME_USE_COW_DISK:
+      ret = useCopyOnWriteDisk;
       break;
   }
 

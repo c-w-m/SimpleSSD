@@ -20,12 +20,14 @@
 #ifndef __HIL_NVME_CONTROLLER__
 #define __HIL_NVME_CONTROLLER__
 
+#include <list>
+
 #include "hil/nvme/config.hh"
 #include "hil/nvme/def.hh"
 #include "hil/nvme/dma.hh"
 #include "hil/nvme/interface.hh"
 #include "hil/nvme/queue.hh"
-#include "util/list.hh"
+#include "hil/nvme/subsystem.hh"
 
 namespace SimpleSSD {
 
@@ -69,8 +71,8 @@ class Controller {
   CQueue *pCQueue;  //!< Completion Queue array
   SQueue *pSQueue;  //!< Submission Queue array
 
-  List<SQEntryWrapper *> lSQFIFO;  //!< Internal FIFO queue for submission
-  List<CQEntryWrapper *> lCQFIFO;  //!< Internal FIFO queue for completion
+  std::list<SQEntryWrapper> lSQFIFO;  //!< Internal FIFO queue for submission
+  std::list<CQEntryWrapper> lCQFIFO;  //!< Internal FIFO queue for completion
 
  public:
   Controller(Interface *, Config *);

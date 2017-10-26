@@ -206,7 +206,8 @@ void PRPList::getPRPListFromPRP(uint64_t base, uint64_t size) {
     if (currentSize < size) {
       // PRP list ends but size is not full
       // Last item of PRP list is pointer of another PRP list
-      listPRP = prpList.pop_back().addr;
+      listPRP = prpList.back().addr;
+      prpList.pop_back();
 
       getPRPListFromPRP(listPRP, size - currentSize);
     }
@@ -226,15 +227,13 @@ uint64_t PRPList::read(uint64_t offset, uint64_t length, uint8_t *buffer,
   uint64_t totalRead = 0;
   uint64_t currentOffset = 0;
   uint64_t read;
-  uint64_t vsize = prpList.size();
   bool begin = false;
 
-  for (uint64_t i = 0; i < vsize; i++) {
+  for (auto &iter : prpList) {
     if (begin) {
-      read = MIN(prpList.at(i).size, length - totalRead);
-      finishedAt =
-          dmaEngine->read(prpList.at(i).addr, read,
-                          buffer ? buffer + totalRead : NULL, finishedAt);
+      read = MIN(iter.size, length - totalRead);
+      finishedAt = dmaEngine->read(
+          iter.addr, read, buffer ? buffer + totalRead : NULL, finishedAt);
       totalRead += read;
 
       if (totalRead == length) {
@@ -242,15 +241,15 @@ uint64_t PRPList::read(uint64_t offset, uint64_t length, uint8_t *buffer,
       }
     }
 
-    if (!begin && currentOffset + prpList.at(i).size > offset) {
+    if (!begin && currentOffset + iter.size > offset) {
       begin = true;
       totalRead = offset - currentOffset;
-      read = MIN(prpList.at(i).size - totalRead, length);
-      finishedAt = dmaEngine->read(prpList.at(i).addr, read, buffer, tick);
+      read = MIN(iter.size - totalRead, length);
+      finishedAt = dmaEngine->read(iter.addr, read, buffer, tick);
       totalRead = read;
     }
 
-    currentOffset += prpList.at(i).size;
+    currentOffset += iter.size;
   }
 
   // TODO: DPRINTF(NVMeDMA, "DMAPORT | READ  | Tick %" PRIu64 "\n",
@@ -265,15 +264,13 @@ uint64_t PRPList::write(uint64_t offset, uint64_t length, uint8_t *buffer,
   uint64_t totalWritten = 0;
   uint64_t currentOffset = 0;
   uint64_t written;
-  uint64_t vsize = prpList.size();
   bool begin = false;
 
-  for (uint64_t i = 0; i < vsize; i++) {
+  for (auto &iter : prpList) {
     if (begin) {
-      written = MIN(prpList.at(i).size, length - totalWritten);
+      written = MIN(iter.size, length - totalWritten);
       finishedAt =
-          dmaEngine->write(prpList.at(i).addr, written,
-                          buffer ? buffer + totalWritten : NULL, finishedAt);
+          dmaEngine->write(iter.addr, written, buffer ? buffer + totalWritten : NULL, finishedAt);
       totalWritten += written;
 
       if (totalWritten == length) {
@@ -281,15 +278,15 @@ uint64_t PRPList::write(uint64_t offset, uint64_t length, uint8_t *buffer,
       }
     }
 
-    if (!begin && currentOffset + prpList.at(i).size > offset) {
+    if (!begin && currentOffset + iter.size > offset) {
       begin = true;
       totalWritten = offset - currentOffset;
-      written = MIN(prpList.at(i).size - totalWritten, length);
-      finishedAt = dmaEngine->write(prpList.at(i).addr, written, buffer, tick);
+      written = MIN(iter.size - totalWritten, length);
+      finishedAt = dmaEngine->write(iter.addr, written, buffer, tick);
       totalWritten = written;
     }
 
-    currentOffset += prpList.at(i).size;
+    currentOffset += iter.size;
   }
 
   // TODO: DPRINTF(NVMeDMA, "DMAPORT | WRITE | Tick %" PRIu64 "\n",

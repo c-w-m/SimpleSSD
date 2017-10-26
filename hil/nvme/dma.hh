@@ -20,9 +20,10 @@
 #ifndef __HIL_NVME_DMA__
 #define __HIL_NVME_DMA__
 
+#include <vector>
+
 #include "hil/nvme/config.hh"
 #include "hil/nvme/interface.hh"
-#include "util/vector.hh"
 
 namespace SimpleSSD {
 
@@ -54,7 +55,7 @@ struct PRP {
 class PRPList {
  private:
   DMAScheduler *dmaEngine;
-  Vector<PRP> prpList;
+  std::vector<PRP> prpList;
   uint64_t totalSize;
   uint64_t pagesize;
 

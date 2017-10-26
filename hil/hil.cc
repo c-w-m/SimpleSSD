@@ -17,31 +17,14 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __HIL_HIL__
-#define __HIL_HIL__
-
-#include "icl/cache.hh"
-#include "util/config.hh"
+#include "hil/hil.hh"
 
 namespace SimpleSSD {
 
 namespace HIL {
 
-class HIL {
- private:
-  ConfigReader *conf;
-
- public:
-  HIL(ConfigReader *);
-
-  uint64_t read(uint64_t, uint64_t, uint64_t);
-  uint64_t write(uint64_t, uint64_t, uint64_t);
-  uint64_t flush(uint64_t, uint64_t, uint64_t);
-  uint64_t trim(uint64_t, uint64_t, uint64_t);
-};
+HIL::HIL(ConfigReader *c) : conf(c) {}
 
 }  // namespace HIL
 
 }  // namespace SimpleSSD
-
-#endif

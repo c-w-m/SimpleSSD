@@ -22,14 +22,14 @@
 
 #include <cinttypes>
 
-#include "hil/nvme/config.hh"
+#include "util/config.hh"
 
 namespace SimpleSSD {
 
 namespace NVMe {
 
 typedef struct {
-  Config *conf;
+  ConfigReader *conf;
   uint64_t memoryPageSize;
   uint8_t memoryPageSizeOrder;
   uint16_t maxQueueEntry;

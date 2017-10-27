@@ -64,6 +64,11 @@ class Subsystem {
   ConfigData *pCfgdata;
   Config &conf;
 
+  HealthInfo globalHealth;
+
+  bool createNamespace(uint32_t, Namespace::Information *);
+  bool destroyNamespace(uint32_t);
+
  public:
   Subsystem(Controller *, ConfigData *);
   ~Subsystem();

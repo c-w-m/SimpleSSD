@@ -19,11 +19,27 @@
 
 #include "hil/nvme/subsystem.hh"
 
+#include <cmath>
+
 namespace SimpleSSD {
 
 namespace HIL {
 
 namespace NVMe {
+
+const uint32_t nLBAFormat = 4;
+const uint32_t lbaFormat[nLBAFormat] = {
+    0x02090000,  // 512B + 0, Good performance
+    0x020A0000,  // 1KB + 0, Good performance
+    0x010B0000,  // 2KB + 0, Better performance
+    0x000C0000,  // 4KB + 0, Best performance
+};
+const uint32_t lbaSize[nLBAFormat] = {
+    512,   // 512B
+    1024,  // 1KB
+    2048,  // 2KB
+    4096,  // 4KB
+};
 
 Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
     : pParent(ctrl),
@@ -42,7 +58,27 @@ Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
   }
 
   if (conf.readBoolean(NVME_ENABLE_DEFAULT_NAMESPACE)) {
-    // TODO
+    Namespace::Information info;
+    uint32_t lba = (uint32_t)conf.readUint(NVME_LBA_SIZE);
+
+    for (info.lbaFormatIndex = 0; info.lbaFormatIndex < nLBAFormat;
+         info.lbaFormatIndex++) {
+      if (lbaSize[info.lbaFormatIndex] == lba) {
+        break;
+      }
+    }
+
+    if (info.lbaFormatIndex == nLBAFormat) {
+      // TODO: panic("Failed to setting LBA size (512B ~ 4KB)");
+    }
+
+    // TODO make one full-sized LBA range
+    // TODO set data from FTL/NAND configuration
+    Namespace *pNS = new Namespace(this, pCfgdata);
+    pNS->setData(NSID_LOWEST, &info);
+    pNS->attach(true);
+
+    lNamespaces.push_back(pNS);
   }
 
   pHIL = new HIL(cfg->conf);
@@ -59,6 +95,56 @@ Subsystem::~Subsystem() {
 
   delete pHIL;
 }
+
+bool Subsystem::createNamespace(uint32_t nsid, Namespace::Information *info) {
+  // TODO: calculate lba ranges
+  // uint64_t lastOffset = 0;
+  //
+  // for (auto iter = lNamespaces.begin(); iter != lNamespaces.end(); iter++) {
+  //   lastOffset = (*iter)->offset + (*iter)->nsData.NSZE;
+  // }
+  //
+  // if (lastOffset + logical_blocks > totalLogicalBlocks) {
+  //   return false;
+  // }
+
+  Namespace *pNS = new Namespace(this, pCfgdata);
+
+  pNS->setData(nsid, info);
+
+  lNamespaces.push_back(pNS);
+  // DPRINTF(NVMeAll, "NS %-5d| CREATE | LBA Range %" PRIu64 " + %" PRIu64 "\n",
+  //        nsid, lastOffset, logical_blocks);
+
+  return true;
+}
+
+bool Subsystem::destroyNamespace(uint32_t nsid) {
+  bool found = false;
+
+  for (auto iter = lNamespaces.begin(); iter != lNamespaces.end(); iter++) {
+    if ((*iter)->getNSID() == nsid) {
+      found = true;
+
+      // DPRINTF(NVMeAll, "NS %-5d| DELETE\n", nsid);
+
+      delete *iter;
+
+      lNamespaces.erase(iter);
+
+      break;
+    }
+  }
+
+  return found;
+}
+
+// TODO: for namespace management function
+// if (flbas >= nLBAFormat) {
+//   return false;
+// }
+//
+// uint32_t lbasize = (uint32_t)powf(2, (lbaFormat[flbas] >> 16) & 0xFF);
 
 }  // namespace NVMe
 

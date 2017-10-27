@@ -30,6 +30,10 @@ namespace HIL {
 
 namespace NVMe {
 
+#define NSID_NONE 0x00000000
+#define NSID_LOWEST 0x00000001
+#define NSID_ALL 0xFFFFFFFF
+
 typedef struct {
   ConfigReader *conf;
   uint64_t memoryPageSize;

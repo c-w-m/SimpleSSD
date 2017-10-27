@@ -28,14 +28,48 @@ namespace HIL {
 
 namespace NVMe {
 
+typedef struct _LBARange {
+  uint64_t slba;
+  uint64_t nlblk;
+
+  _LBARange();
+  _LBARange(uint64_t, uint64_t);
+} LBARange;
+
 class Namespace {
+ public:
+  typedef struct _Information {
+    uint64_t size;                         //!< NSZE
+    uint64_t capacity;                     //!< NCAP
+    uint64_t usage;                        //<! NUSE
+    uint64_t sizeInByteL;                  //<! NVMCAPL
+    uint64_t sizeInByteH;                  //<! NVMCAPH
+    uint8_t feature;                       //!< NSFEAT
+    uint8_t lbaFormatIndex;                //!< FLBAS
+    uint8_t dataProtectionSettings;        //!< DPS
+    uint8_t namespaceSharingCapabilities;  //!< NMIC
+
+    uint32_t lbasize;
+  } Information;
+
  private:
   Subsystem *pParent;
-
   ConfigData *pCfgdata;
+
+  Information info;
+  uint32_t nsid;
+  bool attached;
+  bool allocated;
+
+  uint32_t lbaratio;  //!<NAND page size / LBA size
 
  public:
   Namespace(Subsystem *, ConfigData *);
+
+  void setData(uint32_t, Information *);
+  void attach(bool);
+  uint32_t getNSID();
+  void getIdentifyData(uint8_t *);
 };
 
 }  // namespace NVMe

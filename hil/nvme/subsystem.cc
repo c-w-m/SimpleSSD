@@ -64,6 +64,8 @@ Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
     for (info.lbaFormatIndex = 0; info.lbaFormatIndex < nLBAFormat;
          info.lbaFormatIndex++) {
       if (lbaSize[info.lbaFormatIndex] == lba) {
+        info.lbaSize = lbaSize[info.lbaFormatIndex];
+
         break;
       }
     }

@@ -49,7 +49,7 @@ class Namespace {
     uint8_t dataProtectionSettings;        //!< DPS
     uint8_t namespaceSharingCapabilities;  //!< NMIC
 
-    uint32_t lbasize;
+    uint32_t lbaSize;
   } Information;
 
  private:
@@ -61,7 +61,7 @@ class Namespace {
   bool attached;
   bool allocated;
 
-  uint32_t lbaratio;  //!<NAND page size / LBA size
+  uint32_t lbaratio;  //!< NAND page size / LBA size
 
  public:
   Namespace(Subsystem *, ConfigData *);

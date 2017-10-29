@@ -33,11 +33,12 @@ class Cache {
 
  public:
   Cache(ConfigReader *);
+  virtual ~Cache() = 0;
 
-  uint64_t read(uint64_t, uint64_t, uint64_t);
-  uint64_t write(uint64_t, uint64_t, uint64_t);
-  uint64_t flush(uint64_t, uint64_t, uint64_t);
-  uint64_t trim(uint64_t, uint64_t, uint64_t);
+  virtual uint64_t read(uint64_t, uint64_t, uint64_t) = 0;
+  virtual uint64_t write(uint64_t, uint64_t, uint64_t) = 0;
+  virtual uint64_t flush(uint64_t, uint64_t, uint64_t) = 0;
+  virtual uint64_t trim(uint64_t, uint64_t, uint64_t) = 0;
 };
 
 }  // namespace ICL

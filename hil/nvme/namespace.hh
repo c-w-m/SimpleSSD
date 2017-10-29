@@ -73,7 +73,6 @@ class Namespace {
   void setLBARange(std::list<LBARange> &);
   void attach(bool);
   uint32_t getNSID();
-  void getIdentifyData(uint8_t *);
 };
 
 }  // namespace NVMe

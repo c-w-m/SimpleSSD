@@ -69,7 +69,6 @@ class Namespace {
   void setData(uint32_t, Information *);
   void attach(bool);
   uint32_t getNSID();
-  void getIdentifyData(uint8_t *);
 };
 
 }  // namespace NVMe

@@ -45,7 +45,10 @@ Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
     : pParent(ctrl),
       pDisk(nullptr),
       pCfgdata(cfg),
-      conf(cfg->conf->nvmeConfig) {
+      conf(cfg->conf->nvmeConfig),
+      allocatedLogicalBlocks(0) {
+  // TODO: fillup totalLogicalBlocks
+
   if (conf.readBoolean(NVME_ENABLE_DISK_IMAGE)) {
     if (conf.readBoolean(NVME_USE_COW_DISK)) {
       pDisk = new CoWDisk();
@@ -59,6 +62,7 @@ Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
 
   if (conf.readBoolean(NVME_ENABLE_DEFAULT_NAMESPACE)) {
     Namespace::Information info;
+    std::list<LBARange> list;
     uint32_t lba = (uint32_t)conf.readUint(NVME_LBA_SIZE);
 
     for (info.lbaFormatIndex = 0; info.lbaFormatIndex < nLBAFormat;
@@ -75,6 +79,10 @@ Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
     }
 
     // TODO make one full-sized LBA range
+    // TODO move this to createNamespace
+    allocatedLogicalBlocks = totalLogicalBlocks;
+    list.push_back(LBARange(0, allocatedLogicalBlocks));
+
     // TODO set data from FTL/NAND configuration
     Namespace *pNS = new Namespace(this, pCfgdata);
     pNS->setData(NSID_LOWEST, &info);
@@ -139,6 +147,43 @@ bool Subsystem::destroyNamespace(uint32_t nsid) {
   }
 
   return found;
+}
+
+bool Subsystem::submitCommand(SQEntryWrapper &req, CQEntryWrapper &resp,
+                              uint64_t &tick) {
+  bool processed = false;
+  bool submit = true;
+  uint64_t beginAt = tick;
+
+  // TODO: change this
+  tick += 1000000;  // 1us of command delay
+
+  // Admin command
+  if (req.sqID == 0) {
+    switch (req.entry.dword0.opcode) {
+      case OPCODE_DELETE_IO_SQUEUE:
+        break;
+      case OPCODE_ASYNC_EVENT_REQ:
+        submit = false;
+        break;
+      default:
+        // Invalid opcode
+        break;
+    }
+  }
+
+  // NVM commands or Namespace specific Admin commands
+  if (!processed) {
+    for (auto &iter : lNamespaces) {
+      return iter->submitCommand(req, resp, beginAt);
+    }
+  }
+
+  // Invalid namespace
+  if (!processed) {
+  }
+
+  return submit;
 }
 
 // TODO: for namespace management function

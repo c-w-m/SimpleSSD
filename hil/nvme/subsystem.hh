@@ -65,6 +65,8 @@ class Subsystem {
   Config &conf;
 
   HealthInfo globalHealth;
+  uint64_t totalLogicalBlocks;
+  uint64_t allocatedLogicalBlocks;
 
   bool createNamespace(uint32_t, Namespace::Information *);
   bool destroyNamespace(uint32_t);
@@ -73,7 +75,7 @@ class Subsystem {
   Subsystem(Controller *, ConfigData *);
   ~Subsystem();
 
-  uint64_t submitCommand(SQEntryWrapper &, uint64_t);
+  bool submitCommand(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
   uint64_t allocatedNVMCapacity();
   uint32_t validNamespaceCount();
 };

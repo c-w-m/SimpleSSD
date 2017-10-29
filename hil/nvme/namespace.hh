@@ -62,11 +62,15 @@ class Namespace {
   bool allocated;
 
   uint32_t lbaratio;  //!< NAND page size / LBA size
+  std::list<LBARange> lbaRanges;
 
  public:
   Namespace(Subsystem *, ConfigData *);
 
+  bool submitCommand(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+
   void setData(uint32_t, Information *);
+  void setLBARange(std::list<LBARange> &);
   void attach(bool);
   uint32_t getNSID();
   void getIdentifyData(uint8_t *);

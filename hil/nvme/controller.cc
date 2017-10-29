@@ -1153,9 +1153,13 @@ uint64_t Controller::work(uint64_t tick) {
   // Check SQFIFO
   if (lSQFIFO.size() > 0) {
     SQEntryWrapper front = lSQFIFO.front();
+    CQEntryWrapper response(front);
     lSQFIFO.pop_front();
 
-    tick = pSubsystem->submitCommand(front, tick);
+    // Process command
+    if (pSubsystem->submitCommand(front, response, tick)) {
+      submit(response);
+    }
   }
 
   return tick;

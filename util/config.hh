@@ -23,6 +23,7 @@
 #include <cinttypes>
 #include <string>
 
+#include "ftl/config.hh"
 #include "hil/nvme/config.hh"
 #include "lib/ini/ini.h"
 
@@ -33,7 +34,8 @@ class ConfigReader {
   static int parserHandler(void *, const char *, const char *, const char *);
 
  public:
-  NVMe::Config nvmeConfig;
+  HIL::NVMe::Config nvmeConfig;
+  FTL::Config ftlConfig;
 
   bool init(std::string);
 

@@ -28,7 +28,7 @@
 namespace SimpleSSD {
 
 const char SECTION_NVME[] = "nvme";
-// const char SECTION_FTL[] = "ftl";
+const char SECTION_FTL[] = "ftl";
 // const char SECTION_ICL[] = "cache";
 
 bool BaseConfig::convertBool(const char *value) {
@@ -48,6 +48,7 @@ bool ConfigReader::init(std::string file) {
 
   // Update all
   nvmeConfig.update();
+  ftlConfig.update();
 
   return true;
 }
@@ -58,6 +59,9 @@ int ConfigReader::parserHandler(void *context, const char *section,
 
   if (MATCH_SECTION(SECTION_NVME)) {
     pThis->nvmeConfig.setConfig(name, value);
+  }
+  else if (MATCH_SECTION(SECTION_FTL)) {
+    pThis->ftlConfig.setConfig(name, value);
   }
 
   return 1;

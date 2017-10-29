@@ -163,7 +163,7 @@ uint64_t Config::readUint(uint32_t idx) {
 }
 
 float Config::readFloat(uint32_t idx) {
-  float ret = 0;
+  float ret = 0.f;
 
   switch (idx) {
     case NVME_DMA_DELAY:
@@ -175,7 +175,7 @@ float Config::readFloat(uint32_t idx) {
 }
 
 std::string Config::readString(uint32_t idx) {
-  std::string ret = 0;
+  std::string ret("");
 
   switch (idx) {
     case NVME_DISK_IMAGE_PATH:
@@ -187,7 +187,7 @@ std::string Config::readString(uint32_t idx) {
 }
 
 bool Config::readBoolean(uint32_t idx) {
-  bool ret = 0;
+  bool ret = false;
 
   switch (idx) {
     case NVME_ENABLE_DEFAULT_NAMESPACE:

@@ -36,7 +36,8 @@ Namespace::Namespace(Subsystem *p, ConfigData *c)
       attached(false),
       allocated(false) {}
 
-void Namespace::setData(uint32_t id, Information *data) {
+void Namespace::setData(uint32_t id, Information *data,
+                        std::list<LBARange> &ranges) {
   nsid = id;
   memcpy(&info, data, sizeof(Information));
 

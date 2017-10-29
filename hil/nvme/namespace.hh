@@ -69,8 +69,7 @@ class Namespace {
 
   bool submitCommand(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
 
-  void setData(uint32_t, Information *);
-  void setLBARange(std::list<LBARange> &);
+  void setData(uint32_t, Information *, std::list<LBARange> &);
   void attach(bool);
   uint32_t getNSID();
 };

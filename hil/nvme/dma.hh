@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "hil/nvme/config.hh"
+#include "hil/nvme/def.hh"
 #include "hil/nvme/interface.hh"
 
 namespace SimpleSSD {
@@ -65,8 +66,8 @@ class PRPList {
   uint64_t getPRPSize(uint64_t);
 
  public:
-  PRPList(DMAScheduler *, uint64_t, uint64_t, uint64_t, uint64_t);
-  PRPList(DMAScheduler *, uint64_t, uint64_t, uint64_t, bool);
+  PRPList(ConfigData *, uint64_t, uint64_t, uint64_t);
+  PRPList(ConfigData *, uint64_t, uint64_t, bool);
 
   uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t &);
   uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t &);

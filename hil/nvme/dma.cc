@@ -119,9 +119,10 @@ PRP::PRP() : addr(0), size(0) {}
 
 PRP::PRP(uint64_t address, uint64_t s) : addr(address), size(s) {}
 
-PRPList::PRPList(DMAScheduler *dma, uint64_t ps, uint64_t prp1, uint64_t prp2,
-                 uint64_t size)
-    : dmaEngine(dma), totalSize(size), pagesize(ps) {
+PRPList::PRPList(ConfigData *cfg, uint64_t prp1, uint64_t prp2, uint64_t size)
+    : dmaEngine(cfg->pDmaEngine),
+      totalSize(size),
+      pagesize(cfg->memoryPageSize) {
   uint64_t prp1Size = getPRPSize(prp1);
   uint64_t prp2Size = getPRPSize(prp2);
 
@@ -164,9 +165,10 @@ PRPList::PRPList(DMAScheduler *dma, uint64_t ps, uint64_t prp1, uint64_t prp2,
   }
 }
 
-PRPList::PRPList(DMAScheduler *dma, uint64_t ps, uint64_t base, uint64_t size,
-                 bool cont)
-    : dmaEngine(dma), totalSize(size), pagesize(ps) {
+PRPList::PRPList(ConfigData *cfg, uint64_t base, uint64_t size, bool cont)
+    : dmaEngine(cfg->pDmaEngine),
+      totalSize(size),
+      pagesize(cfg->memoryPageSize) {
   if (cont) {
     prpList.push_back(PRP(base, size));
   }

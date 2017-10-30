@@ -19,6 +19,8 @@
 
 #include "hil/nvme/namespace.hh"
 
+#include "hil/nvme/subsystem.hh"
+
 namespace SimpleSSD {
 
 namespace HIL {
@@ -113,8 +115,7 @@ void Namespace::getLogPage(SQEntryWrapper &req, CQEntryWrapper &resp,
   uint32_t req_size = (((uint32_t)numdu << 16 | numdl) + 1) * 4;
   uint64_t offset = ((uint64_t)lopu << 32) | lopl;
 
-  PRPList PRP(pCfgdata->pDmaEngine, pCfgdata->memoryPageSize, req.entry.data1,
-              req.entry.data2, (uint64_t)req_size);
+  PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2, (uint64_t)req_size);
 
   switch (lid) {
     case LOG_SMART_HEALTH_INFORMATION:
@@ -172,8 +173,8 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
   }
 
   if (!err) {
-    PRPList PRP(pCfgdata->pDmaEngine, pCfgdata->memoryPageSize, req.entry.data1,
-                req.entry.data2, (uint64_t)nlb * info.lbaSize);
+    PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2,
+                (uint64_t)nlb * info.lbaSize);
 
     pParent->write(slba, nlb, PRP, tick);
 
@@ -206,8 +207,8 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
   }
 
   if (!err) {
-    PRPList PRP(pCfgdata->pDmaEngine, pCfgdata->memoryPageSize, req.entry.data1,
-                req.entry.data2, (uint64_t)nlb * info.lbaSize);
+    PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2,
+                (uint64_t)nlb * info.lbaSize);
 
     pParent->write(slba, nlb, PRP, tick);
     // DPRINTF(NVMeBreakdown, "N%u|2|R|I%d|F%" PRIu64 "|D%" PRIu64 "\n", nsid,
@@ -237,8 +238,7 @@ void Namespace::datasetManagement(SQEntryWrapper &req, CQEntryWrapper &resp,
 
   if (!err) {
     static DatasetManagementRange range;
-    PRPList PRP(pCfgdata->pDmaEngine, pCfgdata->memoryPageSize, req.entry.data1,
-                req.entry.data2, (uint64_t)0x1000);
+    PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2, (uint64_t)0x1000);
 
     for (int i = 0; i < nr; i++) {
       PRP.read(i * 0x10, 0x10, range.data, tick);

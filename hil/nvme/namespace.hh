@@ -20,7 +20,11 @@
 #ifndef __HIL_NVME_NAMESPACE__
 #define __HIL_NVME_NAMESPACE__
 
-#include "hil/nvme/subsystem.hh"
+#include <list>
+
+#include "hil/nvme/def.hh"
+#include "hil/nvme/dma.hh"
+#include "hil/nvme/queue.hh"
 
 namespace SimpleSSD {
 
@@ -28,13 +32,7 @@ namespace HIL {
 
 namespace NVMe {
 
-typedef struct _LBARange {
-  uint64_t slba;
-  uint64_t nlblk;
-
-  _LBARange();
-  _LBARange(uint64_t, uint64_t);
-} LBARange;
+class Subsystem;
 
 typedef union _DatasetManagementRange {
   uint8_t data[0x10];

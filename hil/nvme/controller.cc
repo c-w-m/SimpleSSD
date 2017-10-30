@@ -83,13 +83,13 @@ Controller::~Controller() {
   free(ppSQueue);
 }
 
-uint64_t Controller::readRegister(uint64_t offset, uint64_t size,
-                                  uint8_t *buffer, uint64_t tick) {
+void Controller::readRegister(uint64_t offset, uint64_t size, uint8_t *buffer,
+                              uint64_t &tick) {
   registers.interruptMaskSet = interruptMask;
   registers.interruptMaskClear = interruptMask;
 
   memcpy(buffer, registers.data + offset, size);
-  tick = pDmaEngine->read(0, size, nullptr, tick);
+  pDmaEngine->read(0, size, nullptr, tick);
 
   /*
   TODO:
@@ -125,16 +125,14 @@ uint64_t Controller::readRegister(uint64_t offset, uint64_t size,
   *)buffer);
   }
   */
-
-  return tick;
 }
 
-uint64_t Controller::writeRegister(uint64_t offset, uint64_t size,
-                                   uint8_t *buffer, uint64_t tick) {
+void Controller::writeRegister(uint64_t offset, uint64_t size, uint8_t *buffer,
+                               uint64_t &tick) {
   uint32_t uiTemp32;
   uint64_t uiTemp64;
 
-  tick = pDmaEngine->write(0, size, nullptr, tick);
+  pDmaEngine->write(0, size, nullptr, tick);
 
   if (size == 4) {
     memcpy(&uiTemp32, buffer, 4);
@@ -309,13 +307,13 @@ uint64_t Controller::writeRegister(uint64_t offset, uint64_t size,
 
     // DPRINTF(NVMeQueue, "SQ 0    | CREATE | Entry size %d\n", entrySize);
   }
-
-  return tick;
 }
 
-uint64_t Controller::ringCQHeadDoorbell(uint16_t qid, uint16_t head,
-                                        uint64_t tick) {
+void Controller::ringCQHeadDoorbell(uint16_t qid, uint16_t head,
+                                    uint64_t &tick) {
   CQueue *pQueue = ppCQueue[qid];
+
+  pDmaEngine->write(0, 4, nullptr, tick);
 
   if (pQueue) {
     pQueue->setHead(head);
@@ -331,9 +329,11 @@ uint64_t Controller::ringCQHeadDoorbell(uint16_t qid, uint16_t head,
   }
 }
 
-uint64_t Controller::ringSQTailDoorbell(uint16_t qid, uint16_t tail,
-                                        uint64_t tick) {
+void Controller::ringSQTailDoorbell(uint16_t qid, uint16_t tail,
+                                    uint64_t &tick) {
   SQueue *pQueue = ppSQueue[qid];
+
+  pDmaEngine->write(0, 4, nullptr, tick);
 
   if (pQueue) {
     pQueue->setTail(tail);

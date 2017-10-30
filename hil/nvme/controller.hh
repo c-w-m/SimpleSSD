@@ -85,10 +85,10 @@ class Controller {
   Controller(Interface *, ConfigReader *);
   ~Controller();
 
-  uint64_t readRegister(uint64_t, uint64_t, uint8_t *, uint64_t);
-  uint64_t writeRegister(uint64_t, uint64_t, uint8_t *, uint64_t);
-  uint64_t ringCQHeadDoorbell(uint16_t, uint16_t, uint64_t);
-  uint64_t ringSQTailDoorbell(uint16_t, uint16_t, uint64_t);
+  void readRegister(uint64_t, uint64_t, uint8_t *, uint64_t &);
+  void writeRegister(uint64_t, uint64_t, uint8_t *, uint64_t &);
+  void ringCQHeadDoorbell(uint16_t, uint16_t, uint64_t &);
+  void ringSQTailDoorbell(uint16_t, uint16_t, uint64_t &);
 
   void clearInterrupt(uint16_t);
   void updateInterrupt(uint16_t, bool);

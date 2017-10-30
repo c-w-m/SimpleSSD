@@ -57,12 +57,25 @@ class Namespace {
   ConfigData *pCfgdata;
 
   Information info;
+  uint8_t rawInfo[0x1000];
   uint32_t nsid;
   bool attached;
   bool allocated;
 
+  HealthInfo health;
+
   uint32_t lbaratio;  //!< NAND page size / LBA size
   std::list<LBARange> lbaRanges;
+
+  // Admin commands
+  void identify(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+  void getLogPage(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+
+  // NVM commands
+  void flush(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+  void write(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+  void read(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+  void datasetManagement(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
 
  public:
   Namespace(Subsystem *, ConfigData *);

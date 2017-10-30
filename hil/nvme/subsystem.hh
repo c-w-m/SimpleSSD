@@ -52,7 +52,6 @@ class Subsystem {
   bool createNamespace(uint32_t, Namespace::Information *);
   bool destroyNamespace(uint32_t);
   void convertLBAToLPN(uint64_t &, uint64_t &, uint32_t);
-  void convertLPNToLBA(uint64_t &, uint64_t &, uint32_t);
   void fillIdentifyNamespace(uint8_t *, Namespace::Information *);
 
   // Admin commands

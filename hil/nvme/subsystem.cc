@@ -136,15 +136,9 @@ bool Subsystem::createNamespace(uint32_t nsid, Namespace::Information *info) {
 
   // Collect allocated slots
   for (auto &iter : lNamespaces) {
-    std::list<LBARange> list;
+    std::list<LPNRange> *pList = iter->getLPNRange();
 
-    iter->getLBARange(list);
-    uint32_t lba = iter->getInfo()->lbaSize;
-
-    for (auto &item : list) {
-      convertLBAToLPN(item.slba, item.nlblk, lba);
-      allocated.push_back(LPNRange(item.slba, item.nlblk));
-    }
+    allocated.insert(allocated.end(), pList->begin(), pList->end());
   }
 
   // Sort
@@ -191,33 +185,28 @@ bool Subsystem::createNamespace(uint32_t nsid, Namespace::Information *info) {
   }
 
   // Allocated unallocated area to namespace
-  std::list<LBARange> list;
   unallocatedLogicalPages = 0;  // This now contain reserved pages
 
-  for (auto &iter : unallocated) {
-    if (unallocatedLogicalPages > requestedLogicalPages) {
+  for (auto iter = unallocated.begin(); iter != unallocated.end(); iter++) {
+    iter->nlp = MIN(iter->nlp, requestedLogicalPages - unallocatedLogicalPages);
+    unallocatedLogicalPages += iter->nlp;
+
+    if (unallocatedLogicalPages >= requestedLogicalPages) {
+      unallocated.erase(iter, unallocated.end());
+
       break;
     }
-
-    LBARange range(iter.slpn, MIN(iter.nlp, requestedLogicalPages -
-                                                unallocatedLogicalPages));
-    unallocatedLogicalPages += range.nlblk;
-
-    convertLPNToLBA(range.slba, range.nlblk, info->lbaSize);
-    list.push_back(range);
   }
 
   allocatedLogicalPages += unallocatedLogicalPages;
 
   // Fill Information
-  info->size = unallocatedLogicalPages * logicalPageSize / info->lbaSize;
-  info->capacity = info->size;
   info->sizeInByteL = unallocatedLogicalPages * logicalPageSize;
   info->sizeInByteH = 0;
 
   // Create namespace
   Namespace *pNS = new Namespace(this, pCfgdata);
-  pNS->setData(nsid, info, list);
+  pNS->setData(nsid, info, unallocated);
 
   lNamespaces.push_back(pNS);
   // // DPRINTF(NVMeAll, "NS %-5d| CREATE | LBA Range %" PRIu64 " + %" PRIu64 "\n",
@@ -250,10 +239,6 @@ bool Subsystem::destroyNamespace(uint32_t nsid) {
 }
 
 void Subsystem::convertLBAToLPN(uint64_t &slba, uint64_t &nlblk, uint32_t lbaSize) {
-
-}
-
-void Subsystem::convertLPNToLBA(uint64_t &slpn, uint64_t &nlp, uint32_t lbaSize) {
 
 }
 

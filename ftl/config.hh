@@ -17,8 +17,8 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __HIL_NVME_CONFIG__
-#define __HIL_NVME_CONFIG__
+#ifndef __FTL_CONFIG__
+#define __FTL_CONFIG__
 
 #include "util/base_config.hh"
 
@@ -49,7 +49,7 @@ class Config : public BaseConfig {
   FTL_MAPPING mapping;  //!< Default: FTL_NK_MAPPING
   float overProvision;  //!< Default: 0.25 (25%)
   float gcThreshold;    //!< Default: 0.05 (5%)
-  uint64_t eraseCycle;  //!< Default: 100000 
+  uint64_t eraseCycle;  //!< Default: 100000
   float warmup;         //!< Default: 1.0 (100%)
 
   uint64_t N;  //!< Default: 32

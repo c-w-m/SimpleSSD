@@ -21,7 +21,6 @@
 #define __HIL_NVME_SUBSYSTEM__
 
 #include "hil/hil.hh"
-#include "hil/nvme/controller.hh"
 #include "hil/nvme/namespace.hh"
 #include "util/disk.hh"
 
@@ -31,35 +30,7 @@ namespace HIL {
 
 namespace NVMe {
 
-typedef union _HealthInfo {
-  uint8_t data[0x200];
-  struct {
-    uint8_t status;
-    uint16_t temperature;
-    uint8_t availableSpare;
-    uint8_t spareThreshold;
-    uint8_t lifeUsed;
-    uint8_t reserved[26];
-    uint64_t readL;
-    uint64_t readH;
-    uint64_t writeL;
-    uint64_t writeH;
-    uint64_t readCommandL;
-    uint64_t readCommandH;
-    uint64_t writeCommandL;
-    uint64_t writeCommandH;
-  };
-
-  _HealthInfo();
-} HealthInfo;
-
-typedef struct _LPNRange {
-  uint64_t slpn;
-  uint64_t nlp;
-
-  _LPNRange();
-  _LPNRange(uint64_t, uint64_t);
-} LPNRange;
+class Controller;
 
 class Subsystem {
  private:

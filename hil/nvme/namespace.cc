@@ -27,10 +27,6 @@ namespace HIL {
 
 namespace NVMe {
 
-LBARange::_LBARange() : slba(0), nlblk(0) {}
-
-LBARange::_LBARange(uint64_t s, uint64_t n) : slba(s), nlblk(n) {}
-
 Namespace::Namespace(Subsystem *p, ConfigData *c)
     : pParent(p),
       pCfgdata(c),

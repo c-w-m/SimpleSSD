@@ -25,6 +25,7 @@
 #include "hil/nvme/config.hh"
 #include "hil/nvme/def.hh"
 #include "hil/nvme/interface.hh"
+#include "util/config.hh"
 
 namespace SimpleSSD {
 
@@ -46,6 +47,14 @@ class DMAScheduler {
   uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t &);
   uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t &);
 };
+
+typedef struct {
+  ConfigReader *pConfigReader;
+  DMAScheduler *pDmaEngine;
+  uint64_t memoryPageSize;
+  uint8_t memoryPageSizeOrder;
+  uint16_t maxQueueEntry;
+} ConfigData;
 
 struct PRP {
   uint64_t addr;

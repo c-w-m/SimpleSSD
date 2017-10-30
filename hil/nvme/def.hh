@@ -22,9 +22,6 @@
 
 #include <cinttypes>
 
-#include "hil/nvme/dma.hh"
-#include "util/config.hh"
-
 namespace SimpleSSD {
 
 namespace HIL {
@@ -35,13 +32,43 @@ namespace NVMe {
 #define NSID_LOWEST 0x00000001
 #define NSID_ALL 0xFFFFFFFF
 
-typedef struct {
-  ConfigReader *pConfigReader;
-  DMAScheduler *pDmaEngine;
-  uint64_t memoryPageSize;
-  uint8_t memoryPageSizeOrder;
-  uint16_t maxQueueEntry;
-} ConfigData;
+typedef union _HealthInfo {
+  uint8_t data[0x200];
+  struct {
+    uint8_t status;
+    uint16_t temperature;
+    uint8_t availableSpare;
+    uint8_t spareThreshold;
+    uint8_t lifeUsed;
+    uint8_t reserved[26];
+    uint64_t readL;
+    uint64_t readH;
+    uint64_t writeL;
+    uint64_t writeH;
+    uint64_t readCommandL;
+    uint64_t readCommandH;
+    uint64_t writeCommandL;
+    uint64_t writeCommandH;
+  };
+
+  _HealthInfo();
+} HealthInfo;
+
+typedef struct _LPNRange {
+  uint64_t slpn;
+  uint64_t nlp;
+
+  _LPNRange();
+  _LPNRange(uint64_t, uint64_t);
+} LPNRange;
+
+typedef struct _LBARange {
+  uint64_t slba;
+  uint64_t nlblk;
+
+  _LBARange();
+  _LBARange(uint64_t, uint64_t);
+} LBARange;
 
 typedef enum {
   PRIORITY_URGENT,

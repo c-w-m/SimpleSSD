@@ -44,10 +44,6 @@ const uint32_t lbaSize[nLBAFormat] = {
     4096,  // 4KB
 };
 
-LPNRange::_LPNRange() : slpn(0), nlp(0) {}
-
-LPNRange::_LPNRange(uint64_t s, uint64_t n) : slpn(s), nlp(n) {}
-
 Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
     : pParent(ctrl),
       pDisk(nullptr),

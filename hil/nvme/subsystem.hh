@@ -49,7 +49,8 @@ class Subsystem {
 
   bool createNamespace(uint32_t, Namespace::Information *);
   bool destroyNamespace(uint32_t);
-  void convertLBAToLPN(uint64_t &, uint64_t &, uint32_t);
+  void convert(std::list<LPNRange> &, std::list<LPNRange> *, uint64_t,
+               uint64_t);
   void fillIdentifyNamespace(uint8_t *, Namespace::Information *);
 
   // Admin commands
@@ -74,10 +75,10 @@ class Subsystem {
   void getNVMCapacity(uint64_t &, uint64_t &);
   uint32_t validNamespaceCount();
 
-  void read(uint64_t, uint64_t, PRPList &, uint64_t &);
-  void write(uint64_t, uint64_t, PRPList &, uint64_t &);
-  void flush(uint64_t &);
-  void trim(uint64_t, uint64_t, uint64_t &);
+  void read(Namespace *, uint64_t, uint64_t, PRPList &, uint64_t &);
+  void write(Namespace *, uint64_t, uint64_t, PRPList &, uint64_t &);
+  void flush(Namespace *, uint64_t &);
+  void trim(Namespace *, uint64_t, uint64_t, uint64_t &);
 };
 
 }  // namespace NVMe

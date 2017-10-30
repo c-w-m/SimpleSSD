@@ -20,6 +20,8 @@
 #ifndef __HIL_HIL__
 #define __HIL_HIL__
 
+#include <list>
+
 #include "icl/cache.hh"
 #include "util/config.hh"
 
@@ -45,9 +47,13 @@ class HIL {
   ~HIL();
 
   void read(uint64_t, uint64_t, uint64_t &);
+  void read(std::list<LPNRange> &, uint64_t &);
   void write(uint64_t, uint64_t, uint64_t &);
+  void write(std::list<LPNRange> &, uint64_t &);
   void flush(uint64_t, uint64_t, uint64_t &);
+  void flush(std::list<LPNRange> &, uint64_t &);
   void trim(uint64_t, uint64_t, uint64_t &);
+  void trim(std::list<LPNRange> &, uint64_t &);
 
   void getLPNInfo(uint64_t &, uint32_t &);
 };

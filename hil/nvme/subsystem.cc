@@ -210,6 +210,30 @@ bool Subsystem::destroyNamespace(uint32_t nsid) {
   return found;
 }
 
+void Subsystem::convert(std::list<LPNRange> &out, std::list<LPNRange> *in,
+                        uint64_t slpn, uint64_t nlp) {
+  uint64_t passed = 0;
+  uint64_t len;
+
+  for (auto &iter : *in) {
+    if (passed + iter.nlp < slpn) {
+      continue;
+    }
+
+    len = MIN(nlp, iter.nlp - (slpn - passed));
+    nlp -= len;
+    slpn += len;
+
+    out.push_back(LPNRange(iter.slpn + (slpn - passed), len));
+
+    passed += iter.nlp;
+
+    if (nlp == 0) {
+      break;
+    }
+  }
+}
+
 void Subsystem::fillIdentifyNamespace(uint8_t *buffer,
                                       Namespace::Information *info) {
   // Namespace Size
@@ -326,6 +350,60 @@ void Subsystem::getNVMCapacity(uint64_t &total, uint64_t &used) {
 
 uint32_t Subsystem::validNamespaceCount() {
   return (uint32_t)lNamespaces.size();
+}
+
+void Subsystem::read(Namespace *ns, uint64_t slba, uint64_t nlblk, PRPList &prp,
+                     uint64_t &tick) {
+  std::list<LPNRange> result;
+  uint32_t lbaratio = logicalPageSize / ns->getInfo()->lbaSize;
+  uint64_t slpn;
+  uint64_t nlp;
+  uint64_t off;
+
+  slpn = slba / lbaratio;
+  off = slba % lbaratio;
+  nlp = (nlblk + off + lbaratio - 1) / lbaratio;
+
+  convert(result, ns->getLPNRange(), slpn, nlp);
+
+  pHIL->read(result, tick);
+}
+
+void Subsystem::write(Namespace *ns, uint64_t slba, uint64_t nlblk,
+                      PRPList &prp, uint64_t &tick) {
+  std::list<LPNRange> result;
+  uint32_t lbaratio = logicalPageSize / ns->getInfo()->lbaSize;
+  uint64_t slpn;
+  uint64_t nlp;
+  uint64_t off;
+
+  slpn = slba / lbaratio;
+  off = slba % lbaratio;
+  nlp = (nlblk + off + lbaratio - 1) / lbaratio;
+
+  convert(result, ns->getLPNRange(), slpn, nlp);
+
+  pHIL->write(result, tick);
+}
+
+void Subsystem::flush(Namespace *ns, uint64_t &tick) {
+  pHIL->flush(*ns->getLPNRange(), tick);
+}
+
+void Subsystem::trim(Namespace *ns, uint64_t slba, uint64_t nlblk, uint64_t &tick) {
+  std::list<LPNRange> result;
+  uint32_t lbaratio = logicalPageSize / ns->getInfo()->lbaSize;
+  uint64_t slpn;
+  uint64_t nlp;
+  uint64_t off;
+
+  slpn = slba / lbaratio;
+  off = slba % lbaratio;
+  nlp = (nlblk + off + lbaratio - 1) / lbaratio;
+
+  convert(result, ns->getLPNRange(), slpn, nlp);
+
+  pHIL->trim(result, tick);
 }
 
 bool Subsystem::deleteSQueue(SQEntryWrapper &req, CQEntryWrapper &resp,

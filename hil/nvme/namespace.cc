@@ -147,7 +147,7 @@ void Namespace::flush(SQEntryWrapper &req, CQEntryWrapper &resp,
   }
 
   if (!err) {
-    pParent->flush(tick);
+    pParent->flush(this, tick);
     //
     // DPRINTF(NVMeAll, "NVM     | FLUSH | NSID %-5d| Tick %" PRIu64 "\n", nsid,
     //         cmdDelay);
@@ -177,7 +177,14 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
     PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2,
                 (uint64_t)nlb * info.lbaSize);
 
-    pParent->write(slba, nlb, PRP, tick);
+    pParent->write(this, slba, nlb, PRP, tick);
+
+    if (pDisk) {
+      uint8_t *buffer = (uint8_t *)calloc(nlb, info.lbaSize);
+
+
+      pDisk->write(slba, nlb, buffer);
+    }
 
     // DPRINTF(NVMeBreakdown, "N%u|2|W|I%d|F%" PRIu64 "|D%" PRIu64 "\n", nsid,
     //         req.entry.dword0.CID, totalReq, DMA);
@@ -211,7 +218,7 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
     PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2,
                 (uint64_t)nlb * info.lbaSize);
 
-    pParent->write(slba, nlb, PRP, tick);
+    pParent->write(this, slba, nlb, PRP, tick);
     // DPRINTF(NVMeBreakdown, "N%u|2|R|I%d|F%" PRIu64 "|D%" PRIu64 "\n", nsid,
     //         req.entry.dword0.CID, cmdDelay, DMA);
     //
@@ -243,7 +250,7 @@ void Namespace::datasetManagement(SQEntryWrapper &req, CQEntryWrapper &resp,
 
     for (int i = 0; i < nr; i++) {
       PRP.read(i * 0x10, 0x10, range.data, tick);
-      pParent->trim(range.slba, range.nlb, tick);
+      pParent->trim(this, range.slba, range.nlb, tick);
     }
 
     // DPRINTF(NVMeAll, "NVM     | TRIM  | NSID %-5d| Tick %" PRIu64 "\n", nsid,

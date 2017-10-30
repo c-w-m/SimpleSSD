@@ -36,10 +36,12 @@ class HIL {
   HIL(ConfigReader *);
   ~HIL();
 
-  uint64_t read(uint64_t, uint64_t, uint64_t);
-  uint64_t write(uint64_t, uint64_t, uint64_t);
-  uint64_t flush(uint64_t, uint64_t, uint64_t);
-  uint64_t trim(uint64_t, uint64_t, uint64_t);
+  void read(uint64_t, uint64_t, uint64_t &);
+  void write(uint64_t, uint64_t, uint64_t &);
+  void flush(uint64_t, uint64_t, uint64_t &);
+  void trim(uint64_t, uint64_t, uint64_t &);
+
+  void getLPNInfo(uint64_t &, uint32_t &);
 };
 
 }  // namespace HIL

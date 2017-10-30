@@ -212,6 +212,12 @@ bool Subsystem::createNamespace(uint32_t nsid, Namespace::Information *info) {
 
   allocatedLogicalPages += unallocatedLogicalPages;
 
+  // Fill Information
+  info->size = unallocatedLogicalPages * logicalPageSize / info->lbaSize;
+  info->capacity = info->size;
+  info->sizeInByteL = unallocatedLogicalPages * logicalPageSize;
+  info->sizeInByteH = 0;
+
   // Create namespace
   Namespace *pNS = new Namespace(this, pCfgdata);
   pNS->setData(nsid, info, list);
@@ -225,12 +231,15 @@ bool Subsystem::createNamespace(uint32_t nsid, Namespace::Information *info) {
 
 bool Subsystem::destroyNamespace(uint32_t nsid) {
   bool found = false;
+  Namespace::Information *info;
 
   for (auto iter = lNamespaces.begin(); iter != lNamespaces.end(); iter++) {
     if ((*iter)->getNSID() == nsid) {
       found = true;
 
       // DPRINTF(NVMeAll, "NS %-5d| DELETE\n", nsid);
+      info = (*iter)->getInfo();
+      allocatedLogicalPages -= info->size * info->lbaSize / logicalPageSize;
 
       delete *iter;
 

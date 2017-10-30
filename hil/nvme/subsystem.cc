@@ -19,7 +19,10 @@
 
 #include "hil/nvme/subsystem.hh"
 
+#include <algorithm>
 #include <cmath>
+
+#include "util/algorithm.hh"
 
 namespace SimpleSSD {
 
@@ -40,6 +43,10 @@ const uint32_t lbaSize[nLBAFormat] = {
     2048,  // 2KB
     4096,  // 4KB
 };
+
+LPNRange::_LPNRange() : slpn(0), nlp(0) {}
+
+LPNRange::_LPNRange(uint64_t s, uint64_t n) : slpn(s), nlp(n) {}
 
 Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
     : pParent(ctrl),
@@ -93,9 +100,6 @@ Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
       // TODO: panic("Failed to setting LBA size (512B ~ 4KB)");
     }
 
-    // Default namespace is full-sized
-    allocatedLogicalPages = totalLogicalPages;
-
     // Fill Namespace information
     info.size = totalLogicalPages * lbaRatio;
     info.capacity = info.size;
@@ -121,20 +125,96 @@ Subsystem::~Subsystem() {
 }
 
 bool Subsystem::createNamespace(uint32_t nsid, Namespace::Information *info) {
-  // TODO: calculate lba ranges
-  // uint64_t lastOffset = 0;
-  //
-  // for (auto iter = lNamespaces.begin(); iter != lNamespaces.end(); iter++) {
-  //   lastOffset = (*iter)->offset + (*iter)->nsData.NSZE;
-  // }
-  //
-  // if (lastOffset + logical_blocks > totalLogicalBlocks) {
-  //   return false;
-  // }
+  std::list<LPNRange> allocated;
+  std::list<LPNRange> unallocated;
 
+  // Allocate LPN
+  uint64_t requestedLogicalPages =
+      info->size / lbaSize[info->lbaFormatIndex] * logicalPageSize;
+  uint64_t unallocatedLogicalPages = totalLogicalPages - allocatedLogicalPages;
+
+  if (requestedLogicalPages > unallocatedLogicalPages) {
+    return false;
+  }
+
+  // Collect allocated slots
+  for (auto &iter : lNamespaces) {
+    std::list<LBARange> list;
+
+    iter->getLBARange(list);
+    uint32_t lba = iter->getInfo()->lbaSize;
+
+    for (auto &item : list) {
+      convertLBAToLPN(item.slba, item.nlblk, lba);
+      allocated.push_back(LPNRange(item.slba, item.nlblk));
+    }
+  }
+
+  // Sort
+  allocated.sort([](const LPNRange &a, const LPNRange &b) -> bool {
+    return a.slpn < b.slpn;
+  });
+
+  // Merge
+  auto iter = allocated.begin();
+  auto next = iter;
+
+  while (true) {
+    next++;
+
+    if (iter != allocated.end() || next == allocated.end()) {
+      break;
+    }
+
+    if (iter->slpn + iter->nlp == next->slpn) {
+      iter = allocated.erase(iter);
+      next = iter;
+    }
+    else {
+      iter++;
+    }
+  }
+
+  // Invert
+  unallocated.push_back(LPNRange(0, totalLogicalPages));
+
+  for (auto &iter : allocated) {
+    // Split last item
+    auto &last = unallocated.back();
+
+    if (last.slpn <= iter.slpn &&
+        last.slpn + last.nlp >= iter.slpn + iter.nlp) {
+      unallocated.push_back(LPNRange(
+          iter.slpn + iter.nlp, last.slpn + last.nlp - iter.slpn - iter.nlp));
+      last.nlp = iter.slpn - last.slpn;
+    }
+    else {
+      // TODO: panic("BUG");
+    }
+  }
+
+  // Allocated unallocated area to namespace
+  std::list<LBARange> list;
+  unallocatedLogicalPages = 0;  // This now contain reserved pages
+
+  for (auto &iter : unallocated) {
+    if (unallocatedLogicalPages > requestedLogicalPages) {
+      break;
+    }
+
+    LBARange range(iter.slpn, MIN(iter.nlp, requestedLogicalPages -
+                                                unallocatedLogicalPages));
+    unallocatedLogicalPages += range.nlblk;
+
+    convertLPNToLBA(range.slba, range.nlblk, info->lbaSize);
+    list.push_back(range);
+  }
+
+  allocatedLogicalPages += unallocatedLogicalPages;
+
+  // Create namespace
   Namespace *pNS = new Namespace(this, pCfgdata);
-
-  pNS->setData(nsid, info);
+  pNS->setData(nsid, info, list);
 
   lNamespaces.push_back(pNS);
   // DPRINTF(NVMeAll, "NS %-5d| CREATE | LBA Range %" PRIu64 " + %" PRIu64 "\n",
@@ -196,6 +276,8 @@ bool Subsystem::submitCommand(SQEntryWrapper &req, CQEntryWrapper &resp,
   // Invalid namespace
   if (!processed) {
   }
+
+  resp.submitAt = beginAt;
 
   return submit;
 }

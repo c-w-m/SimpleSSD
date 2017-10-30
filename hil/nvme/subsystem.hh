@@ -53,6 +53,14 @@ typedef union _HealthInfo {
   _HealthInfo();
 } HealthInfo;
 
+typedef struct _LPNRange {
+  uint64_t slpn;
+  uint64_t nlp;
+
+  _LPNRange();
+  _LPNRange(uint64_t, uint64_t);
+} LPNRange;
+
 class Subsystem {
  private:
   Controller *pParent;
@@ -71,7 +79,8 @@ class Subsystem {
 
   bool createNamespace(uint32_t, Namespace::Information *);
   bool destroyNamespace(uint32_t);
-  void convertAddress(uint64_t &, uint64_t &, uint32_t);
+  void convertLBAToLPN(uint64_t &, uint64_t &, uint32_t);
+  void convertLPNToLBA(uint64_t &, uint64_t &, uint32_t);
 
   // Admin commands
   bool deleteSQueue(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);

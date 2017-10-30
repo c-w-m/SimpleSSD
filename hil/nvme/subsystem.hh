@@ -65,19 +65,40 @@ class Subsystem {
   Config &conf;
 
   HealthInfo globalHealth;
-  uint64_t totalLogicalBlocks;
-  uint64_t allocatedLogicalBlocks;
+  uint32_t logicalPageSize;
+  uint64_t totalLogicalPages;
+  uint64_t allocatedLogicalPages;
 
   bool createNamespace(uint32_t, Namespace::Information *);
   bool destroyNamespace(uint32_t);
+  void convertAddress(uint64_t &, uint64_t &, uint32_t);
+
+  // Admin commands
+  bool deleteSQueue(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+  bool createSQueue(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+  bool getLogPage(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+  bool deleteCQueue(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+  bool createCQueue(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+  bool identify(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+  bool abort(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+  bool setFeatures(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+  bool getFeatures(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+  bool asyncEventReq(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+  bool namespaceManagement(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
+  bool namespaceAttachment(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
 
  public:
   Subsystem(Controller *, ConfigData *);
   ~Subsystem();
 
   bool submitCommand(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
-  uint64_t allocatedNVMCapacity();
+  void getNVMCapacity(uint64_t &, uint64_t &);
   uint32_t validNamespaceCount();
+
+  void read(uint64_t, uint64_t, PRPList &, uint64_t &);
+  void write(uint64_t, uint64_t, PRPList &, uint64_t &);
+  void flush(uint64_t &);
+  void trim(uint64_t, uint64_t, uint64_t &);
 };
 
 }  // namespace NVMe

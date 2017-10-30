@@ -45,11 +45,15 @@ Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
     : pParent(ctrl),
       pDisk(nullptr),
       pCfgdata(cfg),
-      conf(cfg->conf->nvmeConfig),
-      allocatedLogicalBlocks(0) {
-  // TODO: fillup totalLogicalBlocks
+      conf(cfg->pConfigReader->nvmeConfig),
+      allocatedLogicalPages(0) {
+  pHIL = new HIL(cfg->pConfigReader);
+
+  pHIL->getLPNInfo(totalLogicalPages, logicalPageSize);
 
   if (conf.readBoolean(NVME_ENABLE_DISK_IMAGE)) {
+    uint64_t diskSize;
+
     if (conf.readBoolean(NVME_USE_COW_DISK)) {
       pDisk = new CoWDisk();
     }
@@ -57,13 +61,24 @@ Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
       pDisk = new Disk();
     }
 
-    // TODO
+    std::string filename = conf.readString(NVME_DISK_IMAGE_PATH);
+
+    diskSize = pDisk->open(filename);
+
+    if (diskSize == 0) {
+      // TODO: panic("Failed to open disk image");
+    }
+    else if (diskSize != totalLogicalPages * logicalPageSize) {
+      if (conf.readBoolean(NVME_STRICT_DISK_SIZE)) {
+        // TODO: panic("Disk size not match");
+      }
+    }
   }
 
   if (conf.readBoolean(NVME_ENABLE_DEFAULT_NAMESPACE)) {
     Namespace::Information info;
-    std::list<LBARange> list;
     uint32_t lba = (uint32_t)conf.readUint(NVME_LBA_SIZE);
+    uint32_t lbaRatio = logicalPageSize / lba;
 
     for (info.lbaFormatIndex = 0; info.lbaFormatIndex < nLBAFormat;
          info.lbaFormatIndex++) {
@@ -78,20 +93,19 @@ Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
       // TODO: panic("Failed to setting LBA size (512B ~ 4KB)");
     }
 
-    // TODO make one full-sized LBA range
-    // TODO move this to createNamespace
-    allocatedLogicalBlocks = totalLogicalBlocks;
-    list.push_back(LBARange(0, allocatedLogicalBlocks));
+    // Default namespace is full-sized
+    allocatedLogicalPages = totalLogicalPages;
 
-    // TODO set data from FTL/NAND configuration
-    Namespace *pNS = new Namespace(this, pCfgdata);
-    pNS->setData(NSID_LOWEST, &info);
-    pNS->attach(true);
+    // Fill Namespace information
+    info.size = totalLogicalPages * lbaRatio;
+    info.capacity = info.size;
+    info.dataProtectionSettings = 0x00;
+    info.namespaceSharingCapabilities = 0x00;
 
-    lNamespaces.push_back(pNS);
+    if (!createNamespace(NSID_LOWEST, &info)) {
+      // TODO: panic("Failed to create namespace");
+    }
   }
-
-  pHIL = new HIL(cfg->conf);
 }
 
 Subsystem::~Subsystem() {
@@ -184,6 +198,11 @@ bool Subsystem::submitCommand(SQEntryWrapper &req, CQEntryWrapper &resp,
   }
 
   return submit;
+}
+
+void Subsystem::getNVMCapacity(uint64_t &total, uint64_t &used) {
+  total = totalLogicalPages * logicalPageSize;
+  used = allocatedLogicalPages * logicalPageSize;
 }
 
 // TODO: for namespace management function

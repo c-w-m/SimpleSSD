@@ -25,6 +25,8 @@
 #include "hil/nvme/def.hh"
 #include "hil/nvme/dma.hh"
 #include "hil/nvme/queue.hh"
+#include "hil/hil.hh"
+#include "util/disk.hh"
 
 namespace SimpleSSD {
 
@@ -59,7 +61,10 @@ class Namespace {
 
  private:
   Subsystem *pParent;
+  Disk *pDisk;
+
   ConfigData *pCfgdata;
+  Config conf;
 
   Information info;
   uint32_t nsid;
@@ -81,6 +86,7 @@ class Namespace {
 
  public:
   Namespace(Subsystem *, ConfigData *);
+  ~Namespace();
 
   bool submitCommand(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
 

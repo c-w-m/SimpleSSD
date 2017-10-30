@@ -20,6 +20,7 @@
 #include "hil/nvme/namespace.hh"
 
 #include "hil/nvme/subsystem.hh"
+#include "util/algorithm.hh"
 
 namespace SimpleSSD {
 
@@ -29,10 +30,18 @@ namespace NVMe {
 
 Namespace::Namespace(Subsystem *p, ConfigData *c)
     : pParent(p),
+      pDisk(nullptr),
       pCfgdata(c),
+      conf(c->pConfigReader->nvmeConfig),
       nsid(NSID_NONE),
       attached(false),
       allocated(false) {}
+
+Namespace::~Namespace() {
+  if (pDisk) {
+    delete pDisk;
+  }
+}
 
 bool Namespace::submitCommand(SQEntryWrapper &req, CQEntryWrapper &resp,
                               uint64_t &tick) {
@@ -81,6 +90,30 @@ void Namespace::setData(uint32_t id, Information *data,
   nsid = id;
   lpnRanges = ranges;
   memcpy(&info, data, sizeof(Information));
+
+  if (conf.readBoolean(NVME_ENABLE_DISK_IMAGE) && id == NSID_LOWEST) {
+    uint64_t diskSize;
+
+    if (conf.readBoolean(NVME_USE_COW_DISK)) {
+      pDisk = new CoWDisk();
+    }
+    else {
+      pDisk = new Disk();
+    }
+
+    std::string filename = conf.readString(NVME_DISK_IMAGE_PATH);
+
+    diskSize = pDisk->open(filename, info.lbaSize);
+
+    if (diskSize == 0) {
+      // TODO: panic("Failed to open disk image");
+    }
+    else if (diskSize != info.size * info.lbaSize) {
+      if (conf.readBoolean(NVME_STRICT_DISK_SIZE)) {
+        // TODO: panic("Disk size not match");
+      }
+    }
+  }
 
   allocated = true;
 }
@@ -174,6 +207,9 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
   }
 
   if (!err) {
+    uint64_t dmaTick = tick;
+    uint64_t dmaDelayed;
+
     PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2,
                 (uint64_t)nlb * info.lbaSize);
 
@@ -182,9 +218,16 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
     if (pDisk) {
       uint8_t *buffer = (uint8_t *)calloc(nlb, info.lbaSize);
 
-
+      dmaDelayed = PRP.read(0, nlb * info.lbaSize, buffer, dmaTick);
       pDisk->write(slba, nlb, buffer);
+
+      free(buffer);
     }
+    else {
+      dmaDelayed = PRP.read(0, nlb * info.lbaSize, nullptr, dmaTick);
+    }
+
+    tick = MAX(tick, dmaTick);
 
     // DPRINTF(NVMeBreakdown, "N%u|2|W|I%d|F%" PRIu64 "|D%" PRIu64 "\n", nsid,
     //         req.entry.dword0.CID, totalReq, DMA);
@@ -215,10 +258,28 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
   }
 
   if (!err) {
+    uint64_t dmaTick = tick;
+    uint64_t dmaDelayed;
+
     PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2,
                 (uint64_t)nlb * info.lbaSize);
 
     pParent->write(this, slba, nlb, PRP, tick);
+
+    if (pDisk) {
+      uint8_t *buffer = (uint8_t *)calloc(nlb, info.lbaSize);
+
+      pDisk->read(slba, nlb, buffer);
+      dmaDelayed = PRP.write(0, nlb * info.lbaSize, buffer, dmaTick);
+
+      free(buffer);
+    }
+    else {
+      dmaDelayed = PRP.write(0, nlb * info.lbaSize, nullptr, dmaTick);
+    }
+
+    tick = MAX(tick, dmaTick);
+
     // DPRINTF(NVMeBreakdown, "N%u|2|R|I%d|F%" PRIu64 "|D%" PRIu64 "\n", nsid,
     //         req.entry.dword0.CID, cmdDelay, DMA);
     //

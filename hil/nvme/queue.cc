@@ -44,6 +44,16 @@ CQEntryWrapper::_CQEntryWrapper(SQEntryWrapper &sqew) {
   entry.dword3.commandID = sqew.entry.dword0.commandID;
 }
 
+void CQEntryWrapper::makeStatus(bool dnr, bool more, STATUS_CODE_TYPE sct,
+                                int sc) {
+  entry.dword3.status = 0x0000;
+
+  entry.dword3.status = ((dnr ? 1 : 0) << 15);
+  entry.dword3.status |= ((more ? 1 : 0) << 14);
+  entry.dword3.status |= ((sct & 0x07) << 9);
+  entry.dword3.status |= ((sc & 0xFF) << 1);
+}
+
 Queue::Queue(uint16_t qid, uint16_t length)
     : id(qid), head(0), tail(0), size(length), stride(0), base(nullptr) {}
 

@@ -20,6 +20,7 @@
 #ifndef __HIL_NVME_QUEUE__
 #define __HIL_NVME_QUEUE__
 
+#include "hil/nvme/def.hh"
 #include "hil/nvme/dma.hh"
 
 namespace SimpleSSD {
@@ -89,6 +90,7 @@ typedef struct _CQEntryWrapper {
   uint16_t cqID;
 
   _CQEntryWrapper(SQEntryWrapper &);
+  void makeStatus(bool, bool, STATUS_CODE_TYPE, int);
 } CQEntryWrapper;
 
 class Queue {

@@ -21,6 +21,6 @@
 
 namespace SimpleSSD {
 
-Disk::Disk() : diskSize(0), realSize(0), sectorSize(0) {}
+Disk::Disk() : diskSize(0), realSize(0) {}
 
 }  // namespace SimpleSSD

@@ -68,7 +68,7 @@ class Namespace {
 
   HealthInfo health;
 
-  std::list<LBARange> lbaRanges;
+  std::list<LPNRange> lpnRanges;
 
   // Admin commands
   void getLogPage(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
@@ -84,11 +84,11 @@ class Namespace {
 
   bool submitCommand(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
 
-  void setData(uint32_t, Information *, std::list<LBARange> &);
+  void setData(uint32_t, Information *, std::list<LPNRange> &);
   void attach(bool);
   uint32_t getNSID();
   Information *getInfo();
-  void getLBARange(std::list<LBARange> &);
+  std::list<LPNRange> *getLPNRange();
   bool isAttached();
 };
 

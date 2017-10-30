@@ -77,8 +77,9 @@ bool Namespace::submitCommand(SQEntryWrapper &req, CQEntryWrapper &resp,
 }
 
 void Namespace::setData(uint32_t id, Information *data,
-                        std::list<LBARange> &ranges) {
+                        std::list<LPNRange> &ranges) {
   nsid = id;
+  lpnRanges = ranges;
   memcpy(&info, data, sizeof(Information));
 
   allocated = true;
@@ -96,8 +97,8 @@ Namespace::Information *Namespace::getInfo() {
   return &info;
 }
 
-void Namespace::getLBARange(std::list<LBARange> &list) {
-  list = lbaRanges;
+std::list<LPNRange> *Namespace::getLPNRange() {
+  return &lpnRanges;
 }
 
 bool Namespace::isAttached() {

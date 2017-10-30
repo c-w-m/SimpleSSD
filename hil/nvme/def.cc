@@ -35,10 +35,6 @@ LPNRange::_LPNRange() : slpn(0), nlp(0) {}
 
 LPNRange::_LPNRange(uint64_t s, uint64_t n) : slpn(s), nlp(n) {}
 
-LBARange::_LBARange() : slba(0), nlblk(0) {}
-
-LBARange::_LBARange(uint64_t s, uint64_t n) : slba(s), nlblk(n) {}
-
 }  // namespace NVMe
 
 }  // namespace HIL

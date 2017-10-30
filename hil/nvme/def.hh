@@ -62,14 +62,6 @@ typedef struct _LPNRange {
   _LPNRange(uint64_t, uint64_t);
 } LPNRange;
 
-typedef struct _LBARange {
-  uint64_t slba;
-  uint64_t nlblk;
-
-  _LBARange();
-  _LBARange(uint64_t, uint64_t);
-} LBARange;
-
 typedef enum {
   PRIORITY_URGENT,
   PRIORITY_HIGH,

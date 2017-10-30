@@ -33,7 +33,8 @@ DMAScheduler::DMAScheduler(Interface *intr, Config *conf)
 
 uint64_t DMAScheduler::read(uint64_t addr, uint64_t length, uint8_t *buffer,
                             uint64_t &tick) {
-  uint64_t delay = (uint64_t)(psPerByte * length + 0.5);
+  uint64_t latency = (uint64_t)(psPerByte * length + 0.5);
+  uint64_t delay = 0;
 
   // DMA Scheduling
   if (tick == 0) {
@@ -41,12 +42,11 @@ uint64_t DMAScheduler::read(uint64_t addr, uint64_t length, uint8_t *buffer,
   }
 
   if (lastReadEndAt <= tick) {
-    lastReadEndAt = tick + delay;
+    lastReadEndAt = tick + latency;
   }
   else {
-    uint64_t diff = lastReadEndAt - tick;
-    lastReadEndAt += delay;
-    tick += diff;
+    delay = lastReadEndAt - tick;
+    lastReadEndAt += latency;
   }
 
   // Read data
@@ -67,12 +67,16 @@ uint64_t DMAScheduler::read(uint64_t addr, uint64_t length, uint8_t *buffer,
     // }
   }
 
-  return tick + delay;
+  delay += tick;
+  tick = delay + latency;
+
+  return delay;
 }
 
 uint64_t DMAScheduler::write(uint64_t addr, uint64_t length, uint8_t *buffer,
                              uint64_t &tick) {
-  uint64_t delay = (uint64_t)(psPerByte * length + 0.5);
+  uint64_t latency = (uint64_t)(psPerByte * length + 0.5);
+  uint64_t delay = 0;
 
   // DMA Scheduling
   if (tick == 0) {
@@ -80,12 +84,11 @@ uint64_t DMAScheduler::write(uint64_t addr, uint64_t length, uint8_t *buffer,
   }
 
   if (lastWriteEndAt <= tick) {
-    lastWriteEndAt = tick + delay;
+    lastWriteEndAt = tick + latency;
   }
   else {
-    uint64_t diff = lastWriteEndAt - tick;
-    lastWriteEndAt += delay;
-    tick += diff;
+    delay = lastWriteEndAt - tick;
+    lastWriteEndAt += latency;
   }
 
   // Read data
@@ -106,7 +109,10 @@ uint64_t DMAScheduler::write(uint64_t addr, uint64_t length, uint8_t *buffer,
     // }
   }
 
-  return tick + delay;
+  delay += tick;
+  tick = delay + latency;
+
+  return delay;
 }
 
 PRP::PRP() : addr(0), size(0) {}
@@ -225,7 +231,7 @@ uint64_t PRPList::getPRPSize(uint64_t addr) {
 
 uint64_t PRPList::read(uint64_t offset, uint64_t length, uint8_t *buffer,
                        uint64_t &tick) {
-  uint64_t finishedAt = 0;
+  uint64_t delay = 0;
   uint64_t totalRead = 0;
   uint64_t currentOffset = 0;
   uint64_t read;
@@ -234,8 +240,8 @@ uint64_t PRPList::read(uint64_t offset, uint64_t length, uint8_t *buffer,
   for (auto &iter : prpList) {
     if (begin) {
       read = MIN(iter.size, length - totalRead);
-      finishedAt = dmaEngine->read(
-          iter.addr, read, buffer ? buffer + totalRead : NULL, finishedAt);
+      dmaEngine->read(iter.addr, read, buffer ? buffer + totalRead : NULL,
+                      tick);
       totalRead += read;
 
       if (totalRead == length) {
@@ -247,7 +253,7 @@ uint64_t PRPList::read(uint64_t offset, uint64_t length, uint8_t *buffer,
       begin = true;
       totalRead = offset - currentOffset;
       read = MIN(iter.size - totalRead, length);
-      finishedAt = dmaEngine->read(iter.addr, read, buffer, tick);
+      delay = dmaEngine->read(iter.addr, read, buffer, tick);
       totalRead = read;
     }
 
@@ -257,12 +263,12 @@ uint64_t PRPList::read(uint64_t offset, uint64_t length, uint8_t *buffer,
   // TODO: DPRINTF(NVMeDMA, "DMAPORT | READ  | Tick %" PRIu64 "\n",
   // totalDMATime);
 
-  return finishedAt;
+  return delay;
 }
 
 uint64_t PRPList::write(uint64_t offset, uint64_t length, uint8_t *buffer,
                         uint64_t &tick) {
-  uint64_t finishedAt = 0;
+  uint64_t delay = 0;
   uint64_t totalWritten = 0;
   uint64_t currentOffset = 0;
   uint64_t written;
@@ -271,9 +277,8 @@ uint64_t PRPList::write(uint64_t offset, uint64_t length, uint8_t *buffer,
   for (auto &iter : prpList) {
     if (begin) {
       written = MIN(iter.size, length - totalWritten);
-      finishedAt =
-          dmaEngine->write(iter.addr, written,
-                           buffer ? buffer + totalWritten : NULL, finishedAt);
+      dmaEngine->write(iter.addr, written,
+                       buffer ? buffer + totalWritten : NULL, tick);
       totalWritten += written;
 
       if (totalWritten == length) {
@@ -285,7 +290,7 @@ uint64_t PRPList::write(uint64_t offset, uint64_t length, uint8_t *buffer,
       begin = true;
       totalWritten = offset - currentOffset;
       written = MIN(iter.size - totalWritten, length);
-      finishedAt = dmaEngine->write(iter.addr, written, buffer, tick);
+      delay = dmaEngine->write(iter.addr, written, buffer, tick);
       totalWritten = written;
     }
 
@@ -295,7 +300,7 @@ uint64_t PRPList::write(uint64_t offset, uint64_t length, uint8_t *buffer,
   // TODO: DPRINTF(NVMeDMA, "DMAPORT | WRITE | Tick %" PRIu64 "\n",
   // totalDMATime);
 
-  return finishedAt;
+  return delay;
 }
 
 }  // namespace NVMe

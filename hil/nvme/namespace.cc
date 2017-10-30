@@ -100,6 +100,10 @@ void Namespace::getLBARange(std::list<LBARange> &list) {
   list = lbaRanges;
 }
 
+bool Namespace::isAttached() {
+  return attached;
+}
+
 void Namespace::getLogPage(SQEntryWrapper &req, CQEntryWrapper &resp,
                            uint64_t &tick) {
   uint16_t numdl = (req.entry.dword10 & 0xFFFF0000) >> 16;

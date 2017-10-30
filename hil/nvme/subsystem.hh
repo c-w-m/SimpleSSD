@@ -42,6 +42,7 @@ class Subsystem {
 
   ConfigData *pCfgdata;
   Config &conf;
+  uint32_t queueAllocated;
 
   HealthInfo globalHealth;
   uint32_t logicalPageSize;
@@ -52,6 +53,7 @@ class Subsystem {
   bool destroyNamespace(uint32_t);
   void convertLBAToLPN(uint64_t &, uint64_t &, uint32_t);
   void convertLPNToLBA(uint64_t &, uint64_t &, uint32_t);
+  void fillIdentifyNamespace(uint8_t *, Namespace::Information *);
 
   // Admin commands
   bool deleteSQueue(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);

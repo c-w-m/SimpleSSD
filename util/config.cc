@@ -29,7 +29,8 @@ namespace SimpleSSD {
 
 const char SECTION_NVME[] = "nvme";
 const char SECTION_FTL[] = "ftl";
-// const char SECTION_ICL[] = "cache";
+const char SECTION_ICL[] = "icl";
+const char SECTION_PAL[] = "pal";
 
 bool BaseConfig::convertBool(const char *value) {
   bool ret = false;
@@ -49,6 +50,8 @@ bool ConfigReader::init(std::string file) {
   // Update all
   nvmeConfig.update();
   ftlConfig.update();
+  iclConfig.update();
+  palConfig.update();
 
   return true;
 }
@@ -56,12 +59,23 @@ bool ConfigReader::init(std::string file) {
 int ConfigReader::parserHandler(void *context, const char *section,
                                 const char *name, const char *value) {
   ConfigReader *pThis = (ConfigReader *)context;
+  bool handled = true;
 
   if (MATCH_SECTION(SECTION_NVME)) {
-    pThis->nvmeConfig.setConfig(name, value);
+    handled = pThis->nvmeConfig.setConfig(name, value);
   }
   else if (MATCH_SECTION(SECTION_FTL)) {
-    pThis->ftlConfig.setConfig(name, value);
+    handled = pThis->ftlConfig.setConfig(name, value);
+  }
+  else if (MATCH_SECTION(SECTION_ICL)) {
+    handled = pThis->iclConfig.setConfig(name, value);
+  }
+  else if (MATCH_SECTION(SECTION_PAL)) {
+    handled = pThis->palConfig.setConfig(name, value);
+  }
+
+  if (!handled) {
+    // TODO: warn("Config [%s] %s = %s not handled\n", section, name, value);
   }
 
   return 1;

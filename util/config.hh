@@ -25,7 +25,9 @@
 
 #include "ftl/config.hh"
 #include "hil/nvme/config.hh"
+#include "icl/config.hh"
 #include "lib/ini/ini.h"
+#include "pal/config.hh"
 
 namespace SimpleSSD {
 
@@ -34,8 +36,10 @@ class ConfigReader {
   static int parserHandler(void *, const char *, const char *, const char *);
 
  public:
-  HIL::NVMe::Config nvmeConfig;
   FTL::Config ftlConfig;
+  HIL::NVMe::Config nvmeConfig;
+  ICL::Config iclConfig;
+  PAL::Config palConfig;
 
   bool init(std::string);
 

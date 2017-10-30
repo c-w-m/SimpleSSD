@@ -43,9 +43,6 @@ bool Namespace::submitCommand(SQEntryWrapper &req, CQEntryWrapper &resp,
   // Admin commands
   if (req.sqID == 0) {
     switch (req.entry.dword0.opcode) {
-      case OPCODE_IDENTIFY:
-        identify(req, resp, beginAt);
-        break;
       case OPCODE_GET_LOG_PAGE:
         getLogPage(req, resp, beginAt);
         break;
@@ -86,9 +83,6 @@ void Namespace::setData(uint32_t id, Information *data,
   nsid = id;
   memcpy(&info, data, sizeof(Information));
 
-  // TODO calculate lbaratio
-  // TODO set rawInfo
-
   allocated = true;
 }
 
@@ -102,37 +96,6 @@ uint32_t Namespace::getNSID() {
 
 Namespace::Information *Namespace::getInfo() {
   return &info;
-}
-
-void Namespace::identify(SQEntryWrapper &req, CQEntryWrapper &resp,
-                         uint64_t &tick) {
-  bool err = false;
-
-  uint8_t cns = req.entry.dword10 & 0xFF;
-
-  PRPList PRP(pCfgdata->pDmaEngine, pCfgdata->memoryPageSize, req.entry.data1,
-              req.entry.data2, (uint64_t)0x1000);
-
-  switch (cns) {
-    case CNS_IDENTIFY_NAMESPACE:
-      if (!attached) {
-        err = true;
-        resp.makeStatus(true, false, TYPE_COMMAND_SPECIFIC_STATUS,
-                        STATUS_NAMESPACE_NOT_ATTACHED);
-      }
-
-      break;
-    case CNS_IDENTIFY_ALLOCATED_NAMESPACE:
-      // Do nothing
-      break;
-    default:
-      // TODO panic("nvme_namespace: Invalid CNS in identify namespace\n");
-      break;
-  }
-
-  if (!err) {
-    PRP.write(0, 0x1000, rawInfo, tick);
-  }
 }
 
 void Namespace::getLogPage(SQEntryWrapper &req, CQEntryWrapper &resp,

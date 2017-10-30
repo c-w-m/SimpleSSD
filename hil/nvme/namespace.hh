@@ -66,7 +66,6 @@ class Namespace {
   ConfigData *pCfgdata;
 
   Information info;
-  uint8_t rawInfo[0x1000];
   uint32_t nsid;
   bool attached;
   bool allocated;
@@ -76,7 +75,6 @@ class Namespace {
   std::list<LBARange> lbaRanges;
 
   // Admin commands
-  void identify(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
   void getLogPage(SQEntryWrapper &, CQEntryWrapper &, uint64_t &);
 
   // NVM commands

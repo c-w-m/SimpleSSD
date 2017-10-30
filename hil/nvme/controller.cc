@@ -815,7 +815,9 @@ void Controller::identify(uint8_t *data) {
     // [Bits ] Description
     // [07:01] Reserved
     // [00:00] 1 for volatile write cache is present
-    data[0x020D] = nvmeConfig.WriteCaching ? 0x01 : 0x00;
+    data[0x020D] = cfgdata.conf->iclConfig.readBoolean(ICL::ICL_USE_WRITE_CACHE)
+                       ? 0x01
+                       : 0x00;
 
     // Atomic Write Unit Normal
     {

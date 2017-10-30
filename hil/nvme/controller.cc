@@ -19,6 +19,8 @@
 
 #include "hil/nvme/controller.hh"
 
+#include "hil/nvme/subsystem.hh"
+
 namespace SimpleSSD {
 
 namespace HIL {
@@ -173,15 +175,13 @@ void Controller::writeRegister(uint64_t offset, uint64_t size, uint8_t *buffer,
         // Apply to admin queue
         if (ppCQueue[0]) {
           ppCQueue[0]->setBase(
-              new PRPList(pDmaEngine, cfgdata.memoryPageSize,
-                          registers.adminCQueueBaseAddress,
+              new PRPList(&cfgdata, registers.adminCQueueBaseAddress,
                           ppCQueue[0]->getSize() * cqstride, true),
               cqstride);
         }
         if (ppSQueue[0]) {
           ppSQueue[0]->setBase(
-              new PRPList(pDmaEngine, cfgdata.memoryPageSize,
-                          registers.adminSQueueBaseAddress,
+              new PRPList(&cfgdata, registers.adminSQueueBaseAddress,
                           ppSQueue[0]->getSize() * sqstride, true),
               sqstride);
         }
@@ -391,8 +391,7 @@ int Controller::createCQueue(uint16_t cqid, uint16_t size, uint16_t iv,
 
   if (ppCQueue[cqid] == NULL) {
     ppCQueue[cqid] = new CQueue(iv, ien, cqid, size);
-    ppCQueue[cqid]->setBase(new PRPList(pDmaEngine, cfgdata.memoryPageSize,
-                                        prp1, size * cqstride, pc),
+    ppCQueue[cqid]->setBase(new PRPList(&cfgdata, prp1, size * cqstride, pc),
                             cqstride);
 
     ret = 0;
@@ -411,8 +410,7 @@ int Controller::createSQueue(uint16_t sqid, uint16_t cqid, uint16_t size,
   if (ppSQueue[sqid] == NULL) {
     if (ppCQueue[cqid] != NULL) {
       ppSQueue[sqid] = new SQueue(cqid, priority, sqid, size);
-      ppSQueue[sqid]->setBase(new PRPList(pDmaEngine, cfgdata.memoryPageSize,
-                                          prp1, size * sqstride, pc),
+      ppSQueue[sqid]->setBase(new PRPList(&cfgdata, prp1, size * sqstride, pc),
                               sqstride);
 
       ret = 0;

@@ -26,7 +26,6 @@
 #include "hil/nvme/dma.hh"
 #include "hil/nvme/interface.hh"
 #include "hil/nvme/queue.hh"
-#include "hil/nvme/subsystem.hh"
 #include "util/config.hh"
 
 namespace SimpleSSD {
@@ -34,6 +33,8 @@ namespace SimpleSSD {
 namespace HIL {
 
 namespace NVMe {
+
+class Subsystem;
 
 typedef union _RegisterTable {
   uint8_t data[64];

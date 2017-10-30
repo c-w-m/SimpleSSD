@@ -521,11 +521,14 @@ int Controller::abort(uint16_t sqid, uint16_t cid) {
 
 void Controller::identify(uint8_t *data) {
   uint16_t vid, ssvid;
-  uint64_t totalSize = cfgdata.conf->getNVMCapacity();
-  uint64_t unallocated = totalSize - pSubsystem->allocatedNVMCapacity();
+  uint64_t totalSize;
+  uint64_t unallocated;
   uint32_t nn = pSubsystem->validNamespaceCount();
 
   pParent->getVendorID(vid, ssvid);
+  pSubsystem->getNVMCapacity(totalSize, unallocated);
+
+  unallocated = totalSize - unallocated;
 
   /** Controller Capabilities and Features **/
   {

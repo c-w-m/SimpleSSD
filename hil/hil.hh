@@ -27,6 +27,14 @@ namespace SimpleSSD {
 
 namespace HIL {
 
+typedef struct _LPNRange {
+  uint64_t slpn;
+  uint64_t nlp;
+
+  _LPNRange();
+  _LPNRange(uint64_t, uint64_t);
+} LPNRange;
+
 class HIL {
  private:
   ConfigReader *conf;

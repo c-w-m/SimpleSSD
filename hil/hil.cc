@@ -23,6 +23,10 @@ namespace SimpleSSD {
 
 namespace HIL {
 
+LPNRange::_LPNRange() : slpn(0), nlp(0) {}
+
+LPNRange::_LPNRange(uint64_t s, uint64_t n) : slpn(s), nlp(n) {}
+
 HIL::HIL(ConfigReader *c) : conf(c) {
   cache = new ICL::Cache(conf);
 }

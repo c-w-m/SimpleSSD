@@ -54,14 +54,6 @@ typedef union _HealthInfo {
   _HealthInfo();
 } HealthInfo;
 
-typedef struct _LPNRange {
-  uint64_t slpn;
-  uint64_t nlp;
-
-  _LPNRange();
-  _LPNRange(uint64_t, uint64_t);
-} LPNRange;
-
 typedef enum {
   PRIORITY_URGENT,
   PRIORITY_HIGH,

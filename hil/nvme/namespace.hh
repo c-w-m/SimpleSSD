@@ -36,6 +36,15 @@ typedef struct _LBARange {
   _LBARange(uint64_t, uint64_t);
 } LBARange;
 
+typedef union _DatasetManagementRange {
+  uint8_t data[0x10];
+  struct {
+    uint32_t attr;
+    uint32_t nlb;
+    uint64_t slba;
+  };
+} DatasetManagementRange;
+
 class Namespace {
  public:
   typedef struct _Information {
@@ -64,7 +73,6 @@ class Namespace {
 
   HealthInfo health;
 
-  uint32_t lbaratio;  //!< NAND page size / LBA size
   std::list<LBARange> lbaRanges;
 
   // Admin commands
@@ -85,6 +93,7 @@ class Namespace {
   void setData(uint32_t, Information *, std::list<LBARange> &);
   void attach(bool);
   uint32_t getNSID();
+  Information *getInfo();
 };
 
 }  // namespace NVMe

@@ -50,7 +50,6 @@ class Namespace {
   typedef struct _Information {
     uint64_t size;                         //!< NSZE
     uint64_t capacity;                     //!< NCAP
-    uint64_t usage;                        //<! NUSE
     uint64_t sizeInByteL;                  //<! NVMCAPL
     uint64_t sizeInByteH;                  //<! NVMCAPH
     uint8_t feature;                       //!< NSFEAT

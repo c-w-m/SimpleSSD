@@ -209,7 +209,8 @@ bool Subsystem::createNamespace(uint32_t nsid, Namespace::Information *info) {
   pNS->setData(nsid, info, unallocated);
 
   lNamespaces.push_back(pNS);
-  // // DPRINTF(NVMeAll, "NS %-5d| CREATE | LBA Range %" PRIu64 " + %" PRIu64 "\n",
+  // // DPRINTF(NVMeAll, "NS %-5d| CREATE | LBA Range %" PRIu64 " + %" PRIu64
+  // "\n",
   //        nsid, lastOffset, logical_blocks);
 
   return true;
@@ -238,12 +239,40 @@ bool Subsystem::destroyNamespace(uint32_t nsid) {
   return found;
 }
 
-void Subsystem::convertLBAToLPN(uint64_t &slba, uint64_t &nlblk, uint32_t lbaSize) {
+void Subsystem::fillIdentifyNamespace(uint8_t *buffer,
+                                      Namespace::Information *info) {
+  // Namespace Size
+  memcpy(buffer + 0, &info->size, 8);
 
-}
+  // Namespace Capacity
+  memcpy(buffer + 8, &info->capacity, 8);
 
-void Subsystem::fillIdentifyNamespace(uint8_t *buffer, Namespace::Information *info) {
+  // Namespace Utilization
+  memcpy(buffer + 16, &info->capacity, 8);
 
+  // Namespace Features
+  buffer[24] = 0x04;  // Trim supported
+
+  // Number of LBA Formats
+  buffer[25] = nLBAFormat;
+
+  // Formatted LBA Size
+  buffer[26] = info->lbaFormatIndex;
+
+  // End-to-end Data Protection Capabilities
+  buffer[28] = info->dataProtectionSettings;
+
+  // Namespace Multi-path I/O and Namespace Sharing Capabilities
+  buffer[30] = info->namespaceSharingCapabilities;
+
+  // NVM capacity
+  memcpy(buffer + 48, &info->sizeInByteL, 8);
+  memcpy(buffer + 56, &info->sizeInByteH, 8);
+
+  // LBA Formats
+  for (uint32_t i = 0; i < nLBAFormat; i++) {
+    memcpy(buffer + 128 + i * 4, lbaFormat + i, 4);
+  }
 }
 
 bool Subsystem::submitCommand(SQEntryWrapper &req, CQEntryWrapper &resp,
@@ -328,7 +357,8 @@ uint32_t Subsystem::validNamespaceCount() {
   return (uint32_t)lNamespaces.size();
 }
 
-bool Subsystem::deleteSQueue(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &tick) {
+bool Subsystem::deleteSQueue(SQEntryWrapper &req, CQEntryWrapper &resp,
+                             uint64_t &tick) {
   uint16_t sqid = req.entry.dword10 & 0xFFFF;
 
   // DPRINTF(NVMeAll, "ADMIN   | Delete I/O Submission Queue\n");
@@ -336,13 +366,15 @@ bool Subsystem::deleteSQueue(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t
   int ret = pParent->deleteSQueue(sqid);
 
   if (ret == 1) {
-    resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS, STATUS_INVALID_QUEUE_ID);
+    resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS,
+                    STATUS_INVALID_QUEUE_ID);
   }
 
   return true;
 }
 
-bool Subsystem::createSQueue(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &tick) {
+bool Subsystem::createSQueue(SQEntryWrapper &req, CQEntryWrapper &resp,
+                             uint64_t &tick) {
   bool err = false;
 
   uint16_t sqid = req.entry.dword10 & 0xFFFF;
@@ -355,24 +387,29 @@ bool Subsystem::createSQueue(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t
 
   if (entrySize > pCfgdata->maxQueueEntry) {
     err = true;
-    resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS, STATUS_INVALID_QUEUE_SIZE);
+    resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS,
+                    STATUS_INVALID_QUEUE_SIZE);
   }
 
   if (!err) {
-    int ret = pParent->createSQueue(sqid, cqid, entrySize, priority, pc, req.entry.data1);
+    int ret = pParent->createSQueue(sqid, cqid, entrySize, priority, pc,
+                                    req.entry.data1);
 
     if (ret == 1) {
-      resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS, STATUS_INVALID_QUEUE_ID);
+      resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS,
+                      STATUS_INVALID_QUEUE_ID);
     }
     else if (ret == 2) {
-      resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS, STATUS_INVALID_COMPLETION_QUEUE);
+      resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS,
+                      STATUS_INVALID_COMPLETION_QUEUE);
     }
   }
 
   return true;
 }
 
-bool Subsystem::getLogPage(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &tick) {
+bool Subsystem::getLogPage(SQEntryWrapper &req, CQEntryWrapper &resp,
+                           uint64_t &tick) {
   uint16_t numdl = (req.entry.dword10 & 0xFFFF0000) >> 16;
   uint16_t lid = req.entry.dword10 & 0xFFFF;
   uint16_t numdu = req.entry.dword11 & 0xFFFF;
@@ -383,7 +420,8 @@ bool Subsystem::getLogPage(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &
   uint32_t req_size = (((uint32_t)numdu << 16 | numdl) + 1) * 4;
   uint64_t offset = ((uint64_t)lopu << 32) | lopl;
 
-  // DPRINTF(NVMeAll, "ADMIN   | Get Log Page | Log %d | Size %d | NSID %d\n", lid, req_size, req.entry.NSID);
+  // DPRINTF(NVMeAll, "ADMIN   | Get Log Page | Log %d | Size %d | NSID %d\n",
+  // lid, req_size, req.entry.NSID);
 
   PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2, (uint64_t)req_size);
 
@@ -402,14 +440,16 @@ bool Subsystem::getLogPage(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &
       break;
     default:
       ret = true;
-      resp.makeStatus(true, false, TYPE_COMMAND_SPECIFIC_STATUS, STATUS_INVALID_LOG_PAGE);
+      resp.makeStatus(true, false, TYPE_COMMAND_SPECIFIC_STATUS,
+                      STATUS_INVALID_LOG_PAGE);
       break;
   }
 
   return ret;
 }
 
-bool Subsystem::deleteCQueue(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &tick) {
+bool Subsystem::deleteCQueue(SQEntryWrapper &req, CQEntryWrapper &resp,
+                             uint64_t &tick) {
   uint16_t cqid = req.entry.dword10 & 0xFFFF;
 
   // DPRINTF(NVMeAll, "ADMIN   | Delete I/O Completion Queue\n");
@@ -417,16 +457,19 @@ bool Subsystem::deleteCQueue(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t
   int ret = pParent->deleteCQueue(cqid);
 
   if (ret == 1) {
-    resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS, STATUS_INVALID_QUEUE_ID);
+    resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS,
+                    STATUS_INVALID_QUEUE_ID);
   }
   else if (ret == 2) {
-    resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS, STATUS_INVALID_QUEUE_DELETE);
+    resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS,
+                    STATUS_INVALID_QUEUE_DELETE);
   }
 
   return true;
 }
 
-bool Subsystem::createCQueue(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &tick) {
+bool Subsystem::createCQueue(SQEntryWrapper &req, CQEntryWrapper &resp,
+                             uint64_t &tick) {
   bool err = false;
 
   uint16_t cqid = req.entry.dword10 & 0xFFFF;
@@ -439,21 +482,25 @@ bool Subsystem::createCQueue(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t
 
   if (entrySize > pCfgdata->maxQueueEntry) {
     err = true;
-    resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS, STATUS_INVALID_QUEUE_SIZE);
+    resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS,
+                    STATUS_INVALID_QUEUE_SIZE);
   }
 
   if (!err) {
-    int ret = pParent->createCQueue(cqid, entrySize, iv, ien, pc, req.entry.data1);
+    int ret =
+        pParent->createCQueue(cqid, entrySize, iv, ien, pc, req.entry.data1);
 
     if (ret == 1) {
-      resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS, STATUS_INVALID_QUEUE_ID);
+      resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS,
+                      STATUS_INVALID_QUEUE_ID);
     }
   }
 
   return true;
 }
 
-bool Subsystem::identify(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &tick) {
+bool Subsystem::identify(SQEntryWrapper &req, CQEntryWrapper &resp,
+                         uint64_t &tick) {
   bool err = false;
 
   uint8_t cns = req.entry.dword10 & 0xFF;
@@ -464,7 +511,8 @@ bool Subsystem::identify(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &ti
   uint16_t idx = 0;
 
   memset(data, 0, 0x1000);
-  // DPRINTF(NVMeAll, "ADMIN   | Identify | CNS %d | CNTID %d | NSID %d\n", cns, cntid, req.entry.NSID);
+  // DPRINTF(NVMeAll, "ADMIN   | Identify | CNS %d | CNTID %d | NSID %d\n", cns,
+  // cntid, req.entry.NSID);
 
   PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2, (uint64_t)0x1000);
 
@@ -474,11 +522,11 @@ bool Subsystem::identify(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &ti
         // FIXME: Not called by current(4.9.32) NVMe driver
       }
       else {
-       for (auto &iter : lNamespaces) {
-        if (iter->isAttached() && iter->getNSID() == req.entry.namespaceID) {
-          fillIdentifyNamespace(data, iter->getInfo());
+        for (auto &iter : lNamespaces) {
+          if (iter->isAttached() && iter->getNSID() == req.entry.namespaceID) {
+            fillIdentifyNamespace(data, iter->getInfo());
+          }
         }
-      }
       }
 
       break;
@@ -489,7 +537,8 @@ bool Subsystem::identify(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &ti
     case CNS_ACTIVE_NAMESPACE_LIST:
       if (req.entry.namespaceID >= NSID_ALL - 1) {
         err = true;
-        resp.makeStatus(true, false, TYPE_GENERIC_COMMAND_STATUS, STATUS_ABORT_INVALID_NAMESPACE);
+        resp.makeStatus(true, false, TYPE_GENERIC_COMMAND_STATUS,
+                        STATUS_ABORT_INVALID_NAMESPACE);
       }
       else {
         for (auto &iter : lNamespaces) {
@@ -503,7 +552,8 @@ bool Subsystem::identify(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &ti
     case CNS_ALLOCATED_NAMESPACE_LIST:
       if (req.entry.namespaceID >= NSID_ALL - 1) {
         err = true;
-        resp.makeStatus(true, false, TYPE_GENERIC_COMMAND_STATUS, STATUS_ABORT_INVALID_NAMESPACE);
+        resp.makeStatus(true, false, TYPE_GENERIC_COMMAND_STATUS,
+                        STATUS_ABORT_INVALID_NAMESPACE);
       }
       else {
         for (auto &iter : lNamespaces) {
@@ -515,11 +565,11 @@ bool Subsystem::identify(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &ti
 
       break;
     case CNS_IDENTIFY_ALLOCATED_NAMESPACE:
-    for (auto &iter : lNamespaces) {
-     if (iter->getNSID() == req.entry.namespaceID) {
-       fillIdentifyNamespace(data, iter->getInfo());
-     }
-   }
+      for (auto &iter : lNamespaces) {
+        if (iter->getNSID() == req.entry.namespaceID) {
+          fillIdentifyNamespace(data, iter->getInfo());
+        }
+      }
 
       break;
     case CNS_ATTACHED_CONTROLLER_LIST:
@@ -545,7 +595,8 @@ bool Subsystem::identify(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &ti
   return ret;
 }
 
-bool Subsystem::abort(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &tick) {
+bool Subsystem::abort(SQEntryWrapper &req, CQEntryWrapper &resp,
+                      uint64_t &tick) {
   uint16_t sqid = req.entry.dword10 & 0xFFFF;
   uint16_t cid = (req.entry.dword10 & 0xFFFF0000) >> 16;
 
@@ -565,31 +616,41 @@ bool Subsystem::abort(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &tick)
   return true;
 }
 
-bool Subsystem::setFeatures(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &tick) {
+bool Subsystem::setFeatures(SQEntryWrapper &req, CQEntryWrapper &resp,
+                            uint64_t &tick) {
   bool err = false;
 
   uint16_t fid = req.entry.dword10 & 0x00FF;
   bool save = req.entry.dword10 & 0x80000000;
 
-  // DPRINTF(NVMeAll, "ADMIN   | Set Features | Feature %d | NSID %d\n", fid, req.entry.NSID);
+  // DPRINTF(NVMeAll, "ADMIN   | Set Features | Feature %d | NSID %d\n", fid,
+  // req.entry.NSID);
 
   if (save) {
     err = true;
-    resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS, STATUS_FEATURE_ID_NOT_SAVEABLE);
+    resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS,
+                    STATUS_FEATURE_ID_NOT_SAVEABLE);
   }
 
   if (!err) {
     switch (fid) {
       case FEATURE_NUMBER_OF_QUEUES:
-        if ((req.entry.dword11 & 0xFFFF) == 0xFFFF || (req.entry.dword11 & 0xFFFF0000) == 0xFFFF0000) {
-          resp.makeStatus(false, false, TYPE_GENERIC_COMMAND_STATUS, STATUS_INVALID_FIELD);
+        if ((req.entry.dword11 & 0xFFFF) == 0xFFFF ||
+            (req.entry.dword11 & 0xFFFF0000) == 0xFFFF0000) {
+          resp.makeStatus(false, false, TYPE_GENERIC_COMMAND_STATUS,
+                          STATUS_INVALID_FIELD);
         }
         else {
-          if ((req.entry.dword11 & 0xFFFF) >= conf.readUint(NVME_MAX_IO_SQUEUE)) {
-            req.entry.dword11 = (req.entry.dword11 & 0xFFFF0000) | (conf.readUint(NVME_MAX_IO_SQUEUE) - 1);
+          if ((req.entry.dword11 & 0xFFFF) >=
+              conf.readUint(NVME_MAX_IO_SQUEUE)) {
+            req.entry.dword11 = (req.entry.dword11 & 0xFFFF0000) |
+                                (conf.readUint(NVME_MAX_IO_SQUEUE) - 1);
           }
-          if (((req.entry.dword11 & 0xFFFF0000) >> 16) >= conf.readUint(NVME_MAX_IO_CQUEUE)) {
-            req.entry.dword11 = (req.entry.dword11 & 0xFFFF) | ((uint32_t)(conf.readUint(NVME_MAX_IO_CQUEUE) - 1) << 16);
+          if (((req.entry.dword11 & 0xFFFF0000) >> 16) >=
+              conf.readUint(NVME_MAX_IO_CQUEUE)) {
+            req.entry.dword11 =
+                (req.entry.dword11 & 0xFFFF) |
+                ((uint32_t)(conf.readUint(NVME_MAX_IO_CQUEUE) - 1) << 16);
           }
 
           resp.entry.dword0 = req.entry.dword11;
@@ -598,7 +659,8 @@ bool Subsystem::setFeatures(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t 
 
         break;
       default:
-        resp.makeStatus(true, false, TYPE_GENERIC_COMMAND_STATUS, STATUS_INVALID_FIELD);
+        resp.makeStatus(true, false, TYPE_GENERIC_COMMAND_STATUS,
+                        STATUS_INVALID_FIELD);
         break;
     }
   }
@@ -606,71 +668,58 @@ bool Subsystem::setFeatures(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t 
   return true;
 }
 
-bool Subsystem::getFeatures(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &tick) {
+bool Subsystem::getFeatures(SQEntryWrapper &req, CQEntryWrapper &resp,
+                            uint64_t &tick) {
   uint16_t fid = req.entry.dword10 & 0x00FF;
-  static uint8_t lbaType[0x40];
 
-  // DPRINTF(NVMeAll, "ADMIN   | Get Features | Feature %d | NSID %d\n", fid, req.entry.NSID);
+  // DPRINTF(NVMeAll, "ADMIN   | Get Features | Feature %d | NSID %d\n", fid,
+  // req.entry.NSID);
 
   switch (fid) {
     case FEATURE_ARBITRATION:
-      resp.entry.dword0 = ((uint8_t)(conf.readUint(NVME_WRR_HIGH) * conf.readUint(NVME_WRR_MEDIUM) - 1) << 24) |
-        ((conf.readUint(NVME_WRR_MEDIUM) - 1) << 16) | 0x03;
-      break;
-    case FEATURE_LBA_RANGE_TYPE:
-      resp.entry.dword0 = 0x00000000;
-
-      ////////////////////////////////////////////////////////////// Type
-      lbaType[0x00] = 0x01;                                       // File system
-      // Attributes     10  [Bits ] Description
-      //                42  [07:02] Reserved
-      //                 1  [01:01] 1 for LBA range may be overwritten
-      //                 1  [00:00] 1 for LBA range should be hidden from the OS/EFI/BIOS
-      lbaType[0x01] = 0x00;
-      memset(lbaType + 0x02, 0, 14);                              // Reserved
-      ////////////////////////////////////////////////////////////// Starting LBA
-      memset(lbaType + 0x10, 0, 8);                               // 0
-      ////////////////////////////////////////////////////////////// Number of Logical Blocks
-      *(uint64_t *)(lbaType + 0x18) = nvmeConfig.GetNVMCapacity() / nvmeConfig.LBASize - 1;
-      ////////////////////////////////////////////////////////////// Unique Identifier
-      memset(lbaType + 0x20, 0, 16);
-      memset(lbaType + 0x30, 0, 16);                              // Reserved
-
-      {
-        PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2, (uint64_t)0x40);
-        PRP.write(0, 0x40, lbaType, tick);
-      }
-
+      resp.entry.dword0 = ((uint8_t)(conf.readUint(NVME_WRR_HIGH) *
+                                         conf.readUint(NVME_WRR_MEDIUM) -
+                                     1)
+                           << 24) |
+                          ((conf.readUint(NVME_WRR_MEDIUM) - 1) << 16) | 0x03;
       break;
     case FEATURE_VOLATILE_WRITE_CACHE:
-      resp.entry.dword0 = pCfgdata->pConfigReader->iclConfig.readBoolean(ICL::ICL_USE_WRITE_CACHE) ? 0x01 : 0x00;
+      resp.entry.dword0 = pCfgdata->pConfigReader->iclConfig.readBoolean(
+                              ICL::ICL_USE_WRITE_CACHE)
+                              ? 0x01
+                              : 0x00;
       break;
     case FEATURE_NUMBER_OF_QUEUES:
       resp.entry.dword0 = queueAllocated;
       break;
     default:
-      resp.makeStatus(true, false, TYPE_GENERIC_COMMAND_STATUS, STATUS_INVALID_FIELD);
+      resp.makeStatus(true, false, TYPE_GENERIC_COMMAND_STATUS,
+                      STATUS_INVALID_FIELD);
       break;
   }
 
   return true;
 }
 
-bool Subsystem::asyncEventReq(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &tick) {
+bool Subsystem::asyncEventReq(SQEntryWrapper &req, CQEntryWrapper &resp,
+                              uint64_t &tick) {
   // FIXME: Not implemented
   return true;
 }
 
-bool Subsystem::namespaceManagement(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &tick) {
+bool Subsystem::namespaceManagement(SQEntryWrapper &req, CQEntryWrapper &resp,
+                                    uint64_t &tick) {
   bool err = false;
 
   uint8_t sel = req.entry.dword10 & 0x0F;
 
-  // DPRINTF(NVMeAll, "ADMIN   | Namespace Management | OP %d | NSID %d\n", sel, req.entry.NSID);
+  // DPRINTF(NVMeAll, "ADMIN   | Namespace Management | OP %d | NSID %d\n", sel,
+  // req.entry.NSID);
 
   if ((sel == 0x00 && req.entry.namespaceID != NSID_NONE) || sel > 0x01) {
     err = true;
-    resp.makeStatus(false, false, TYPE_GENERIC_COMMAND_STATUS, STATUS_INVALID_FIELD);
+    resp.makeStatus(false, false, TYPE_GENERIC_COMMAND_STATUS,
+                    STATUS_INVALID_FIELD);
   }
 
   if (!err) {
@@ -687,13 +736,15 @@ bool Subsystem::namespaceManagement(SQEntryWrapper &req, CQEntryWrapper &resp, u
       }
 
       if (nsid == NSID_ALL) {
-        resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS, STATUS_NAMESPACE_ID_UNAVAILABLE);
+        resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS,
+                        STATUS_NAMESPACE_ID_UNAVAILABLE);
       }
       else {
         static uint8_t data[0x1000];
         static Namespace::Information info;
 
-        PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2, (uint64_t)0x1000);
+        PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2,
+                    (uint64_t)0x1000);
 
         PRP.read(0, 0x1000, data, tick);
 
@@ -705,13 +756,16 @@ bool Subsystem::namespaceManagement(SQEntryWrapper &req, CQEntryWrapper &resp, u
         info.namespaceSharingCapabilities = data[30];
 
         if (info.lbaFormatIndex >= nLBAFormat) {
-          resp.makeStatus(false, false, TYPE_GENERIC_COMMAND_STATUS, STATUS_ABORT_INVALID_FORMAT);
+          resp.makeStatus(false, false, TYPE_GENERIC_COMMAND_STATUS,
+                          STATUS_ABORT_INVALID_FORMAT);
         }
         else if (info.namespaceSharingCapabilities != 0x00) {
-          resp.makeStatus(false, false, TYPE_GENERIC_COMMAND_STATUS, STATUS_INVALID_FIELD);
+          resp.makeStatus(false, false, TYPE_GENERIC_COMMAND_STATUS,
+                          STATUS_INVALID_FIELD);
         }
         else if (info.dataProtectionSettings != 0x00) {
-          resp.makeStatus(false, false, TYPE_GENERIC_COMMAND_STATUS, STATUS_INVALID_FIELD);
+          resp.makeStatus(false, false, TYPE_GENERIC_COMMAND_STATUS,
+                          STATUS_INVALID_FIELD);
         }
 
         info.lbaSize = lbaSize[info.lbaFormatIndex];
@@ -722,7 +776,8 @@ bool Subsystem::namespaceManagement(SQEntryWrapper &req, CQEntryWrapper &resp, u
           resp.entry.dword0 = nsid;
         }
         else {
-          resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS, STATUS_NAMESPACE_INSUFFICIENT_CAPACITY);
+          resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS,
+                          STATUS_NAMESPACE_INSUFFICIENT_CAPACITY);
         }
       }
     }
@@ -730,7 +785,8 @@ bool Subsystem::namespaceManagement(SQEntryWrapper &req, CQEntryWrapper &resp, u
       bool found = destroyNamespace(req.entry.namespaceID);
 
       if (!found) {
-        resp.makeStatus(false, false, TYPE_GENERIC_COMMAND_STATUS, STATUS_ABORT_INVALID_NAMESPACE);
+        resp.makeStatus(false, false, TYPE_GENERIC_COMMAND_STATUS,
+                        STATUS_ABORT_INVALID_NAMESPACE);
       }
     }
   }
@@ -738,20 +794,23 @@ bool Subsystem::namespaceManagement(SQEntryWrapper &req, CQEntryWrapper &resp, u
   return true;
 }
 
-bool Subsystem::namespaceAttachment(SQEntryWrapper &req, CQEntryWrapper &resp, uint64_t &tick) {
+bool Subsystem::namespaceAttachment(SQEntryWrapper &req, CQEntryWrapper &resp,
+                                    uint64_t &tick) {
   bool err = false;
 
   uint8_t sel = req.entry.dword10 & 0x0F;
   uint32_t ctrlList;
 
-  // DPRINTF(NVMeAll, "ADMIN   | Namespace Attachment | OP %d | NSID %d\n", sel, req.entry.NSID);
+  // DPRINTF(NVMeAll, "ADMIN   | Namespace Attachment | OP %d | NSID %d\n", sel,
+  // req.entry.NSID);
 
   PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2, (uint64_t)0x1000);
   PRP.read(0, 4, (uint8_t *)&ctrlList, tick);
 
   if (ctrlList != 0x00000001) {
     err = true;
-    resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS, STATUS_CONTROLLER_LIST_INVALID);
+    resp.makeStatus(false, false, TYPE_COMMAND_SPECIFIC_STATUS,
+                    STATUS_CONTROLLER_LIST_INVALID);
   }
 
   if (!err) {
@@ -759,7 +818,8 @@ bool Subsystem::namespaceAttachment(SQEntryWrapper &req, CQEntryWrapper &resp, u
       for (auto &iter : lNamespaces) {
         if (iter->getNSID() == req.entry.namespaceID) {
           if (iter->isAttached()) {
-            resp.makeStatus(true, false, TYPE_COMMAND_SPECIFIC_STATUS, STATUS_NAMESPACE_ALREADY_ATTACHED);
+            resp.makeStatus(true, false, TYPE_COMMAND_SPECIFIC_STATUS,
+                            STATUS_NAMESPACE_ALREADY_ATTACHED);
           }
           else {
             iter->attach(true);
@@ -767,20 +827,22 @@ bool Subsystem::namespaceAttachment(SQEntryWrapper &req, CQEntryWrapper &resp, u
         }
       }
     }
-    else if (sel == 0x01) { // Detach
+    else if (sel == 0x01) {  // Detach
       for (auto &iter : lNamespaces) {
         if (iter->getNSID() == req.entry.namespaceID) {
           if (iter->isAttached()) {
             iter->attach(false);
           }
           else {
-            resp.makeStatus(true, false, TYPE_COMMAND_SPECIFIC_STATUS, STATUS_NAMESPACE_NOT_ATTACHED);
+            resp.makeStatus(true, false, TYPE_COMMAND_SPECIFIC_STATUS,
+                            STATUS_NAMESPACE_NOT_ATTACHED);
           }
         }
       }
     }
     else {
-      resp.makeStatus(false, false, TYPE_GENERIC_COMMAND_STATUS, STATUS_INVALID_FIELD);
+      resp.makeStatus(false, false, TYPE_GENERIC_COMMAND_STATUS,
+                      STATUS_INVALID_FIELD);
     }
   }
 

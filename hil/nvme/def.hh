@@ -22,6 +22,7 @@
 
 #include <cinttypes>
 
+#include "hil/nvme/dma.hh"
 #include "util/config.hh"
 
 namespace SimpleSSD {
@@ -35,7 +36,8 @@ namespace NVMe {
 #define NSID_ALL 0xFFFFFFFF
 
 typedef struct {
-  ConfigReader *conf;
+  ConfigReader *pConfigReader;
+  DMAScheduler *pDmaEngine;
   uint64_t memoryPageSize;
   uint8_t memoryPageSizeOrder;
   uint16_t maxQueueEntry;

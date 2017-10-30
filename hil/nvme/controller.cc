@@ -58,7 +58,8 @@ Controller::Controller(Interface *intrface, ConfigReader *c)
   registers.capabilities = 0x0020002028010FFF;
   registers.version = 0x00010201;  // NVMe 1.2.1
 
-  cfgdata.conf = c;
+  cfgdata.pConfigReader = c;
+  cfgdata.pDmaEngine = pDmaEngine;
   cfgdata.maxQueueEntry = (registers.capabilities & 0xFFFF) + 1;
 
   pSubsystem = new Subsystem(this, &cfgdata);
@@ -815,9 +816,10 @@ void Controller::identify(uint8_t *data) {
     // [Bits ] Description
     // [07:01] Reserved
     // [00:00] 1 for volatile write cache is present
-    data[0x020D] = cfgdata.conf->iclConfig.readBoolean(ICL::ICL_USE_WRITE_CACHE)
-                       ? 0x01
-                       : 0x00;
+    data[0x020D] =
+        cfgdata.pConfigReader->iclConfig.readBoolean(ICL::ICL_USE_WRITE_CACHE)
+            ? 0x01
+            : 0x00;
 
     // Atomic Write Unit Normal
     {

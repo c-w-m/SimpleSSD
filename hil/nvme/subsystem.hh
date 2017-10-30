@@ -22,7 +22,6 @@
 
 #include "hil/hil.hh"
 #include "hil/nvme/namespace.hh"
-#include "util/disk.hh"
 
 namespace SimpleSSD {
 
@@ -36,7 +35,6 @@ class Subsystem {
  private:
   Controller *pParent;
   HIL *pHIL;
-  Disk *pDisk;
 
   std::list<Namespace *> lNamespaces;
 

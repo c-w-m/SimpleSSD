@@ -47,37 +47,12 @@ const uint32_t lbaSize[nLBAFormat] = {
 
 Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
     : pParent(ctrl),
-      pDisk(nullptr),
       pCfgdata(cfg),
       conf(cfg->pConfigReader->nvmeConfig),
       allocatedLogicalPages(0) {
   pHIL = new HIL(cfg->pConfigReader);
 
   pHIL->getLPNInfo(totalLogicalPages, logicalPageSize);
-
-  if (conf.readBoolean(NVME_ENABLE_DISK_IMAGE)) {
-    uint64_t diskSize;
-
-    if (conf.readBoolean(NVME_USE_COW_DISK)) {
-      pDisk = new CoWDisk();
-    }
-    else {
-      pDisk = new Disk();
-    }
-
-    std::string filename = conf.readString(NVME_DISK_IMAGE_PATH);
-
-    diskSize = pDisk->open(filename);
-
-    if (diskSize == 0) {
-      // TODO: panic("Failed to open disk image");
-    }
-    else if (diskSize != totalLogicalPages * logicalPageSize) {
-      if (conf.readBoolean(NVME_STRICT_DISK_SIZE)) {
-        // TODO: panic("Disk size not match");
-      }
-    }
-  }
 
   if (conf.readBoolean(NVME_ENABLE_DEFAULT_NAMESPACE)) {
     Namespace::Information info;
@@ -110,10 +85,6 @@ Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
 }
 
 Subsystem::~Subsystem() {
-  if (pDisk) {
-    delete pDisk;
-  }
-
   for (auto &iter : lNamespaces) {
     delete iter;
   }

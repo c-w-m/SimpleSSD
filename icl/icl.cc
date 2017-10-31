@@ -20,6 +20,7 @@
 #include "icl/icl.hh"
 
 #include "icl/generic_cache.hh"
+#include "util/algorithm.hh"
 
 namespace SimpleSSD {
 
@@ -33,6 +34,72 @@ ICL::ICL(ConfigReader *c) : pConf(c) {
 ICL::~ICL() {
   delete pCache;
   delete pFTL;
+}
+
+void ICL::read(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
+  uint64_t beginAt;
+  uint64_t finishedAt = 0;
+
+  for (uint64_t i = 0; i < nlp; i++) {
+    beginAt = tick;
+
+    if (!pCache->read(slpn + i, beginAt)) {
+      pFTL->read(slpn + i, beginAt);
+    }
+
+    finishedAt = MAX(finishedAt, beginAt);
+  }
+
+  tick = finishedAt;
+}
+
+void ICL::write(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
+  uint64_t beginAt;
+  uint64_t finishedAt = 0;
+
+  for (uint64_t i = 0; i < nlp; i++) {
+    beginAt = tick;
+
+    if (!pCache->write(slpn + i, beginAt)) {
+      pFTL->write(slpn + i, beginAt);
+    }
+
+    finishedAt = MAX(finishedAt, beginAt);
+  }
+
+  tick = finishedAt;
+}
+
+void ICL::flush(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
+  uint64_t beginAt;
+  uint64_t finishedAt = 0;
+
+  for (uint64_t i = 0; i < nlp; i++) {
+    beginAt = tick;
+
+    pCache->erase(slpn + i, beginAt);
+    pFTL->flush(slpn + i, beginAt);
+
+    finishedAt = MAX(finishedAt, beginAt);
+  }
+
+  tick = finishedAt;
+}
+
+void ICL::trim(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
+  uint64_t beginAt;
+  uint64_t finishedAt = 0;
+
+  for (uint64_t i = 0; i < nlp; i++) {
+    beginAt = tick;
+
+    pCache->erase(slpn + i, beginAt);
+    pFTL->trim(slpn + i, beginAt);
+
+    finishedAt = MAX(finishedAt, beginAt);
+  }
+
+  tick = finishedAt;
 }
 
 void ICL::getLPNInfo(uint64_t &totalLogicalPages, uint32_t &logicalPageSize) {

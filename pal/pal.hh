@@ -49,6 +49,10 @@ class PAL {
   PAL(ConfigReader *);
   ~PAL();
 
+  void read(uint32_t, uint32_t, uint64_t &);
+  void write(uint32_t, uint32_t, uint64_t &);
+  void erase(uint32_t, uint64_t &);
+
   Parameter *getInfo();
 };
 

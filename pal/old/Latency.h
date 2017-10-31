@@ -21,7 +21,7 @@
 #ifndef __Latency_h__
 #define __Latency_h__
 
-#include "SimpleSSD_types.h"
+#include "util/old/SimpleSSD_types.h"
 
 #include <iostream>
 #include <string>

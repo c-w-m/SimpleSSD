@@ -25,8 +25,7 @@
 #include <cinttypes>
 #include <list>
 
-#include "base/types.hh"
-#include "SimpleSSD_types.h"
+#include "util/old/SimpleSSD_types.h"
 
 typedef struct _Command {
   Tick arrived;

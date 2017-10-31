@@ -71,6 +71,8 @@ extern char NAND_STRINFO[][10];
 extern char CONFLICT_STRINFO[][10];
 #endif
 
+typedef uint64_t Tick;
+typedef uint64_t Addr;
 
 /*==============================
 Macros

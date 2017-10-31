@@ -20,7 +20,7 @@
 #ifndef __PAL2_h__
 #define __PAL2_h__
 
-#include "SimpleSSD_types.h"
+#include "util/old/SimpleSSD_types.h"
 
 #include "base_config.hh"
 #include "Latency.h"

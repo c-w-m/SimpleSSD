@@ -20,7 +20,7 @@
 #ifndef __PAL2_TimeSlot_h__
 #define __PAL2_TimeSlot_h__
 
-#include "SimpleSSD_types.h"
+#include "util/old/SimpleSSD_types.h"
 
 #include <cinttypes>
 #include <iostream>

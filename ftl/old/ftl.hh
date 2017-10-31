@@ -11,7 +11,7 @@
 #ifndef __FTL_3__FTL__
 #define __FTL_3__FTL__
 
-#include "SimpleSSD_types.h"
+#include "util/old/SimpleSSD_types.h"
 
 #include "ftl_hybridmapping.hh"
 #include "ftl_mappingtable.hh"

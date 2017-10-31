@@ -49,7 +49,7 @@ PAL::PAL(ConfigReader *c) : pConf(c) {
 
 PAL::~PAL() {}
 
-PAL::Parameter *PAL::getInfo() {
+Parameter *PAL::getInfo() {
   return &param;
 }
 

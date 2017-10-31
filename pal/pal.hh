@@ -26,21 +26,20 @@ namespace SimpleSSD {
 
 namespace PAL {
 
-class PAL {
- public:
-  typedef struct {
-    uint32_t channel;        //!< Total # channels
-    uint32_t package;        //!< # packages / channel
-    uint32_t die;            //!< # dies / package
-    uint32_t plane;          //!< # planes / die
-    uint32_t block;          //!< # blocks / plane
-    uint32_t page;           //!< # pages / block
-    uint64_t superBlock;     //!< Total super blocks
-    uint64_t superPage;      //!< Total super pages
-    uint32_t pageSize;       //!< Size of page in bytes
-    uint32_t superPageSize;  //!< Size of super page in bytes
-  } Parameter;
+typedef struct {
+  uint32_t channel;        //!< Total # channels
+  uint32_t package;        //!< # packages / channel
+  uint32_t die;            //!< # dies / package
+  uint32_t plane;          //!< # planes / die
+  uint32_t block;          //!< # blocks / plane
+  uint32_t page;           //!< # pages / block
+  uint64_t superBlock;     //!< Total super blocks
+  uint64_t superPage;      //!< Total super pages
+  uint32_t pageSize;       //!< Size of page in bytes
+  uint32_t superPageSize;  //!< Size of super page in bytes
+} Parameter;
 
+class PAL {
  private:
   Parameter param;
 

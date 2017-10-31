@@ -24,7 +24,7 @@ namespace SimpleSSD {
 namespace FTL {
 
 FTL::FTL(ConfigReader *c) : pConf(c) {
-  PAL::PAL::Parameter *palparam;
+  PAL::Parameter *palparam;
 
   pPAL = new PAL::PAL(pConf);
   palparam = pPAL->getInfo();
@@ -41,7 +41,7 @@ FTL::~FTL() {
   delete pPAL;
 }
 
-FTL::Parameter *FTL::getInfo() {
+Parameter *FTL::getInfo() {
   return &param;
 }
 

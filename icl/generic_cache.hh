@@ -17,37 +17,33 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ICL_CACHE__
-#define __ICL_CACHE__
+#ifndef __ICL_GENERIC_CACHE__
+#define __ICL_GENERIC_CACHE__
 
-#include "ftl/ftl.hh"
-#include "util/config.hh"
+#include <unordered_map>
+
+#include "icl/cache.hh"
 
 namespace SimpleSSD {
 
 namespace ICL {
 
-typedef struct _Line {
-  uint64_t tag;
-  bool dirty;
-  bool valid;
+class GenericCache : public Cache {
+ private:
+  uint32_t setSize;
+  uint32_t entrySize;
+  uint32_t dataSize;
 
-  _Line();
-  _Line(uint64_t, bool);
-} Line;
-
-class Cache {
- protected:
-  ConfigReader *conf;
+  Line **ppCache;
 
  public:
-  Cache(ConfigReader *);
-  virtual ~Cache() = 0;
+  GenericCache(ConfigReader *);
+  ~GenericCache();
 
-  virtual bool read(uint64_t, uint64_t &) = 0;
-  virtual bool write(uint64_t, uint64_t &) = 0;
-  virtual bool flush(uint64_t, uint64_t &) = 0;
-  virtual bool trim(uint64_t, uint64_t &) = 0;
+  void read(uint64_t, uint64_t, uint64_t &);
+  void write(uint64_t, uint64_t, uint64_t &);
+  void flush(uint64_t, uint64_t, uint64_t &);
+  void trim(uint64_t, uint64_t, uint64_t &);
 };
 
 }  // namespace ICL

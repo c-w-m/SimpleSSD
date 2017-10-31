@@ -20,8 +20,8 @@
 #ifndef __ICL_ICL__
 #define __ICL_ICL__
 
-#include <unordered_map>
-
+#include "ftl/ftl.hh"
+#include "icl/cache.hh"
 #include "util/config.hh"
 
 namespace SimpleSSD {
@@ -30,9 +30,10 @@ namespace ICL {
 
 class ICL {
  private:
-  uint32_t setSize;
-  uint32_t entrySize;
-  uint32_t pageSize;
+  FTL::FTL *pFTL;
+
+  ConfigReader *pConf;
+  Cache *pCache;
 
  public:
   ICL(ConfigReader *);

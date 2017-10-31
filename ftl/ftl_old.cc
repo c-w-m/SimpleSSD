@@ -17,36 +17,18 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __FTL_FTL_OLD__
-#define __FTL_FTL_OLD__
+/*
+ * This class wraps old ftl codes by Narges
+ */
 
-#include <cinttypes>
-
-#include "ftl/ftl.hh"
-#include "ftl/abstract_ftl.hh"
+#include "ftl/ftl_old.hh"
 
 namespace SimpleSSD {
 
 namespace FTL {
 
-class FTLOLD : public AbstractFTL {
- private:
-  Parameter *pParam;
-  PAL::PAL *pPAL;
-
- public:
-  FTLOLD(Parameter *, PAL::PAL *);
-  ~FTLOLD();
-
-  bool initialize();
-
-  void read(uint64_t, uint64_t &);
-  void write(uint64_t, uint64_t &);
-  void trim(uint64_t, uint64_t &);
-};
+FTLOLD::FTLOLD(Parameter *p, PAL::PAL *l) : AbstractFTL(p, l) {}
 
 }  // namespace FTL
 
 }  // namespace SimpleSSD
-
-#endif

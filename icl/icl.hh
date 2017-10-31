@@ -17,48 +17,36 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __HIL_HIL__
-#define __HIL_HIL__
+#ifndef __ICL_ICL__
+#define __ICL_ICL__
 
-#include <list>
+#include <unordered_map>
 
-#include "icl/icl.hh"
 #include "util/config.hh"
 
 namespace SimpleSSD {
 
-namespace HIL {
+namespace ICL {
 
-typedef struct _LPNRange {
-  uint64_t slpn;
-  uint64_t nlp;
-
-  _LPNRange();
-  _LPNRange(uint64_t, uint64_t);
-} LPNRange;
-
-class HIL {
+class ICL {
  private:
-  ConfigReader *conf;
-  ICL::ICL *pICL;
+  uint32_t setSize;
+  uint32_t entrySize;
+  uint32_t pageSize;
 
  public:
-  HIL(ConfigReader *);
-  ~HIL();
+  ICL(ConfigReader *);
+  ~ICL();
 
   void read(uint64_t, uint64_t, uint64_t &);
-  void read(std::list<LPNRange> &, uint64_t &);
   void write(uint64_t, uint64_t, uint64_t &);
-  void write(std::list<LPNRange> &, uint64_t &);
   void flush(uint64_t, uint64_t, uint64_t &);
-  void flush(std::list<LPNRange> &, uint64_t &);
   void trim(uint64_t, uint64_t, uint64_t &);
-  void trim(std::list<LPNRange> &, uint64_t &);
 
   void getLPNInfo(uint64_t &, uint32_t &);
 };
 
-}  // namespace HIL
+}  // namespace ICL
 
 }  // namespace SimpleSSD
 

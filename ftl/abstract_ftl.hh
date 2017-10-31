@@ -29,11 +29,11 @@ namespace SimpleSSD {
 namespace FTL {
 
 class AbstractFTL {
-private:
+ private:
   Parameter *pParam;
   PAL::PAL *pPAL;
 
-public:
+ public:
   AbstractFTL(Parameter *p, PAL::PAL *l) : pParam(p), pPAL(l) {}
   virtual ~AbstractFTL() = 0;
 
@@ -44,8 +44,8 @@ public:
   virtual void trim(uint64_t, uint64_t &) = 0;
 };
 
-}
+}  // namespace FTL
 
-}
+}  // namespace SimpleSSD
 
 #endif

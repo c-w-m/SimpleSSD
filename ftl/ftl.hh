@@ -27,6 +27,8 @@ namespace SimpleSSD {
 
 namespace FTL {
 
+class AbstractFTL;
+
 typedef struct {
   uint64_t totalPhysicalBlocks;
   uint64_t totalLogicalBlocks;
@@ -40,6 +42,7 @@ class FTL {
   PAL::PAL *pPAL;
 
   ConfigReader *pConf;
+  AbstractFTL *pFTL;
 
  public:
   FTL(ConfigReader *);

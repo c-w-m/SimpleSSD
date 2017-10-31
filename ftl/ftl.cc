@@ -19,6 +19,8 @@
 
 #include "ftl/ftl.hh"
 
+#include "ftl/abstract_ftl.hh"
+
 namespace SimpleSSD {
 
 namespace FTL {
@@ -35,10 +37,25 @@ FTL::FTL(ConfigReader *c) : pConf(c) {
       (1 - pConf->ftlConfig.readFloat(FTL_OVERPROVISION_RATIO));
   param.pagesInBlock = palparam->page;
   param.pageSize = palparam->superPageSize;
+
+  // TODO allocated pFTL
 }
 
 FTL::~FTL() {
   delete pPAL;
+  delete pFTL;
+}
+
+void FTL::read(uint64_t lpn, uint64_t &tick) {
+  pFTL->read(lpn, tick);
+}
+
+void FTL::write(uint64_t lpn, uint64_t &tick) {
+  pFTL->write(lpn, tick);
+}
+
+void FTL::trim(uint64_t lpn, uint64_t &tick) {
+  pFTL->trim(lpn, tick);
 }
 
 Parameter *FTL::getInfo() {

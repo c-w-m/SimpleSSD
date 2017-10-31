@@ -19,6 +19,8 @@
 
 #include "icl/config.hh"
 
+#include "util/algorithm.hh"
+
 namespace SimpleSSD {
 
 namespace ICL {
@@ -125,7 +127,14 @@ bool Config::setConfig(const char *name, const char *value) {
   return ret;
 }
 
-void Config::update() {}
+void Config::update() {
+  if (popcount(cacheSetSize) != 1) {
+    // TODO: panic("cache set size should be power of 2");
+  }
+  if (popcount(cacheEntrySize) != 1) {
+    // TODO: panic("cache entry size should be power of 2");
+  }
+}
 
 int64_t Config::readInt(uint32_t idx) {
   int64_t ret = 0;

@@ -31,19 +31,26 @@ namespace ICL {
 class GenericCache : public Cache {
  private:
   uint32_t setSize;
+  uint32_t setMask;
   uint32_t entrySize;
   uint32_t lineSize;
 
+  // TODO: replace this with DRAM model
+  uint64_t latency;
+  uint32_t width;
+
   Line **ppCache;
 
+  uint32_t calcSet(uint64_t);
+
  public:
-  GenericCache(ConfigReader *, uint32_t);
+  GenericCache(ConfigReader *, FTL::FTL *);
   ~GenericCache();
 
-  void read(uint64_t, uint64_t, uint64_t &);
-  void write(uint64_t, uint64_t, uint64_t &);
-  void flush(uint64_t, uint64_t, uint64_t &);
-  void trim(uint64_t, uint64_t, uint64_t &);
+  bool read(uint64_t, uint64_t &);
+  bool write(uint64_t, uint64_t &);
+  bool flush(uint64_t, uint64_t &);
+  bool trim(uint64_t, uint64_t &);
 };
 
 }  // namespace ICL

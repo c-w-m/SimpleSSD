@@ -39,16 +39,16 @@ typedef struct _Line {
 class Cache {
  protected:
   ConfigReader *conf;
-
-  uint32_t lineSize;
+  FTL::FTL *pFTL;
 
  public:
-  Cache(ConfigReader *, uint32_t);
+  Cache(ConfigReader *, FTL::FTL *);
   virtual ~Cache() = 0;
 
   virtual bool read(uint64_t, uint64_t &) = 0;
   virtual bool write(uint64_t, uint64_t &) = 0;
-  virtual bool erase(uint64_t, uint64_t &) = 0;
+  virtual bool flush(uint64_t, uint64_t &) = 0;
+  virtual bool trim(uint64_t, uint64_t &) = 0;
 };
 
 }  // namespace ICL

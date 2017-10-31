@@ -34,7 +34,7 @@ ICL::ICL(ConfigReader *c) : pConf(c) {
   totalLogicalPages = param->totalLogicalBlocks * param->pagesInBlock;
   logicalPageSize = param->pageSize;
 
-  pCache = new GenericCache(pConf, logicalPageSize);
+  pCache = new GenericCache(pConf, pFTL);
 }
 
 ICL::~ICL() {
@@ -48,11 +48,7 @@ void ICL::read(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
 
   for (uint64_t i = 0; i < nlp; i++) {
     beginAt = tick;
-
-    if (!pCache->read(slpn + i, beginAt)) {
-      pFTL->read(slpn + i, beginAt);
-    }
-
+    pCache->read(slpn + i, beginAt);
     finishedAt = MAX(finishedAt, beginAt);
   }
 
@@ -65,11 +61,7 @@ void ICL::write(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
 
   for (uint64_t i = 0; i < nlp; i++) {
     beginAt = tick;
-
-    if (!pCache->write(slpn + i, beginAt)) {
-      pFTL->write(slpn + i, beginAt);
-    }
-
+    pCache->write(slpn + i, beginAt);
     finishedAt = MAX(finishedAt, beginAt);
   }
 
@@ -82,10 +74,7 @@ void ICL::flush(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
 
   for (uint64_t i = 0; i < nlp; i++) {
     beginAt = tick;
-
-    pCache->erase(slpn + i, beginAt);
-    pFTL->write(slpn + i, beginAt);
-
+    pCache->flush(slpn + i, beginAt);
     finishedAt = MAX(finishedAt, beginAt);
   }
 
@@ -98,10 +87,7 @@ void ICL::trim(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
 
   for (uint64_t i = 0; i < nlp; i++) {
     beginAt = tick;
-
-    pCache->erase(slpn + i, beginAt);
-    pFTL->trim(slpn + i, beginAt);
-
+    pCache->trim(slpn + i, beginAt);
     finishedAt = MAX(finishedAt, beginAt);
   }
 

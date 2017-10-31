@@ -23,9 +23,18 @@ namespace SimpleSSD {
 
 namespace ICL {
 
-GenericCache::GenericCache(ConfigReader *c, uint32_t l) : Cache(c, l) {
+GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f) : Cache(c, f) {
   setSize = c->iclConfig.readUint(ICL_SET_SIZE);
   entrySize = c->iclConfig.readUint(ICL_ENTRY_SIZE);
+  lineSize = f->getInfo()->pageSize;
+
+  // TODO: replace this with DRAM model
+  width = c->iclConfig.readUint(DRAM_CHIP_BUS_WIDTH);
+  latency = c->iclConfig.readUint(DRAM_TIMING_RP);
+  latency += c->iclConfig.readUint(DRAM_TIMING_RCD);
+  latency += c->iclConfig.readUint(DRAM_TIMING_CL);
+
+  latency *= lineSize / (width / 8);
 
   ppCache = (Line **)calloc(setSize, sizeof(Line *));
 
@@ -40,6 +49,158 @@ GenericCache::~GenericCache() {
   }
 
   free(ppCache);
+}
+
+uint32_t GenericCache::calcSet(uint64_t lpn) {
+  return lpn & (setSize - 1);
+}
+
+// True when hit
+bool GenericCache::read(uint64_t lpn, uint64_t &tick) {
+  bool ret = false;
+  uint32_t setIdx = calcSet(lpn);
+  uint32_t emptyIdx = entrySize;
+
+  for (uint32_t i = 0; i < entrySize; i++) {
+    Line &line = ppCache[setIdx][i];
+
+    if (line.valid && line.tag == lpn) {
+      ret = true;
+
+      break;
+    }
+
+    if (!line.valid || !line.dirty) {
+      emptyIdx = i;
+    }
+  }
+
+  if (!ret) {
+    // miss
+    if (emptyIdx < entrySize) {
+      // we have place to write
+      pFTL->read(lpn, tick);
+
+      ppCache[setIdx][emptyIdx].valid = true;
+      ppCache[setIdx][emptyIdx].dirty = false;
+      ppCache[setIdx][emptyIdx].tag = lpn;
+    }
+    else {
+      // we don't have place
+      pFTL->read(lpn, tick);
+
+      // flush one TODO: you may want to apply algorithm to select victim
+      pFTL->write(ppCache[setIdx][0].tag, tick);
+
+      ppCache[setIdx][0].valid = true;
+      ppCache[setIdx][0].dirty = false;
+      ppCache[setIdx][0].tag = lpn;
+    }
+  }
+
+  tick += latency;
+
+  return ret;
+}
+
+// True when cold-miss/hit
+bool GenericCache::write(uint64_t lpn, uint64_t &tick) {
+  bool ret = false;
+  uint32_t setIdx = calcSet(lpn);
+  uint32_t emptyIdx = entrySize;
+
+  for (uint32_t i = 0; i < entrySize; i++) {
+    Line &line = ppCache[setIdx][i];
+
+    if (line.valid && line.tag == lpn) {
+      ret = true;
+
+      break;
+    }
+
+    if (!line.valid || !line.dirty) {
+      emptyIdx = i;
+    }
+  }
+
+  if (emptyIdx < entrySize) {
+    // miss
+    ret = true;
+
+    ppCache[setIdx][emptyIdx].valid = true;
+    ppCache[setIdx][emptyIdx].dirty = true;
+    ppCache[setIdx][emptyIdx].tag = lpn;
+  }
+
+  if (!ret) {
+    // we don't have place
+    // flush one TODO: you may want to apply algorithm to select victim
+    pFTL->write(ppCache[setIdx][0].tag, tick);
+
+    ppCache[setIdx][0].valid = true;
+    ppCache[setIdx][0].dirty = true;
+    ppCache[setIdx][0].tag = lpn;
+  }
+
+  tick += latency;
+
+  return ret;
+}
+
+// True when hit
+bool GenericCache::flush(uint64_t lpn, uint64_t &tick) {
+  bool ret = false;
+  uint32_t setIdx = calcSet(lpn);
+  uint32_t i;
+
+  for (i = 0; i < entrySize; i++) {
+    Line &line = ppCache[setIdx][i];
+
+    if (line.valid && line.tag == lpn) {
+      ret = true;
+
+      break;
+    }
+  }
+
+  if (ret) {
+    if (ppCache[setIdx][i].dirty) {
+      // we have to flush this
+      pFTL->write(ppCache[setIdx][i].tag, tick);
+    }
+
+    // invalidate
+    ppCache[setIdx][i].valid = false;
+  }
+
+  return ret;
+}
+
+// True when hit
+bool GenericCache::trim(uint64_t lpn, uint64_t &tick) {
+  bool ret = false;
+  uint32_t setIdx = calcSet(lpn);
+  uint32_t i;
+
+  for (i = 0; i < entrySize; i++) {
+    Line &line = ppCache[setIdx][i];
+
+    if (line.valid && line.tag == lpn) {
+      ret = true;
+
+      break;
+    }
+  }
+
+  if (ret) {
+    // invalidate
+    ppCache[setIdx][i].valid = false;
+  }
+
+  // we have to trim this
+  pFTL->trim(ppCache[setIdx][i].tag, tick);
+
+  return ret;
 }
 
 }  // namespace ICL

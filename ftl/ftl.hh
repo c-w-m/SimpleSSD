@@ -20,4 +20,37 @@
 #ifndef __FTL_FTL__
 #define __FTL_FTL__
 
+#include "pal/pal.hh"
+#include "util/config.hh"
+
+namespace SimpleSSD {
+
+namespace FTL {
+
+class FTL {
+ public:
+  typedef struct {
+    uint64_t totalPhysicalBlocks;
+    uint64_t totalLogicalBlocks;
+    uint64_t pagesInBlock;
+    uint32_t pageSize;
+  } Parameter;
+
+ private:
+  Parameter param;
+  PAL::PAL *pPAL;
+
+  ConfigReader *pConf;
+
+ public:
+  FTL(ConfigReader *);
+  ~FTL();
+
+  Parameter *getInfo();
+};
+
+}  // namespace FTL
+
+}  // namespace SimpleSSD
+
 #endif

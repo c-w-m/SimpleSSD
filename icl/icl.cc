@@ -78,7 +78,7 @@ void ICL::flush(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
     beginAt = tick;
 
     pCache->erase(slpn + i, beginAt);
-    pFTL->flush(slpn + i, beginAt);
+    pFTL->write(slpn + i, beginAt);
 
     finishedAt = MAX(finishedAt, beginAt);
   }

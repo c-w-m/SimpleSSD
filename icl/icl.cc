@@ -27,8 +27,14 @@ namespace SimpleSSD {
 namespace ICL {
 
 ICL::ICL(ConfigReader *c) : pConf(c) {
-  pCache = new GenericCache(pConf);
   pFTL = new FTL::FTL(pConf);
+
+  FTL::Parameter *param = pFTL->getInfo();
+
+  totalLogicalPages = param->totalLogicalBlocks * param->pagesInBlock;
+  logicalPageSize = param->pageSize;
+
+  pCache = new GenericCache(pConf, logicalPageSize);
 }
 
 ICL::~ICL() {
@@ -102,11 +108,9 @@ void ICL::trim(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
   tick = finishedAt;
 }
 
-void ICL::getLPNInfo(uint64_t &totalLogicalPages, uint32_t &logicalPageSize) {
-  FTL::FTL::Parameter *param = pFTL->getInfo();
-
-  totalLogicalPages = param->totalLogicalBlocks * param->pagesInBlock;
-  logicalPageSize = param->pageSize;
+void ICL::getLPNInfo(uint64_t &t, uint32_t &s) {
+  t = totalLogicalPages;
+  s = logicalPageSize;
 }
 
 }  // namespace ICL

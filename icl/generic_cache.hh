@@ -32,12 +32,12 @@ class GenericCache : public Cache {
  private:
   uint32_t setSize;
   uint32_t entrySize;
-  uint32_t dataSize;
+  uint32_t lineSize;
 
   Line **ppCache;
 
  public:
-  GenericCache(ConfigReader *);
+  GenericCache(ConfigReader *, uint32_t);
   ~GenericCache();
 
   void read(uint64_t, uint64_t, uint64_t &);

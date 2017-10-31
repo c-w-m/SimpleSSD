@@ -35,6 +35,9 @@ class ICL {
   ConfigReader *pConf;
   Cache *pCache;
 
+  uint64_t totalLogicalPages;
+  uint32_t logicalPageSize;
+
  public:
   ICL(ConfigReader *);
   ~ICL();

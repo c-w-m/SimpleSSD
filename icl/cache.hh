@@ -40,8 +40,10 @@ class Cache {
  protected:
   ConfigReader *conf;
 
+  uint32_t lineSize;
+
  public:
-  Cache(ConfigReader *);
+  Cache(ConfigReader *, uint32_t);
   virtual ~Cache() = 0;
 
   virtual bool read(uint64_t, uint64_t &) = 0;

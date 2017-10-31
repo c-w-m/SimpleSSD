@@ -27,7 +27,7 @@ Line::_Line() : tag(0), dirty(false), valid(false) {}
 
 Line::_Line(uint64_t t, bool d) : tag(t), dirty(d), valid(true) {}
 
-Cache::Cache(ConfigReader *c) : conf(c) {}
+Cache::Cache(ConfigReader *c, uint32_t l) : conf(c), lineSize(l) {}
 
 }  // namespace ICL
 

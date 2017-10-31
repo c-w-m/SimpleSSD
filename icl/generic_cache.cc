@@ -23,10 +23,9 @@ namespace SimpleSSD {
 
 namespace ICL {
 
-GenericCache::GenericCache(ConfigReader *c) : Cache(c) {
+GenericCache::GenericCache(ConfigReader *c, uint32_t l) : Cache(c, l) {
   setSize = c->iclConfig.readUint(ICL_SET_SIZE);
   entrySize = c->iclConfig.readUint(ICL_ENTRY_SIZE);
-  dataSize = c->palConfig.readUint(PAL::NAND_PAGE_SIZE);
 
   ppCache = (Line **)calloc(setSize, sizeof(Line *));
 

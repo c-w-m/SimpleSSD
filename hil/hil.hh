@@ -39,7 +39,7 @@ typedef struct _LPNRange {
 
 class HIL {
  private:
-  ConfigReader *conf;
+  ConfigReader *pConf;
   ICL::ICL *pICL;
 
  public:

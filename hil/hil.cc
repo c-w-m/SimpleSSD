@@ -29,8 +29,8 @@ LPNRange::_LPNRange() : slpn(0), nlp(0) {}
 
 LPNRange::_LPNRange(uint64_t s, uint64_t n) : slpn(s), nlp(n) {}
 
-HIL::HIL(ConfigReader *c) : conf(c) {
-  pICL = new ICL::ICL(conf);
+HIL::HIL(ConfigReader *c) : pConf(c) {
+  pICL = new ICL::ICL(pConf);
 }
 
 HIL::~HIL() {

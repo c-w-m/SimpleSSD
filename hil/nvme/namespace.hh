@@ -64,7 +64,7 @@ class Namespace {
   Disk *pDisk;
 
   ConfigData *pCfgdata;
-  Config conf;
+  Config &conf;
 
   Information info;
   uint32_t nsid;

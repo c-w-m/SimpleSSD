@@ -100,7 +100,7 @@ bool Subsystem::createNamespace(uint32_t nsid, Namespace::Information *info) {
 
   // Allocate LPN
   uint64_t requestedLogicalPages =
-      info->size / lbaSize[info->lbaFormatIndex] * logicalPageSize;
+      info->size / logicalPageSize * lbaSize[info->lbaFormatIndex];
   uint64_t unallocatedLogicalPages = totalLogicalPages - allocatedLogicalPages;
 
   if (requestedLogicalPages > unallocatedLogicalPages) {
@@ -161,14 +161,18 @@ bool Subsystem::createNamespace(uint32_t nsid, Namespace::Information *info) {
   unallocatedLogicalPages = 0;  // This now contain reserved pages
 
   for (auto iter = unallocated.begin(); iter != unallocated.end(); iter++) {
-    iter->nlp = MIN(iter->nlp, requestedLogicalPages - unallocatedLogicalPages);
-    unallocatedLogicalPages += iter->nlp;
-
     if (unallocatedLogicalPages >= requestedLogicalPages) {
       unallocated.erase(iter, unallocated.end());
 
       break;
     }
+
+    iter->nlp = MIN(iter->nlp, requestedLogicalPages - unallocatedLogicalPages);
+    unallocatedLogicalPages += iter->nlp;
+  }
+
+  if (unallocated.size() == 0) {
+    // TODO: panic("BUG");
   }
 
   allocatedLogicalPages += unallocatedLogicalPages;

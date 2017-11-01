@@ -19,7 +19,7 @@
 
 #include "util/algorithm.hh"
 
-#include <cstdint>
+#include <climits>
 
 namespace SimpleSSD {
 

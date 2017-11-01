@@ -81,6 +81,8 @@ Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
     if (!createNamespace(NSID_LOWEST, &info)) {
       // TODO: panic("Failed to create namespace");
     }
+
+    lNamespaces.front()->attach(true);
   }
 }
 

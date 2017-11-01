@@ -22,9 +22,9 @@
 
 #include "util/old/SimpleSSD_types.h"
 
-#include "base_config.hh"
 #include "Latency.h"
 #include "PALStatistics.h"
+#include "util/config.hh"
 
 #include "PAL2_TimeSlot.h"
 
@@ -42,7 +42,7 @@ class PALStatistics;
 class PAL2 //let's not inherit PAL1
 {
   public:
-    PAL2(PALStatistics* statistics, BaseConfig *c, Latency *l);
+    PAL2(PALStatistics* statistics, SimpleSSD::PAL::Config *c, Latency *l);
     ~PAL2();
 
     BaseConfig *gconf;

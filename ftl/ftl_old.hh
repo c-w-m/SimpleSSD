@@ -22,8 +22,14 @@
 
 #include <cinttypes>
 
-#include "ftl/ftl.hh"
 #include "ftl/abstract_ftl.hh"
+#include "ftl/ftl.hh"
+
+class Parameter;
+class FTL;
+class PAL2;
+class PALStatistics;
+class Latency;
 
 namespace SimpleSSD {
 
@@ -31,11 +37,16 @@ namespace FTL {
 
 class FTLOLD : public AbstractFTL {
  private:
-  Parameter *pParam;
-  PAL::PAL *pPAL;
+  ::PAL2 *pal;
+  ::PALStatistics *stats;
+  ::Latency *lat;
+  ::FTL *ftl;
+  ::Parameter *old;
+
+  Config *pConf;
 
  public:
-  FTLOLD(Parameter *, PAL::PAL *);
+  FTLOLD(Parameter *, PAL::PAL *, ConfigReader *);
   ~FTLOLD();
 
   bool initialize();

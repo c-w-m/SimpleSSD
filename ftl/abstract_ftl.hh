@@ -29,7 +29,7 @@ namespace SimpleSSD {
 namespace FTL {
 
 class AbstractFTL {
- private:
+ protected:
   Parameter *pParam;
   PAL::PAL *pPAL;
 

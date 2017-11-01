@@ -41,7 +41,7 @@ class FTL {
     FTLStats ftl_statistics;
     MappingTable *FTLmapping;
 
-    void initialize();
+    bool initialize();
     Parameter * getParameter(){return param;}
 
     Tick read(Addr lpn, size_t npages, Tick arrived = curTick());

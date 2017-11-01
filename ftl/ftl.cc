@@ -39,6 +39,7 @@ FTL::FTL(ConfigReader *c) : pConf(c) {
   param.pageSize = palparam->superPageSize;
 
   // TODO allocated pFTL
+  // Initialize pFTL
 }
 
 FTL::~FTL() {

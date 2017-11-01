@@ -23,7 +23,7 @@
 #include "debug/PAL.hh"
 #endif
 
-PAL2::PAL2(PALStatistics* statistics, BaseConfig *c, Latency *l)
+PAL2::PAL2(PALStatistics* statistics, SimpleSSD::PAL::Config *c, Latency *l)
 {
   stats = statistics;
   gconf = c;

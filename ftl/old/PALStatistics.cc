@@ -341,7 +341,7 @@ void PALStatistics::ValueOper::printstat_latency(const char* namestr)
 #endif // Polished stats
 
 
-PALStatistics::PALStatistics(BaseConfig *c, Latency *l) : gconf(c), lat(l)
+PALStatistics::PALStatistics(SimpleSSD::PAL::Config *c, Latency *l) : gconf(c), lat(l)
 {
   LastTick = 0;
 

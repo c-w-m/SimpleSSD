@@ -25,7 +25,7 @@ FTL::~FTL(){
   delete param;
 }
 
-void FTL::initialize(){
+bool FTL::initialize(){
   std::cout << "Total physical block/page "  << param->physical_block_number << "  " << param->physical_page_number << endl;
   std::cout << "Total logical block/page "  << param->logical_block_number << "  " << param->logical_page_number << endl;
 
@@ -33,13 +33,15 @@ void FTL::initialize(){
     int to_fill_page_number = (param->page_per_block * param->warmup);
     if (to_fill_page_number > param->page_per_block)  {
       cout << "error in initialization " << endl;
-      return;
+      return false;
     }
     if (to_fill_page_number != 0) {
       write (i * param->page_per_block, to_fill_page_number, 0, true);
     }
   }
   std::cout << "Initialization done! " << std::endl;
+
+  return true;
 }
 
 Tick FTL::read(Addr lpn, size_t npages, Tick arrived) {

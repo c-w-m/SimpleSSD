@@ -22,10 +22,11 @@
 
 #include "util/old/SimpleSSD_types.h"
 
-#include "base_config.hh"
 #include "Latency.h"
 #include "PAL2_TimeSlot.h"
 #include "ftl.hh"
+
+#include "util/config.hh"
 
 #include "base/types.hh"
 #include "base/trace.hh"
@@ -122,7 +123,7 @@ class PALStatistics
     void AddStall(uint8_t oper, uint8_t stall_kind, uint64_t lat);
     #endif
 
-    PALStatistics(BaseConfig *, Latency *);
+    PALStatistics(SimpleSSD::PAL::Config *, Latency *);
 
     ~PALStatistics();
 

@@ -31,6 +31,8 @@ Line::_Line(uint64_t t, bool d)
 
 Cache::Cache(ConfigReader *c, FTL::FTL *f) : conf(c), pFTL(f) {}
 
+Cache::~Cache() {}
+
 }  // namespace ICL
 
 }  // namespace SimpleSSD

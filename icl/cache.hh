@@ -45,7 +45,7 @@ class Cache {
 
  public:
   Cache(ConfigReader *, FTL::FTL *);
-  virtual ~Cache() = 0;
+  virtual ~Cache();
 
   virtual bool read(uint64_t, uint64_t &) = 0;
   virtual bool write(uint64_t, uint64_t &) = 0;

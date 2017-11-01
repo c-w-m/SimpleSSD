@@ -88,6 +88,11 @@ uint16_t Queue::getSize() {
   return size;
 }
 
+void Queue::setBase(PRPList *p, uint64_t s) {
+  base = p;
+  stride = s;
+}
+
 CQueue::CQueue(uint16_t iv, bool en, uint16_t qid, uint16_t size)
     : Queue(qid, size), ien(en), phase(true), interruptVector(iv) {}
 
@@ -181,6 +186,10 @@ uint64_t SQueue::getData(SQEntry *entry, uint64_t tick) {
   }
 
   return tick;
+}
+
+uint8_t SQueue::getPriority() {
+  return priority;
 }
 
 }  // namespace NVMe

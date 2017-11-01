@@ -21,6 +21,7 @@
 #define __UTIL_ALGORITHM__
 
 #include <cinttypes>
+#include <climits>
 
 #ifndef MIN
 #define MIN(x, y) ((x) > (y) ? (y) : (x))
@@ -33,7 +34,15 @@
 namespace SimpleSSD {
 
 template <typename T>
-uint8_t popcount(T);
+uint8_t popcount(T v) {
+  v = v - ((v >> 1) & (T) ~(T)0 / 3);
+  v = (v & (T) ~(T)0 / 15 * 3) + ((v >> 2) & (T) ~(T)0 / 15 * 3);
+  v = (v + (v >> 4)) & (T) ~(T)0 / 255 * 15;
+  v = (T)(v * ((T) ~(T)0 / 255)) >> (sizeof(T) - 1) * CHAR_BIT;
+
+  return (uint8_t)v;
 }
+
+}  // namespace SimpleSSD
 
 #endif

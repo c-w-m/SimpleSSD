@@ -208,7 +208,7 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
 
   if (!err) {
     uint64_t dmaTick = tick;
-    uint64_t dmaDelayed;
+    // uint64_t dmaDelayed;
 
     PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2,
                 (uint64_t)nlb * info.lbaSize);
@@ -218,13 +218,13 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
     if (pDisk) {
       uint8_t *buffer = (uint8_t *)calloc(nlb, info.lbaSize);
 
-      dmaDelayed = PRP.read(0, nlb * info.lbaSize, buffer, dmaTick);
+      /*dmaDelayed = */ PRP.read(0, nlb * info.lbaSize, buffer, dmaTick);
       pDisk->write(slba, nlb, buffer);
 
       free(buffer);
     }
     else {
-      dmaDelayed = PRP.read(0, nlb * info.lbaSize, nullptr, dmaTick);
+      /*dmaDelayed = */ PRP.read(0, nlb * info.lbaSize, nullptr, dmaTick);
     }
 
     tick = MAX(tick, dmaTick);
@@ -259,7 +259,7 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
 
   if (!err) {
     uint64_t dmaTick = tick;
-    uint64_t dmaDelayed;
+    // uint64_t dmaDelayed;
 
     PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2,
                 (uint64_t)nlb * info.lbaSize);
@@ -270,12 +270,12 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
       uint8_t *buffer = (uint8_t *)calloc(nlb, info.lbaSize);
 
       pDisk->read(slba, nlb, buffer);
-      dmaDelayed = PRP.write(0, nlb * info.lbaSize, buffer, dmaTick);
+      /*dmaDelayed = */ PRP.write(0, nlb * info.lbaSize, buffer, dmaTick);
 
       free(buffer);
     }
     else {
-      dmaDelayed = PRP.write(0, nlb * info.lbaSize, nullptr, dmaTick);
+      /*dmaDelayed = */ PRP.write(0, nlb * info.lbaSize, nullptr, dmaTick);
     }
 
     tick = MAX(tick, dmaTick);

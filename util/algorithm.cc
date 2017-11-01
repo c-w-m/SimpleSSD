@@ -19,6 +19,8 @@
 
 #include "util/algorithm.hh"
 
+#include <cstdint>
+
 namespace SimpleSSD {
 
 template <typename T>

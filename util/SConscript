@@ -22,6 +22,5 @@ Import('*')
 if env['TARGET_ISA'] == 'null':
     Return()
 
-Source('algorithm.cc')
 Source('config.cc')
 Source('disk.cc')

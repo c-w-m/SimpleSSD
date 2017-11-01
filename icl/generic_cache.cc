@@ -28,6 +28,10 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f) : Cache(c, f) {
   entrySize = c->iclConfig.readUint(ICL_ENTRY_SIZE);
   lineSize = f->getInfo()->pageSize;
 
+  useReadCaching = c->iclConfig.readBoolean(ICL_USE_READ_CACHE);
+  useWriteCaching = c->iclConfig.readBoolean(ICL_USE_WRITE_CACHE);
+  useReadPrefetch = c->iclConfig.readBoolean(ICL_USE_READ_PREFETCH);
+
   // TODO: replace this with DRAM model
   width = c->iclConfig.readUint(DRAM_CHIP_BUS_WIDTH);
   latency = c->iclConfig.readUint(DRAM_TIMING_RP);
@@ -58,47 +62,61 @@ uint32_t GenericCache::calcSet(uint64_t lpn) {
 // True when hit
 bool GenericCache::read(uint64_t lpn, uint64_t &tick) {
   bool ret = false;
-  uint32_t setIdx = calcSet(lpn);
-  uint32_t emptyIdx = entrySize;
 
-  for (uint32_t i = 0; i < entrySize; i++) {
-    Line &line = ppCache[setIdx][i];
+  if (useReadCaching) {
+    uint32_t setIdx = calcSet(lpn);
+    uint32_t emptyIdx = entrySize;
 
-    if (line.valid && line.tag == lpn) {
-      ret = true;
+    for (uint32_t i = 0; i < entrySize; i++) {
+      Line &line = ppCache[setIdx][i];
 
-      break;
+      if (line.valid && line.tag == lpn) {
+        line.lastAccessed = tick;
+        ret = true;
+
+        break;
+      }
+
+      if (!line.valid || !line.dirty) {
+        emptyIdx = i;
+      }
     }
 
-    if (!line.valid || !line.dirty) {
-      emptyIdx = i;
+    if (!ret) {
+      // miss
+      if (emptyIdx < entrySize) {
+        // Insert first
+        ppCache[setIdx][emptyIdx].valid = true;
+        ppCache[setIdx][emptyIdx].dirty = false;
+        ppCache[setIdx][emptyIdx].tag = lpn;
+        ppCache[setIdx][emptyIdx].lastAccessed = tick;
+        ppCache[setIdx][emptyIdx].insertedAt = tick;
+
+        // we have place to write
+        pFTL->read(lpn, tick);
+      }
+      else {
+        uint64_t insertAt = tick;
+
+        // we don't have place
+        pFTL->read(lpn, tick);
+
+        // flush one TODO: you may want to apply algorithm to select victim
+        pFTL->write(ppCache[setIdx][0].tag, tick);
+
+        ppCache[setIdx][0].valid = true;
+        ppCache[setIdx][0].dirty = false;
+        ppCache[setIdx][0].tag = lpn;
+        ppCache[setIdx][0].lastAccessed = insertAt;
+        ppCache[setIdx][0].insertedAt = insertAt;
+      }
     }
+
+    tick += latency;
   }
-
-  if (!ret) {
-    // miss
-    if (emptyIdx < entrySize) {
-      // we have place to write
-      pFTL->read(lpn, tick);
-
-      ppCache[setIdx][emptyIdx].valid = true;
-      ppCache[setIdx][emptyIdx].dirty = false;
-      ppCache[setIdx][emptyIdx].tag = lpn;
-    }
-    else {
-      // we don't have place
-      pFTL->read(lpn, tick);
-
-      // flush one TODO: you may want to apply algorithm to select victim
-      pFTL->write(ppCache[setIdx][0].tag, tick);
-
-      ppCache[setIdx][0].valid = true;
-      ppCache[setIdx][0].dirty = false;
-      ppCache[setIdx][0].tag = lpn;
-    }
+  else {
+    pFTL->read(lpn, tick);
   }
-
-  tick += latency;
 
   return ret;
 }
@@ -106,43 +124,57 @@ bool GenericCache::read(uint64_t lpn, uint64_t &tick) {
 // True when cold-miss/hit
 bool GenericCache::write(uint64_t lpn, uint64_t &tick) {
   bool ret = false;
-  uint32_t setIdx = calcSet(lpn);
-  uint32_t emptyIdx = entrySize;
 
-  for (uint32_t i = 0; i < entrySize; i++) {
-    Line &line = ppCache[setIdx][i];
+  if (useWriteCaching) {
+    uint32_t setIdx = calcSet(lpn);
+    uint32_t emptyIdx = entrySize;
 
-    if (line.valid && line.tag == lpn) {
+    for (uint32_t i = 0; i < entrySize; i++) {
+      Line &line = ppCache[setIdx][i];
+
+      if (line.valid && line.tag == lpn) {
+        line.lastAccessed = tick;
+        line.dirty = true;
+        ret = true;
+
+        break;
+      }
+
+      if (!line.valid || !line.dirty) {
+        emptyIdx = i;
+      }
+    }
+
+    if (emptyIdx < entrySize) {
+      // miss
       ret = true;
 
-      break;
+      ppCache[setIdx][emptyIdx].valid = true;
+      ppCache[setIdx][emptyIdx].dirty = true;
+      ppCache[setIdx][emptyIdx].tag = lpn;
+      ppCache[setIdx][emptyIdx].lastAccessed = tick;
+      ppCache[setIdx][emptyIdx].insertedAt = tick;
     }
 
-    if (!line.valid || !line.dirty) {
-      emptyIdx = i;
+    if (!ret) {
+      uint64_t insertAt = tick;
+
+      // we don't have place
+      // flush one TODO: you may want to apply algorithm to select victim
+      pFTL->write(ppCache[setIdx][0].tag, tick);
+
+      ppCache[setIdx][0].valid = true;
+      ppCache[setIdx][0].dirty = true;
+      ppCache[setIdx][0].tag = lpn;
+      ppCache[setIdx][0].lastAccessed = insertAt;
+      ppCache[setIdx][0].insertedAt = insertAt;
     }
+
+    tick += latency;
   }
-
-  if (emptyIdx < entrySize) {
-    // miss
-    ret = true;
-
-    ppCache[setIdx][emptyIdx].valid = true;
-    ppCache[setIdx][emptyIdx].dirty = true;
-    ppCache[setIdx][emptyIdx].tag = lpn;
+  else {
+    pFTL->write(lpn, tick);
   }
-
-  if (!ret) {
-    // we don't have place
-    // flush one TODO: you may want to apply algorithm to select victim
-    pFTL->write(ppCache[setIdx][0].tag, tick);
-
-    ppCache[setIdx][0].valid = true;
-    ppCache[setIdx][0].dirty = true;
-    ppCache[setIdx][0].tag = lpn;
-  }
-
-  tick += latency;
 
   return ret;
 }
@@ -150,27 +182,30 @@ bool GenericCache::write(uint64_t lpn, uint64_t &tick) {
 // True when hit
 bool GenericCache::flush(uint64_t lpn, uint64_t &tick) {
   bool ret = false;
-  uint32_t setIdx = calcSet(lpn);
-  uint32_t i;
 
-  for (i = 0; i < entrySize; i++) {
-    Line &line = ppCache[setIdx][i];
+  if (useReadCaching || useWriteCaching) {
+    uint32_t setIdx = calcSet(lpn);
+    uint32_t i;
 
-    if (line.valid && line.tag == lpn) {
-      ret = true;
+    for (i = 0; i < entrySize; i++) {
+      Line &line = ppCache[setIdx][i];
 
-      break;
-    }
-  }
+      if (line.valid && line.tag == lpn) {
+        ret = true;
 
-  if (ret) {
-    if (ppCache[setIdx][i].dirty) {
-      // we have to flush this
-      pFTL->write(ppCache[setIdx][i].tag, tick);
+        break;
+      }
     }
 
-    // invalidate
-    ppCache[setIdx][i].valid = false;
+    if (ret) {
+      if (ppCache[setIdx][i].dirty) {
+        // we have to flush this
+        pFTL->write(ppCache[setIdx][i].tag, tick);
+      }
+
+      // invalidate
+      ppCache[setIdx][i].valid = false;
+    }
   }
 
   return ret;
@@ -179,26 +214,32 @@ bool GenericCache::flush(uint64_t lpn, uint64_t &tick) {
 // True when hit
 bool GenericCache::trim(uint64_t lpn, uint64_t &tick) {
   bool ret = false;
-  uint32_t setIdx = calcSet(lpn);
-  uint32_t i;
 
-  for (i = 0; i < entrySize; i++) {
-    Line &line = ppCache[setIdx][i];
+  if (useReadCaching || useWriteCaching) {
+    uint32_t setIdx = calcSet(lpn);
+    uint32_t i;
 
-    if (line.valid && line.tag == lpn) {
-      ret = true;
+    for (i = 0; i < entrySize; i++) {
+      Line &line = ppCache[setIdx][i];
 
-      break;
+      if (line.valid && line.tag == lpn) {
+        ret = true;
+
+        break;
+      }
     }
-  }
 
-  if (ret) {
-    // invalidate
-    ppCache[setIdx][i].valid = false;
-  }
+    if (ret) {
+      // invalidate
+      ppCache[setIdx][i].valid = false;
+    }
 
-  // we have to trim this
-  pFTL->trim(ppCache[setIdx][i].tag, tick);
+    // we have to trim this
+    pFTL->trim(ppCache[setIdx][i].tag, tick);
+  }
+  else {
+    pFTL->trim(lpn, tick);
+  }
 
   return ret;
 }

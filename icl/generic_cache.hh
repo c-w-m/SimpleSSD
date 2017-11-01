@@ -35,6 +35,10 @@ class GenericCache : public Cache {
   uint32_t entrySize;
   uint32_t lineSize;
 
+  bool useReadCaching;
+  bool useWriteCaching;
+  bool useReadPrefetch;
+
   // TODO: replace this with DRAM model
   uint64_t latency;
   uint32_t width;

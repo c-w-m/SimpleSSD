@@ -19,8 +19,161 @@
 
 #include "util/disk.hh"
 
+#ifdef _MSC_VER
+#include <Windows.h>
+#else
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+
 namespace SimpleSSD {
 
-Disk::Disk() : diskSize(0), realSize(0), sectorSize(0) {}
+Disk::Disk() : diskSize(0), sectorSize(0) {}
+
+Disk::~Disk() {
+  close();
+}
+
+uint64_t Disk::open(std::string path, uint64_t desiredSize, uint32_t lbaSize) {
+  filename = path;
+  sectorSize = lbaSize;
+
+  // Validate size
+#ifdef _MSC_VER
+  LARGE_INTEGER size;
+  HANDLE hFile = CreateFileA(path.c_str(), GENERIC_READ | GENERIC_WRITE, NULL,
+                             NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+  if (GetLastError() == ERROR_ALREADY_EXISTS) {
+    if (GetFileSizeEx(hFile, &size)) {
+      diskSize = size.QuadPart;
+    }
+    else {
+      // panic("Get file size failed!");
+    }
+  }
+  else {
+    size.QuadPart = desiredSize;
+
+    if (SetFilePointerEx(hFile, size, nullptr, FILE_BEGIN)) {
+      if (SetEndOfFile(hFile)) {
+        diskSize = desiredSize;
+      }
+      else {
+        // panic("SetEndOfFile failed");
+      }
+    }
+    else {
+      // panic("SetFilePointerEx failed");
+    }
+  }
+
+  CloseHandle(hFile);
+#else
+  struct stat s;
+
+  if (stat(filename.c_str(), &s) == 0) {
+    // File exists
+    if (S_ISREG(s.st_mode)) {
+      diskSize = s.st_size;
+    }
+    else {
+      // panic("nvme_disk: Specified file %s is not regular file.\n",
+      //       filename.c_str());
+    }
+  }
+  else {
+    // Create zero-sized file
+    disk.open(filename, std::ios::out | std::ios::binary);
+    disk.close();
+
+    // Set file size
+    if (truncate(filename.c_str(), desiredSize) == 0) {
+      diskSize = desiredSize;
+    }
+    else {
+      // panic("nvme_disk: Failed to set disk size %" PRIu64 " errno=%d\n",
+      //       diskSize, errno);
+    }
+  }
+#endif
+
+  // Open file
+  disk.open(filename, std::ios::in | std::ios::out | std::ios::binary);
+
+  if (!disk.is_open()) {
+    // panic("failed to open file");
+  }
+
+  return diskSize;
+}
+
+void Disk::close() {
+  if (disk.is_open()) {
+    disk.close();
+  }
+}
+
+uint16_t Disk::read(uint64_t slba, uint16_t nlblk, uint8_t *buffer) {
+  uint16_t ret = 0;
+
+  if (disk.is_open()) {
+    uint64_t avail;
+
+    slba *= sectorSize;
+    avail = nlblk * sectorSize;
+
+    if (slba + avail > diskSize) {
+      if (slba >= diskSize) {
+        avail = 0;
+      }
+      else {
+        avail = diskSize - slba;
+      }
+    }
+
+    if (avail > 0) {
+      disk.seekg(slba, std::ios::beg);
+      if (!disk.good()) {
+        // panic("nvme_disk: Fail to seek to %" PRIu64 "\n", slba);
+      }
+
+      disk.read((char *)buffer, avail);
+    }
+
+    memset(buffer + avail, 0, nlblk * sectorSize - avail);
+
+    // DPRINTF(NVMeDisk, "DISK    | READ  | BYTE %016" PRIX64 " + %X\n",
+    //         slba, nlblk * sectorSize);
+
+    ret = nlblk;
+  }
+
+  return ret;
+}
+
+uint16_t Disk::write(uint64_t slba, uint16_t nlblk, uint8_t *buffer) {
+  uint16_t ret = 0;
+
+  if (disk.is_open()) {
+    slba *= sectorSize;
+
+    disk.seekp(slba, std::ios::beg);
+    if (!disk.good()) {
+      // panic("nvme_disk: Fail to seek to %" PRIu64 "\n", slba);
+    }
+
+    uint64_t offset = disk.tellp();
+    disk.write((char *)buffer, sectorSize * nlblk);
+    offset = (uint64_t)disk.tellp() - offset;
+
+    // DPRINTF(NVMeDisk, "DISK    | WRITE | BYTE %016" PRIX64 " + %X\n", slba,
+    //         offset);
+
+    ret = offset / sectorSize;
+  }
+
+  return ret;
+}
 
 }  // namespace SimpleSSD

@@ -19,6 +19,10 @@
 
 #include "icl/generic_cache.hh"
 
+#include <limits>
+
+#include "util/algorithm.hh"
+
 namespace SimpleSSD {
 
 namespace ICL {
@@ -31,6 +35,8 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f) : Cache(c, f) {
   useReadCaching = c->iclConfig.readBoolean(ICL_USE_READ_CACHE);
   useWriteCaching = c->iclConfig.readBoolean(ICL_USE_WRITE_CACHE);
   useReadPrefetch = c->iclConfig.readBoolean(ICL_USE_READ_PREFETCH);
+
+  policy = (EVICT_POLICY)c->iclConfig.readInt(ICL_EVICT_POLICY);
 
   // TODO: replace this with DRAM model
   width = c->iclConfig.readUint(DRAM_CHIP_BUS_WIDTH);
@@ -59,13 +65,62 @@ uint32_t GenericCache::calcSet(uint64_t lpn) {
   return lpn & (setSize - 1);
 }
 
+uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick) {
+  uint32_t entryIdx = entrySize;
+  uint64_t min = std::numeric_limits<uint64_t>::max();
+
+  // Check set has empty entry
+  for (uint32_t i = 0; i < entrySize; i++) {
+    if (!ppCache[setIdx][i].valid) {
+      entryIdx = i;
+
+      break;
+    }
+  }
+
+  // If no empty entry
+  if (entryIdx == entrySize) {
+    switch (policy) {
+      case POLICY_FIRST_ENTRY:
+        entryIdx = 0;
+
+        break;
+      case POLICY_FIFO:
+        for (uint32_t i = 0; i < entrySize; i++) {
+          if (ppCache[setIdx][i].insertedAt < min) {
+            min = ppCache[setIdx][i].insertedAt;
+            entryIdx = i;
+          }
+        }
+
+        break;
+      case POLICY_LEAST_RECENTLY_USED:
+        for (uint32_t i = 0; i < entrySize; i++) {
+          if (ppCache[setIdx][i].lastAccessed < min) {
+            min = ppCache[setIdx][i].lastAccessed;
+            entryIdx = i;
+          }
+        }
+
+        break;
+    }
+
+    // Let's flush 'em
+    pFTL->write(ppCache[setIdx][entryIdx].tag, tick);
+
+    // Invalidate
+    ppCache[setIdx][entryIdx].valid = false;
+  }
+
+  return entryIdx;
+}
+
 // True when hit
 bool GenericCache::read(uint64_t lpn, uint64_t &tick) {
   bool ret = false;
 
   if (useReadCaching) {
     uint32_t setIdx = calcSet(lpn);
-    uint32_t emptyIdx = entrySize;
 
     for (uint32_t i = 0; i < entrySize; i++) {
       Line &line = ppCache[setIdx][i];
@@ -76,40 +131,22 @@ bool GenericCache::read(uint64_t lpn, uint64_t &tick) {
 
         break;
       }
-
-      if (!line.valid || !line.dirty) {
-        emptyIdx = i;
-      }
     }
 
     if (!ret) {
-      // miss
-      if (emptyIdx < entrySize) {
-        // Insert first
-        ppCache[setIdx][emptyIdx].valid = true;
-        ppCache[setIdx][emptyIdx].dirty = false;
-        ppCache[setIdx][emptyIdx].tag = lpn;
-        ppCache[setIdx][emptyIdx].lastAccessed = tick;
-        ppCache[setIdx][emptyIdx].insertedAt = tick;
+      uint64_t insertAt = tick;
+      uint32_t emptyIdx = flushVictim(setIdx, tick);
 
-        // we have place to write
-        pFTL->read(lpn, tick);
-      }
-      else {
-        uint64_t insertAt = tick;
+      ppCache[setIdx][emptyIdx].valid = true;
+      ppCache[setIdx][emptyIdx].dirty = false;
+      ppCache[setIdx][emptyIdx].tag = lpn;
+      ppCache[setIdx][emptyIdx].lastAccessed = insertAt;
+      ppCache[setIdx][emptyIdx].insertedAt = insertAt;
 
-        // we don't have place
-        pFTL->read(lpn, tick);
+      // Request read and flush at same time
+      pFTL->read(lpn, insertAt);
 
-        // flush one TODO: you may want to apply algorithm to select victim
-        pFTL->write(ppCache[setIdx][0].tag, tick);
-
-        ppCache[setIdx][0].valid = true;
-        ppCache[setIdx][0].dirty = false;
-        ppCache[setIdx][0].tag = lpn;
-        ppCache[setIdx][0].lastAccessed = insertAt;
-        ppCache[setIdx][0].insertedAt = insertAt;
-      }
+      tick = MAX(tick, insertAt);
     }
 
     tick += latency;
@@ -127,7 +164,6 @@ bool GenericCache::write(uint64_t lpn, uint64_t &tick) {
 
   if (useWriteCaching) {
     uint32_t setIdx = calcSet(lpn);
-    uint32_t emptyIdx = entrySize;
 
     for (uint32_t i = 0; i < entrySize; i++) {
       Line &line = ppCache[setIdx][i];
@@ -139,35 +175,17 @@ bool GenericCache::write(uint64_t lpn, uint64_t &tick) {
 
         break;
       }
-
-      if (!line.valid || !line.dirty) {
-        emptyIdx = i;
-      }
-    }
-
-    if (emptyIdx < entrySize) {
-      // miss
-      ret = true;
-
-      ppCache[setIdx][emptyIdx].valid = true;
-      ppCache[setIdx][emptyIdx].dirty = true;
-      ppCache[setIdx][emptyIdx].tag = lpn;
-      ppCache[setIdx][emptyIdx].lastAccessed = tick;
-      ppCache[setIdx][emptyIdx].insertedAt = tick;
     }
 
     if (!ret) {
       uint64_t insertAt = tick;
+      uint32_t emptyIdx = flushVictim(setIdx, tick);
 
-      // we don't have place
-      // flush one TODO: you may want to apply algorithm to select victim
-      pFTL->write(ppCache[setIdx][0].tag, tick);
-
-      ppCache[setIdx][0].valid = true;
-      ppCache[setIdx][0].dirty = true;
-      ppCache[setIdx][0].tag = lpn;
-      ppCache[setIdx][0].lastAccessed = insertAt;
-      ppCache[setIdx][0].insertedAt = insertAt;
+      ppCache[setIdx][emptyIdx].valid = true;
+      ppCache[setIdx][emptyIdx].dirty = true;
+      ppCache[setIdx][emptyIdx].tag = lpn;
+      ppCache[setIdx][emptyIdx].lastAccessed = insertAt;
+      ppCache[setIdx][emptyIdx].insertedAt = insertAt;
     }
 
     tick += latency;

@@ -19,6 +19,8 @@
 
 #include "util/disk.hh"
 
+#include <cstring>
+
 #ifdef _MSC_VER
 #include <Windows.h>
 #else

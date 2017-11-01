@@ -48,7 +48,7 @@ class Disk {
 
 class CoWDisk : public Disk {
  private:
-  std::unordered_map<uint64_t, std::string> table;
+  std::unordered_map<uint64_t, std::vector<uint8_t>> table;
 
  public:
   CoWDisk();

@@ -1174,8 +1174,8 @@ bool Controller::checkQueue(SQueue *pQueue, std::list<SQEntryWrapper> &fifo,
 
   if (pQueue->getItemCount() > 0) {
     pQueue->getData(&entry, tick);
-    fifo.push_back(SQEntryWrapper(entry, pQueue->getID(), pQueue->getHead(),
-                                  pQueue->getCQID()));
+    fifo.push_back(SQEntryWrapper(entry, pQueue->getID(), pQueue->getCQID(),
+                                  pQueue->getHead()));
 
     return true;
   }

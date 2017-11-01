@@ -1141,7 +1141,7 @@ void Controller::work(uint64_t &tick) {
         pQueue = ppCQueue[iter->cqID];
 
         // Write CQ
-        tick = pQueue->setData(&iter->entry, tick);
+        pQueue->setData(&iter->entry, tick);
 
         // Delete entry
         iter = lCQFIFO.erase(iter);
@@ -1173,7 +1173,7 @@ bool Controller::checkQueue(SQueue *pQueue, std::list<SQEntryWrapper> &fifo,
   SQEntry entry;
 
   if (pQueue->getItemCount() > 0) {
-    tick = pQueue->getData(&entry, tick);
+    pQueue->getData(&entry, tick);
     fifo.push_back(SQEntryWrapper(entry, pQueue->getID(), pQueue->getHead(),
                                   pQueue->getCQID()));
 

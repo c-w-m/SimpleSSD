@@ -49,6 +49,19 @@ PAL::PAL(ConfigReader *c) : pConf(c) {
 
 PAL::~PAL() {}
 
+void PAL::read(uint32_t blockIndex, uint32_t pageIndex, uint64_t &tick) {
+  // TODO implement
+}
+
+void PAL::write(uint32_t blockIndex, uint32_t pageIndex, uint64_t &tick) {
+  // TODO implement
+}
+
+void PAL::erase(uint32_t blockIndex, uint64_t &tick) {
+  // TODO implement
+}
+
+
 Parameter *PAL::getInfo() {
   return &param;
 }

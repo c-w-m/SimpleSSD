@@ -98,8 +98,9 @@ typedef enum {
 } ICL_CONFIG;
 
 typedef enum {
-  POLICY_PAGE,
-  POLICY_BLOCK,
+  POLICY_FIRST_ENTRY,          //!< Always select first entry in the set
+  POLICY_FIFO,                 //!< Select entry that lastly inserted
+  POLICY_LEAST_RECENTLY_USED,  //!< Select entry that least recently used
 } EVICT_POLICY;
 
 class Config : public BaseConfig {
@@ -159,7 +160,7 @@ class Config : public BaseConfig {
   bool readCaching;          //!< Default: false
   bool writeCaching;         //!< Default: true
   bool readPrefetch;         //!< Default: false
-  EVICT_POLICY evictPolicy;  //!< Default: POLICY_PAGE
+  EVICT_POLICY evictPolicy;  //!< Default: POLICY_LEAST_RECENTLY_USED
   uint64_t cacheSetSize;     //!< Default: 8192
   uint64_t cacheEntrySize;   //!< Default: 1
 

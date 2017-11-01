@@ -36,7 +36,7 @@ Config::Config() {
   readCaching = false;
   writeCaching = true;
   readPrefetch = false;
-  evictPolicy = POLICY_PAGE;
+  evictPolicy = POLICY_LEAST_RECENTLY_USED;
   cacheSetSize = 8192;
   cacheEntrySize = 1;
 

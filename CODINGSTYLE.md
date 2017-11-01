@@ -9,8 +9,9 @@ Use `snake_case` for filenames. Use only lower-case characters.
 
 ## Language
 ### C/C++
-User defined type uses `camelCase`. Typename should begin with upper-case characters.
+User defined type uses `CamelCase`. Typename should begin with upper-case characters.  
 Variable/function name uses `camelCase`. Variable/function name should begin with lower-case characters.
 
 ### Formatting using `clang-format`
-See .clang-format file
+Use C/C++ code formatter `clang-format` version >= 5.0.  
+See .clang-format file for style definition.

@@ -19,6 +19,8 @@
 
 #include "hil/nvme/controller.hh"
 
+#include <cmath>
+
 #include "hil/nvme/subsystem.hh"
 
 namespace SimpleSSD {

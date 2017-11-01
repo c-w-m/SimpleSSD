@@ -78,11 +78,12 @@ Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
     info.dataProtectionSettings = 0x00;
     info.namespaceSharingCapabilities = 0x00;
 
-    if (!createNamespace(NSID_LOWEST, &info)) {
+    if (createNamespace(NSID_LOWEST, &info)) {
+      lNamespaces.front()->attach(true);
+    }
+    else {
       // TODO: panic("Failed to create namespace");
     }
-
-    lNamespaces.front()->attach(true);
   }
 }
 

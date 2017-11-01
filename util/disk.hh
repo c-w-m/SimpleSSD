@@ -31,7 +31,6 @@ class Disk {
  protected:
   std::string filename;
   uint64_t diskSize;
-  uint64_t realSize;
   uint32_t sectorSize;
 
   std::fstream disk;
@@ -40,7 +39,7 @@ class Disk {
   Disk();
   virtual ~Disk();
 
-  virtual uint64_t open(std::string, uint32_t);
+  virtual uint64_t open(std::string, uint64_t, uint32_t);
   virtual void close();
 
   virtual uint16_t read(uint64_t, uint16_t, uint8_t *);
@@ -55,7 +54,7 @@ class CoWDisk : public Disk {
   CoWDisk();
   ~CoWDisk();
 
-  uint64_t open(std::string, uint32_t);
+  uint64_t open(std::string, uint64_t, uint32_t);
   void close();
 
   uint16_t read(uint64_t, uint16_t, uint8_t *);

@@ -103,7 +103,7 @@ void Namespace::setData(uint32_t id, Information *data,
 
     std::string filename = conf.readString(NVME_DISK_IMAGE_PATH);
 
-    diskSize = pDisk->open(filename, info.lbaSize);
+    diskSize = pDisk->open(filename, info.size * info.lbaSize, info.lbaSize);
 
     if (diskSize == 0) {
       // TODO: panic("Failed to open disk image");

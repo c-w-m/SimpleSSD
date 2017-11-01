@@ -29,6 +29,8 @@ namespace ICL {
 
 typedef struct _Line {
   uint64_t tag;
+  uint64_t lastAccessed;
+  uint64_t insertedAt;
   bool dirty;
   bool valid;
 

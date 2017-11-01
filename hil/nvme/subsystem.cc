@@ -255,7 +255,7 @@ void Subsystem::fillIdentifyNamespace(uint8_t *buffer,
   buffer[24] = 0x04;  // Trim supported
 
   // Number of LBA Formats
-  buffer[25] = nLBAFormat;
+  buffer[25] = nLBAFormat - 1;  // 0's based
 
   // Formatted LBA Size
   buffer[26] = info->lbaFormatIndex;

@@ -118,29 +118,29 @@ STATE MappingTable::write(const Addr lpn, Addr & ppn){
 }
 
 void MappingTable::PrintStats(){
-  Addr tot_phy_blk_count = param->physical_page_number / param->page_per_block;
-  Addr tot_log_blk_count = param->logical_page_number / param->page_per_block;
-  DPRINTF(FTLOut,  "FTL Map parameters: \n");
-  DPRINTF(FTLOut,  "FTL Map physical block count: %" PRIu64 " \n", tot_phy_blk_count);
-  DPRINTF(FTLOut,  "FTL Map logacal block count: %" PRIu64 " \n", tot_log_blk_count);
-  DPRINTF(FTLOut,  "FTL Map over-provisioning: %.2f \n", param->over_provide);
-  DPRINTF(FTLOut,  "FTL Map GC Strategy: GREEDY \n");
-  int byte_per_block = (param->page_per_block + 1 + 32 + (int)(log2(param->page_per_block)) + 1) / 8;  // valid bit, bad bit, erase counter, write point, lpn
-  DPRINTF(FTLOut,  "FTL Map Meta data Information for each block: %dB (lpn) + %dB (Valid bits, Bad bit, erase counter, write pointer)\n", param->page_per_block * 8, byte_per_block);
-
-  DPRINTF(FTLOut,  "FTL Map Total gc count %d \n", map_total_gc_count);
-  DPRINTF(FTLOut,  "FTL Map Total block erase count %d \n", map_block_erase_count);
-  DPRINTF(FTLOut,  "FTL Map GC move count (read, write)  %d  %d \n", map_gc_move_read_count, map_gc_move_write_count);
-  DPRINTF(FTLOut,  "FTL Map Bad block count %d \n", map_bad_block_count); // bad block count
-
-  if (map_gc_lat_min == DBL_MAX) {
-    DPRINTF(FTLOut, "FTL Map GC latency (min , max , avg) : ( NA , NA , NA) us \n");
-  }
-  else {
-    DPRINTF(FTLOut, "FTL Map GC latency (min , max , avg) : ( %.2f , %.2f , %.2f) us \n", map_gc_lat_min, map_gc_lat_max, map_gc_lat_avg);
-  }
-
-  DPRINTF(FTLOut,  "FTL Map free/used block count: %" PRIu64 "/%" PRIu64 "\n", map_free_block_count, map_used_block_count);
+  // Addr tot_phy_blk_count = param->physical_page_number / param->page_per_block;
+  // Addr tot_log_blk_count = param->logical_page_number / param->page_per_block;
+  // DPRINTF(FTLOut,  "FTL Map parameters: \n");
+  // DPRINTF(FTLOut,  "FTL Map physical block count: %" PRIu64 " \n", tot_phy_blk_count);
+  // DPRINTF(FTLOut,  "FTL Map logacal block count: %" PRIu64 " \n", tot_log_blk_count);
+  // DPRINTF(FTLOut,  "FTL Map over-provisioning: %.2f \n", param->over_provide);
+  // DPRINTF(FTLOut,  "FTL Map GC Strategy: GREEDY \n");
+  // int byte_per_block = (param->page_per_block + 1 + 32 + (int)(log2(param->page_per_block)) + 1) / 8;  // valid bit, bad bit, erase counter, write point, lpn
+  // DPRINTF(FTLOut,  "FTL Map Meta data Information for each block: %dB (lpn) + %dB (Valid bits, Bad bit, erase counter, write pointer)\n", param->page_per_block * 8, byte_per_block);
+  //
+  // DPRINTF(FTLOut,  "FTL Map Total gc count %d \n", map_total_gc_count);
+  // DPRINTF(FTLOut,  "FTL Map Total block erase count %d \n", map_block_erase_count);
+  // DPRINTF(FTLOut,  "FTL Map GC move count (read, write)  %d  %d \n", map_gc_move_read_count, map_gc_move_write_count);
+  // DPRINTF(FTLOut,  "FTL Map Bad block count %d \n", map_bad_block_count); // bad block count
+  //
+  // if (map_gc_lat_min == DBL_MAX) {
+  //   DPRINTF(FTLOut, "FTL Map GC latency (min , max , avg) : ( NA , NA , NA) us \n");
+  // }
+  // else {
+  //   DPRINTF(FTLOut, "FTL Map GC latency (min , max , avg) : ( %.2f , %.2f , %.2f) us \n", map_gc_lat_min, map_gc_lat_max, map_gc_lat_avg);
+  // }
+  //
+  // DPRINTF(FTLOut,  "FTL Map free/used block count: %" PRIu64 "/%" PRIu64 "\n", map_free_block_count, map_used_block_count);
 }
 void MappingTable::ResetStats(){
   map_total_gc_count = 0;

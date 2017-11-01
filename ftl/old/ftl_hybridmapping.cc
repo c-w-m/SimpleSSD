@@ -8,6 +8,9 @@
 
 #include "ftl_hybridmapping.hh"
 
+#include "base/types.hh"
+#include "base/trace.hh"
+
 /*
 * Data Block Mapping Table (DBMT)
 */
@@ -370,7 +373,7 @@ STATE  HybridMapping::insert_into_log_block(const Addr lpn, Addr & ppn){
       Addr new_log_block;
       if (get_free_block(new_log_block) != SUCCESS || log_block_MT->addLogBlock(group_number, new_log_block) != SUCCESS){
 
-        DPRINTF(FTLOut, "FTL Error in insert_into_log_block \n");
+        // DPRINTF(FTLOut, "FTL Error in insert_into_log_block \n");
         return ERROR;
       }
 
@@ -384,18 +387,18 @@ STATE  HybridMapping::insert_into_log_block(const Addr lpn, Addr & ppn){
 
   int page_offset = -1; // write on the write_point of block and set page_offset
   if((selected_log_block == -1) || selected_log_block > (param->physical_page_number / param->page_per_block)) {
-    DPRINTF(FTLOut, "FTL Error in insert_into_log_block \n");
+    // DPRINTF(FTLOut, "FTL Error in insert_into_log_block \n");
     return ERROR;
   }
   if (physical_blocks[selected_log_block].write_page(lpn, page_offset) != SUCCESS) {
-    DPRINTF(FTLOut, "FTL Error couldn't write \n");
+    // DPRINTF(FTLOut, "FTL Error couldn't write \n");
     return ERROR;
   }
   invalid_old_page(lpn);
   ppn = selected_log_block * param->page_per_block + page_offset;
 
   if (log_page_MT->add(group_number, lpn, ppn) != SUCCESS){
-    DPRINTF(FTLOut, "FTL Error cannot find new entry \n");
+    // DPRINTF(FTLOut, "FTL Error cannot find new entry \n");
     return ERROR;
   }
 

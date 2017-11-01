@@ -89,7 +89,7 @@ class PAL2 //let's not inherit PAL1
 
     //PPN Conversion related //ToDo: Shifted-Mode is also required for better performance.
     uint32_t RearrangedSizes[7];
-    uint32_t AddrRemap[6];
+    uint8_t AddrRemap[6];
     uint32_t CPDPBPtoDieIdx(CPDPBP* pCPDPBP);
     void printCPDPBP(CPDPBP* pCPDPBP);
     void PPNdisassemble(uint64_t* pPPN, CPDPBP* pCPDPBP);

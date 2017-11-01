@@ -724,15 +724,15 @@ void PALStatistics::PrintFinalStats(uint64_t sim_time_ps) {
 }
 
 void PALStatistics::PrintStats(uint64_t sim_time_ps) {
-  uint64_t elapsed_time_ps = (sim_time_ps - sim_start_time_ps) + 1;
-  if (LastExecutionTime == 0)
-    LastExecutionTime = sim_start_time_ps;
+  // uint64_t elapsed_time_ps = (sim_time_ps - sim_start_time_ps) + 1;
+  // if (LastExecutionTime == 0)
+  //   LastExecutionTime = sim_start_time_ps;
   // DPRINTF(PAL, "Execution time = %" PRIu64 "\n", sim_time_ps);
   // DPRINTF(PAL, "Last Execution time = %" PRIu64 "\n", LastExecutionTime);
-  if (sim_start_time_ps >= sim_time_ps)  // abnormal case
-  {
-    elapsed_time_ps = sim_time_ps + 1;
-  }
+  // if (sim_start_time_ps >= sim_time_ps)  // abnormal case
+  // {
+  //   elapsed_time_ps = sim_time_ps + 1;
+  // }
 
   // DPRINTF(PAL, "[ PAL Stats ]\n");
 

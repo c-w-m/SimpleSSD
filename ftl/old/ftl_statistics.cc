@@ -1,6 +1,8 @@
 #include "ftl_statistics.hh"
 #include <stdio.h>
 
+#include "base/types.hh"
+#include "base/trace.hh"
 
 FTLStats::FTLStats(){
 
@@ -85,35 +87,35 @@ void FTLStats::print_epoch_stats(Tick sim_time){
 
   collect_epoch_stats(epoch_number);
 
-  DPRINTF(FTLOut, "FTL Host epoch %d , time: %" PRIu64 " \n", epoch_number, sim_time);
-  DPRINTF(FTLOut, "FTL Host read count %d \n", (int) host_epoch_read_count.Get() );
-  DPRINTF(FTLOut, "FTL Host read size %lf KB\n", host_epoch_read_size.Get());
-  DPRINTF(FTLOut, "FTL Host read latency %lf us\n", host_epoch_read_latency.Get());
-  DPRINTF(FTLOut, "FTL Host read capacity %lf KB \n", host_epoch_read_capacity.Get());
-  DPRINTF(FTLOut, "FTL Host write count %d \n", (int)host_epoch_write_count.Get());
-  DPRINTF(FTLOut, "FTL Host write size %lf KB\n", host_epoch_write_size.Get());
-  DPRINTF(FTLOut, "FTL Host write latency %lf us\n", host_epoch_write_latency.Get());
-  DPRINTF(FTLOut, "FTL Host write capacity %lf KB\n", host_epoch_write_capacity.Get());
+  // DPRINTF(FTLOut, "FTL Host epoch %d , time: %" PRIu64 " \n", epoch_number, sim_time);
+  // DPRINTF(FTLOut, "FTL Host read count %d \n", (int) host_epoch_read_count.Get() );
+  // DPRINTF(FTLOut, "FTL Host read size %lf KB\n", host_epoch_read_size.Get());
+  // DPRINTF(FTLOut, "FTL Host read latency %lf us\n", host_epoch_read_latency.Get());
+  // DPRINTF(FTLOut, "FTL Host read capacity %lf KB \n", host_epoch_read_capacity.Get());
+  // DPRINTF(FTLOut, "FTL Host write count %d \n", (int)host_epoch_write_count.Get());
+  // DPRINTF(FTLOut, "FTL Host write size %lf KB\n", host_epoch_write_size.Get());
+  // DPRINTF(FTLOut, "FTL Host write latency %lf us\n", host_epoch_write_latency.Get());
+  // DPRINTF(FTLOut, "FTL Host write capacity %lf KB\n", host_epoch_write_capacity.Get());
 
   // BW
-  DPRINTF(FTLOut, "FTL Host read  BW (active): %lf MB/s \n", host_epoch_read_BW_active.Get());
-  DPRINTF(FTLOut, "FTL Host write BW (active): %lf MB/s \n", host_epoch_write_BW_active.Get());
-  DPRINTF(FTLOut, "FTL Host rw    BW (active): %lf MB/s \n", host_epoch_rw_BW_active.Get());
-  DPRINTF(FTLOut, "FTL Host read  BW (total ): %lf MB/s \n", host_epoch_read_BW_total.Get());
-  DPRINTF(FTLOut, "FTL Host write BW (total ): %lf MB/s \n", host_epoch_write_BW_total.Get());
-  DPRINTF(FTLOut, "FTL Host rw    BW (total ): %lf MB/s \n", host_epoch_rw_BW_total.Get());
-  DPRINTF(FTLOut, "FTL Host read  BW (only  ): %lf MB/s \n", host_epoch_read_BW_only.Get());
-  DPRINTF(FTLOut, "FTL Host write BW (only  ): %lf MB/s \n", host_epoch_write_BW_only.Get());
+  // DPRINTF(FTLOut, "FTL Host read  BW (active): %lf MB/s \n", host_epoch_read_BW_active.Get());
+  // DPRINTF(FTLOut, "FTL Host write BW (active): %lf MB/s \n", host_epoch_write_BW_active.Get());
+  // DPRINTF(FTLOut, "FTL Host rw    BW (active): %lf MB/s \n", host_epoch_rw_BW_active.Get());
+  // DPRINTF(FTLOut, "FTL Host read  BW (total ): %lf MB/s \n", host_epoch_read_BW_total.Get());
+  // DPRINTF(FTLOut, "FTL Host write BW (total ): %lf MB/s \n", host_epoch_write_BW_total.Get());
+  // DPRINTF(FTLOut, "FTL Host rw    BW (total ): %lf MB/s \n", host_epoch_rw_BW_total.Get());
+  // DPRINTF(FTLOut, "FTL Host read  BW (only  ): %lf MB/s \n", host_epoch_read_BW_only.Get());
+  // DPRINTF(FTLOut, "FTL Host write BW (only  ): %lf MB/s \n", host_epoch_write_BW_only.Get());
 
   // IOPS
-  DPRINTF(FTLOut, "FTL Host read  IOPS (active): %lf \n", host_epoch_read_IOPS_active.Get());
-  DPRINTF(FTLOut, "FTL Host write IOPS (active): %lf \n", host_epoch_write_IOPS_active.Get());
-  DPRINTF(FTLOut, "FTL Host rw    IOPS (active): %lf \n", host_epoch_rw_IOPS_active.Get());
-  DPRINTF(FTLOut, "FTL Host read  IOPS (total ): %lf \n", host_epoch_read_IOPS_total.Get());
-  DPRINTF(FTLOut, "FTL Host write IOPS (total ): %lf \n", host_epoch_write_IOPS_total.Get());
-  DPRINTF(FTLOut, "FTL Host rw    IOPS (total ): %lf \n", host_epoch_rw_IOPS_total.Get());
-  DPRINTF(FTLOut, "FTL Host read  IOPS (only  ): %lf \n", host_epoch_read_IOPS_only.Get());
-  DPRINTF(FTLOut, "FTL Host write IOPS (only  ): %lf \n", host_epoch_write_IOPS_only.Get());
+  // DPRINTF(FTLOut, "FTL Host read  IOPS (active): %lf \n", host_epoch_read_IOPS_active.Get());
+  // DPRINTF(FTLOut, "FTL Host write IOPS (active): %lf \n", host_epoch_write_IOPS_active.Get());
+  // DPRINTF(FTLOut, "FTL Host rw    IOPS (active): %lf \n", host_epoch_rw_IOPS_active.Get());
+  // DPRINTF(FTLOut, "FTL Host read  IOPS (total ): %lf \n", host_epoch_read_IOPS_total.Get());
+  // DPRINTF(FTLOut, "FTL Host write IOPS (total ): %lf \n", host_epoch_write_IOPS_total.Get());
+  // DPRINTF(FTLOut, "FTL Host rw    IOPS (total ): %lf \n", host_epoch_rw_IOPS_total.Get());
+  // DPRINTF(FTLOut, "FTL Host read  IOPS (only  ): %lf \n", host_epoch_read_IOPS_only.Get());
+  // DPRINTF(FTLOut, "FTL Host write IOPS (only  ): %lf \n", host_epoch_write_IOPS_only.Get());
 
   reset_epoch_stats(epoch_number);
 }
@@ -125,35 +127,35 @@ void FTLStats::print_final_stats(Tick sim_time){
   //collect_epoch_stats(epoch_number);
   print_simulation_stats(sim_time);
   /*
-  DPRINTF(FTLOut, "FTL Host epoch summarized statistics at time %lld \n", sim_time);
-  DPRINTF(FTLOut, "FTL Host read count %s \n", host_epoch_read_count.print());
-  DPRINTF(FTLOut, "FTL Host read size %s KB\n", host_epoch_read_count.print());
-  DPRINTF(FTLOut, "FTL Host read latency %s us\n", host_epoch_read_latency.print());
-  DPRINTF(FTLOut, "FTL Host read capacity %s KB\n", host_epoch_read_capacity.print());
-  DPRINTF(FTLOut, "FTL Host write count %s \n", host_epoch_write_count.print());
-  DPRINTF(FTLOut, "FTL Host write size %s KB\n", host_epoch_write_size.print());
-  DPRINTF(FTLOut, "FTL Host write latency %s us\n", host_epoch_write_latency.print());
-  DPRINTF(FTLOut, "FTL Host write capacity %s KB\n", host_epoch_write_capacity.print());
+  // DPRINTF(FTLOut, "FTL Host epoch summarized statistics at time %lld \n", sim_time);
+  // DPRINTF(FTLOut, "FTL Host read count %s \n", host_epoch_read_count.print());
+  // DPRINTF(FTLOut, "FTL Host read size %s KB\n", host_epoch_read_count.print());
+  // DPRINTF(FTLOut, "FTL Host read latency %s us\n", host_epoch_read_latency.print());
+  // DPRINTF(FTLOut, "FTL Host read capacity %s KB\n", host_epoch_read_capacity.print());
+  // DPRINTF(FTLOut, "FTL Host write count %s \n", host_epoch_write_count.print());
+  // DPRINTF(FTLOut, "FTL Host write size %s KB\n", host_epoch_write_size.print());
+  // DPRINTF(FTLOut, "FTL Host write latency %s us\n", host_epoch_write_latency.print());
+  // DPRINTF(FTLOut, "FTL Host write capacity %s KB\n", host_epoch_write_capacity.print());
 
   // BW
-  DPRINTF(FTLOut, "FTL Host read  BW (active): %s MB/s \n", host_epoch_read_BW_active.print());
-  DPRINTF(FTLOut, "FTL Host write BW (active): %s MB/s \n", host_epoch_write_BW_active.print());
-  DPRINTF(FTLOut, "FTL Host rw    BW (active): %s MB/s \n", host_epoch_rw_BW_active.print());
-  DPRINTF(FTLOut, "FTL Host read  BW (total ): %s MB/s \n", host_epoch_read_BW_total.print());
-  DPRINTF(FTLOut, "FTL Host write BW (total ): %s MB/s \n", host_epoch_write_BW_total.print());
-  DPRINTF(FTLOut, "FTL Host rw    BW (total ): %s MB/s \n", host_epoch_rw_BW_total.print());
-  DPRINTF(FTLOut, "FTL Host read  BW (only  ): %s MB/s \n", host_epoch_read_BW_only.print());
-  DPRINTF(FTLOut, "FTL Host write BW (only  ): %s MB/s \n", host_epoch_write_BW_only.print());
+  // DPRINTF(FTLOut, "FTL Host read  BW (active): %s MB/s \n", host_epoch_read_BW_active.print());
+  // DPRINTF(FTLOut, "FTL Host write BW (active): %s MB/s \n", host_epoch_write_BW_active.print());
+  // DPRINTF(FTLOut, "FTL Host rw    BW (active): %s MB/s \n", host_epoch_rw_BW_active.print());
+  // DPRINTF(FTLOut, "FTL Host read  BW (total ): %s MB/s \n", host_epoch_read_BW_total.print());
+  // DPRINTF(FTLOut, "FTL Host write BW (total ): %s MB/s \n", host_epoch_write_BW_total.print());
+  // DPRINTF(FTLOut, "FTL Host rw    BW (total ): %s MB/s \n", host_epoch_rw_BW_total.print());
+  // DPRINTF(FTLOut, "FTL Host read  BW (only  ): %s MB/s \n", host_epoch_read_BW_only.print());
+  // DPRINTF(FTLOut, "FTL Host write BW (only  ): %s MB/s \n", host_epoch_write_BW_only.print());
 
   // IOPS
-  DPRINTF(FTLOut, "FTL Host read  IOPS (active): %s \n", host_epoch_read_IOPS_active.print());
-  DPRINTF(FTLOut, "FTL Host write IOPS (active): %s \n", host_epoch_write_IOPS_active.print());
-  DPRINTF(FTLOut, "FTL Host rw    IOPS (active): %s \n", host_epoch_rw_IOPS_active.print());
-  DPRINTF(FTLOut, "FTL Host read  IOPS (total ): %s \n", host_epoch_read_IOPS_total.print());
-  DPRINTF(FTLOut, "FTL Host write IOPS (total ): %s \n", host_epoch_write_IOPS_total.print());
-  DPRINTF(FTLOut, "FTL Host rw    IOPS (total ): %s \n", host_epoch_rw_IOPS_total.print());
-  DPRINTF(FTLOut, "FTL Host read  IOPS (only  ): %s \n", host_epoch_read_IOPS_only.print());
-  DPRINTF(FTLOut, "FTL Host write IOPS (only  ): %s \n", host_epoch_write_IOPS_only.print());
+  // DPRINTF(FTLOut, "FTL Host read  IOPS (active): %s \n", host_epoch_read_IOPS_active.print());
+  // DPRINTF(FTLOut, "FTL Host write IOPS (active): %s \n", host_epoch_write_IOPS_active.print());
+  // DPRINTF(FTLOut, "FTL Host rw    IOPS (active): %s \n", host_epoch_rw_IOPS_active.print());
+  // DPRINTF(FTLOut, "FTL Host read  IOPS (total ): %s \n", host_epoch_read_IOPS_total.print());
+  // DPRINTF(FTLOut, "FTL Host write IOPS (total ): %s \n", host_epoch_write_IOPS_total.print());
+  // DPRINTF(FTLOut, "FTL Host rw    IOPS (total ): %s \n", host_epoch_rw_IOPS_total.print());
+  // DPRINTF(FTLOut, "FTL Host read  IOPS (only  ): %s \n", host_epoch_read_IOPS_only.print());
+  // DPRINTF(FTLOut, "FTL Host write IOPS (only  ): %s \n", host_epoch_write_IOPS_only.print());
   */
 }
 
@@ -538,16 +540,16 @@ Tick FTLStats::get_rw_active_time(Tick current_time){
 }
 
 void FTLStats::print_simulation_stats(Tick sim_time){
-  //    DPRINTF(FTLOut, "FTL Host simulation statistics , time: %lu \n", sim_time);
+  //    // DPRINTF(FTLOut, "FTL Host simulation statistics , time: %lu \n", sim_time);
 
-  //    DPRINTF(FTLOut, "FTL Host sim read  count %d \n",        (int)host_sim_read_count);
-  //    DPRINTF(FTLOut, "FTL Host sim read  size ");             host_sim_read_size.print();
-  //    DPRINTF(FTLOut, "FTL Host sim read  latency ");          host_sim_read_latency.print();
-  //    DPRINTF(FTLOut, "FTL Host sim read  capacity %.2f KB\n", host_sim_read_capacity);
-  //    DPRINTF(FTLOut, "FTL Host sim write count %d \n",        (int)host_sim_write_count);
-  //    DPRINTF(FTLOut, "FTL Host sim write size ");             host_sim_write_size.print();
-  //    DPRINTF(FTLOut, "FTL Host sim write latency ");          host_sim_write_latency.print();
-  //    DPRINTF(FTLOut, "FTL Host sim write capacity %.2f KB\n", host_sim_write_capacity);
+  //    // DPRINTF(FTLOut, "FTL Host sim read  count %d \n",        (int)host_sim_read_count);
+  //    // DPRINTF(FTLOut, "FTL Host sim read  size ");             host_sim_read_size.print();
+  //    // DPRINTF(FTLOut, "FTL Host sim read  latency ");          host_sim_read_latency.print();
+  //    // DPRINTF(FTLOut, "FTL Host sim read  capacity %.2f KB\n", host_sim_read_capacity);
+  //    // DPRINTF(FTLOut, "FTL Host sim write count %d \n",        (int)host_sim_write_count);
+  //    // DPRINTF(FTLOut, "FTL Host sim write size ");             host_sim_write_size.print();
+  //    // DPRINTF(FTLOut, "FTL Host sim write latency ");          host_sim_write_latency.print();
+  //    // DPRINTF(FTLOut, "FTL Host sim write capacity %.2f KB\n", host_sim_write_capacity);
 
   Tick active_time = get_rw_active_time(sim_time);
   Tick total_time = sim_time;
@@ -581,20 +583,20 @@ void FTLStats::print_simulation_stats(Tick sim_time){
     host_sim_write_BW_only      .update(host_sim_write_capacity * USEC * USEC / (KBYTE * write_active_time));
     host_sim_write_IOPS_only    .update(host_sim_write_count * USEC * USEC / (write_active_time));
   }
-  //    DPRINTF(FTLOut, "FTL Host sim read  BW (active): %.2f MB/s\n", host_sim_read_BW_active.Get());
-  //    DPRINTF(FTLOut, "FTL Host sim write BW (active): %.2f MB/s\n", host_sim_write_BW_active.Get());
-  //    DPRINTF(FTLOut, "FTL Host sim rw    BW (active): %.2f MB/s\n", host_sim_rw_BW_active.Get());
-  //    DPRINTF(FTLOut, "FTL Host sim read  IOPS (active): %.2f \n"  , host_sim_read_IOPS_active.Get());
-  //    DPRINTF(FTLOut, "FTL Host sim write IOPS (active): %.2f \n"  , host_sim_write_IOPS_active.Get());
-  //    DPRINTF(FTLOut, "FTL Host sim rw    IOPS (active): %.2f \n"  , host_sim_rw_IOPS_active.Get());
-  //    DPRINTF(FTLOut, "FTL Host sim read  BW (total ): %.2f MB/s\n", host_sim_read_BW_total.Get());
-  //    DPRINTF(FTLOut, "FTL Host sim write BW (total ): %.2f MB/s\n", host_sim_write_BW_total.Get());
-  //    DPRINTF(FTLOut, "FTL Host sim rw    BW (total ): %.2f MB/s\n", host_sim_rw_BW_total.Get());
-  //    DPRINTF(FTLOut, "FTL Host sim read  IOPS (total ): %.2f \n"  , host_sim_read_IOPS_total.Get());
-  //    DPRINTF(FTLOut, "FTL Host sim write IOPS (total ): %.2f \n"  , host_sim_write_IOPS_total.Get());
-  //    DPRINTF(FTLOut, "FTL Host sim rw    IOPS (total ): %.2f \n"  , host_sim_rw_IOPS_total.Get());
-  //    DPRINTF(FTLOut, "FTL Host sim read  BW (only  ): %.2f MB/s\n", host_sim_read_BW_only.Get());
-  //    DPRINTF(FTLOut, "FTL Host sim read  IOPS (only  ): %.2f \n"  , host_sim_read_IOPS_only.Get());
-  //    DPRINTF(FTLOut, "FTL Host sim write BW (only  ): %.2f MB/s\n", host_sim_write_BW_only.Get());
-  //    DPRINTF(FTLOut, "FTL Host sim write IOPS (only  ): %.2f \n"  , host_sim_write_IOPS_only.Get());
+  //    // DPRINTF(FTLOut, "FTL Host sim read  BW (active): %.2f MB/s\n", host_sim_read_BW_active.Get());
+  //    // DPRINTF(FTLOut, "FTL Host sim write BW (active): %.2f MB/s\n", host_sim_write_BW_active.Get());
+  //    // DPRINTF(FTLOut, "FTL Host sim rw    BW (active): %.2f MB/s\n", host_sim_rw_BW_active.Get());
+  //    // DPRINTF(FTLOut, "FTL Host sim read  IOPS (active): %.2f \n"  , host_sim_read_IOPS_active.Get());
+  //    // DPRINTF(FTLOut, "FTL Host sim write IOPS (active): %.2f \n"  , host_sim_write_IOPS_active.Get());
+  //    // DPRINTF(FTLOut, "FTL Host sim rw    IOPS (active): %.2f \n"  , host_sim_rw_IOPS_active.Get());
+  //    // DPRINTF(FTLOut, "FTL Host sim read  BW (total ): %.2f MB/s\n", host_sim_read_BW_total.Get());
+  //    // DPRINTF(FTLOut, "FTL Host sim write BW (total ): %.2f MB/s\n", host_sim_write_BW_total.Get());
+  //    // DPRINTF(FTLOut, "FTL Host sim rw    BW (total ): %.2f MB/s\n", host_sim_rw_BW_total.Get());
+  //    // DPRINTF(FTLOut, "FTL Host sim read  IOPS (total ): %.2f \n"  , host_sim_read_IOPS_total.Get());
+  //    // DPRINTF(FTLOut, "FTL Host sim write IOPS (total ): %.2f \n"  , host_sim_write_IOPS_total.Get());
+  //    // DPRINTF(FTLOut, "FTL Host sim rw    IOPS (total ): %.2f \n"  , host_sim_rw_IOPS_total.Get());
+  //    // DPRINTF(FTLOut, "FTL Host sim read  BW (only  ): %.2f MB/s\n", host_sim_read_BW_only.Get());
+  //    // DPRINTF(FTLOut, "FTL Host sim read  IOPS (only  ): %.2f \n"  , host_sim_read_IOPS_only.Get());
+  //    // DPRINTF(FTLOut, "FTL Host sim write BW (only  ): %.2f MB/s\n", host_sim_write_BW_only.Get());
+  //    // DPRINTF(FTLOut, "FTL Host sim write IOPS (only  ): %.2f \n"  , host_sim_write_IOPS_only.Get());
 }

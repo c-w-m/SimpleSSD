@@ -31,8 +31,8 @@ const char NAME_BLOCK[] = "Block";
 const char NAME_PAGE[] = "Page";
 const char NAME_PAGE_SIZE[] = "PageSize";
 const char NAME_USE_MULTI_PLANE_OP[] = "EnableMultiPlaneOperation";
-const char NAME_DMA_SPEED[] = "NANDDMASpeed";
-const char NAME_DMA_WIDTH[] = "NANDDMABit";
+const char NAME_DMA_SPEED[] = "DMASpeed";
+const char NAME_DMA_WIDTH[] = "DMAWidth";
 const char NAME_FLASH_TYPE[] = "NANDType";
 
 Config::Config() {

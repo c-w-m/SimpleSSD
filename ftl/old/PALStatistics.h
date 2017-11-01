@@ -66,6 +66,7 @@ class PALStatistics
 
     SimpleSSD::PAL::Config *gconf;
     Latency *lat;
+    uint64_t totalDie;
 
     #if 0 //ch-die io count (legacy)
     class mini_cnt_page

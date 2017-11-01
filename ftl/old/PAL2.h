@@ -45,7 +45,7 @@ class PAL2 //let's not inherit PAL1
     PAL2(PALStatistics* statistics, SimpleSSD::PAL::Config *c, Latency *l);
     ~PAL2();
 
-    BaseConfig *gconf;
+    SimpleSSD::PAL::Config *gconf;
     Latency *lat;
 
     TimeSlot** ChTimeSlots;

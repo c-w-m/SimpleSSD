@@ -74,9 +74,9 @@ FTLOLD::FTLOLD(Parameter *p, PAL::PAL *l, ConfigReader *c)
 }
 
 FTLOLD::~FTLOLD() {
-  delete pFTL;
-  delete pPAL;
-  delete pStat;
+  delete ftl;
+  delete pal;
+  delete stats;
   delete old;
 }
 

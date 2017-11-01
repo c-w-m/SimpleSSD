@@ -28,13 +28,6 @@
 
 #include "util/config.hh"
 
-#include "base/types.hh"
-#include "base/trace.hh"
-
-#ifndef SIMPLESSD_STANDALONE
-#include "debug/PAL.hh"
-#endif
-
 #include <iostream>
 #include <string>
 #include <cstring>
@@ -71,7 +64,7 @@ class PALStatistics
       TICK_STAT_NUM
     };
 
-    BaseConfig *gconf;
+    SimpleSSD::PAL::Config *gconf;
     Latency *lat;
 
     #if 0 //ch-die io count (legacy)

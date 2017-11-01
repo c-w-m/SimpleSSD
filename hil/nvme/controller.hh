@@ -102,8 +102,8 @@ class Controller {
   int abort(uint16_t, uint16_t);
   void identify(uint8_t *);
 
-  uint64_t collectSQueue(uint64_t);
-  uint64_t work(uint64_t);
+  void collectSQueue(uint64_t &);
+  void work(uint64_t &);
 };
 
 }  // namespace NVMe

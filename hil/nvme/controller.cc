@@ -986,14 +986,14 @@ void Controller::identify(uint8_t *data) {
   memset(data + 0x0C00, 0, 1024);
 }
 
-uint64_t Controller::collectSQueue(uint64_t tick) {
+void Controller::collectSQueue(uint64_t &tick) {
   static uint16_t sqcount = conf.readUint(NVME_MAX_IO_SQUEUE) + 1;
   static uint16_t wrrHigh = conf.readUint(NVME_WRR_HIGH);
   static uint16_t wrrMedium = conf.readUint(NVME_WRR_MEDIUM);
 
   // Check ready
   if (!(registers.status & 0x00000001)) {
-    return tick;
+    return;
   }
 
   // Round robin
@@ -1124,14 +1124,12 @@ uint64_t Controller::collectSQueue(uint64_t tick) {
   else {
     // panic("nvme_ctrl: Invalid arbitration method\n");
   }
-
-  return tick;
 }
 
-uint64_t Controller::work(uint64_t tick) {
+void Controller::work(uint64_t &tick) {
   // Check ready
   if (!(registers.status & 0x00000001)) {
-    return tick;
+    return;
   }
 
   // Check CQFIFO
@@ -1168,8 +1166,6 @@ uint64_t Controller::work(uint64_t tick) {
       submit(response);
     }
   }
-
-  return tick;
 }
 
 bool Controller::checkQueue(SQueue *pQueue, std::list<SQEntryWrapper> &fifo,

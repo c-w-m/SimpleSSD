@@ -28,7 +28,12 @@ namespace HIL {
 
 namespace NVMe {
 
+class Controller;
+
 class Interface {
+ protected:
+  Controller *pController;
+
  public:
   virtual void updateInterrupt(uint16_t, bool) = 0;
   virtual void getVendorID(uint16_t &, uint16_t &) = 0;

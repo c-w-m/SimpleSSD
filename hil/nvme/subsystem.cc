@@ -396,7 +396,8 @@ void Subsystem::flush(Namespace *ns, uint64_t &tick) {
   pHIL->flush(*ns->getLPNRange(), tick);
 }
 
-void Subsystem::trim(Namespace *ns, uint64_t slba, uint64_t nlblk, uint64_t &tick) {
+void Subsystem::trim(Namespace *ns, uint64_t slba, uint64_t nlblk,
+                     uint64_t &tick) {
   std::list<LPNRange> result;
   uint32_t lbaratio = logicalPageSize / ns->getInfo()->lbaSize;
   uint64_t slpn;

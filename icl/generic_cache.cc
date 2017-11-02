@@ -44,7 +44,7 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f) : Cache(c, f) {
   latency += c->iclConfig.readUint(DRAM_TIMING_RCD);
   latency += c->iclConfig.readUint(DRAM_TIMING_CL);
 
-  latency *= lineSize / (width / 8);
+  // latency *= lineSize / (width / 8);
 
   ppCache = (Line **)calloc(setSize, sizeof(Line *));
 

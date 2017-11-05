@@ -62,7 +62,7 @@ Tick FTL::read(Addr lpn, size_t npages, Tick arrived) {
 
   ftl_statistics.updateStats(&cmd);
 
-  return finished - arrived;
+  return finished;
 }
 
 Tick FTL::write(Addr lpn, size_t npages, Tick arrived, bool init) {
@@ -91,7 +91,7 @@ Tick FTL::write(Addr lpn, size_t npages, Tick arrived, bool init) {
     ftl_statistics.updateStats(&cmd);
   }
 
-  return finished - arrived;
+  return finished;
 }
 
 Tick FTL::trim(Addr lpn, size_t npages) {

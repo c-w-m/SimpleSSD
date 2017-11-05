@@ -228,11 +228,10 @@ void Subsystem::convert(std::list<LPNRange> &out, std::list<LPNRange> *in,
     }
 
     len = MIN(nlp, iter.nlp - (slpn - passed));
-    nlp -= len;
-    slpn += len;
-
     out.push_back(LPNRange(iter.slpn + (slpn - passed), len));
 
+    nlp -= len;
+    slpn += len;
     passed += iter.nlp;
 
     if (nlp == 0) {

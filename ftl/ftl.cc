@@ -20,6 +20,7 @@
 #include "ftl/ftl.hh"
 
 #include "ftl/abstract_ftl.hh"
+#include "ftl/ftl_old.hh"
 
 namespace SimpleSSD {
 
@@ -38,8 +39,8 @@ FTL::FTL(ConfigReader *c) : pConf(c) {
   param.pagesInBlock = palparam->page;
   param.pageSize = palparam->superPageSize;
 
-  // TODO allocated pFTL
   // Initialize pFTL
+  pFTL = new FTLOLD(&param, pPAL, pConf);
 }
 
 FTL::~FTL() {

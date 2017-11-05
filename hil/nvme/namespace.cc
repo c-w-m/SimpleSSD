@@ -266,7 +266,7 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
     PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2,
                 (uint64_t)nlb * info.lbaSize);
 
-    pParent->write(this, slba, nlb, PRP, tick);
+    pParent->read(this, slba, nlb, PRP, tick);
 
     if (pDisk) {
       uint8_t *buffer = (uint8_t *)calloc(nlb, info.lbaSize);

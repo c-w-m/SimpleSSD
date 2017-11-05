@@ -69,6 +69,7 @@ FTLOLD::FTLOLD(Parameter *p, PAL::PAL *l, ConfigReader *c)
   old->warmup = pConf->readFloat(FTL_WARM_UP_RATIO);
   old->erase_cycle = pConf->readUint(FTL_ERASE_CYCLE);
   old->page_byte = p->pageSize;
+  old->page_per_block = p->pagesInBlock;
 
   ftl = new ::FTL(old, pal);
 }

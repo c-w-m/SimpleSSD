@@ -39,8 +39,10 @@ FTL::FTL(ConfigReader *c) : pConf(c) {
   param.pagesInBlock = palparam->page;
   param.pageSize = palparam->superPageSize;
 
-  // Initialize pFTL
   pFTL = new FTLOLD(&param, pPAL, pConf);
+
+  // Initialize pFTL
+  pFTL->initialize();
 }
 
 FTL::~FTL() {

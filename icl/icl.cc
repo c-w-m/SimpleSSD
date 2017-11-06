@@ -20,6 +20,7 @@
 #include "icl/icl.hh"
 
 #include "icl/generic_cache.hh"
+#include "log/trace.hh"
 #include "util/algorithm.hh"
 
 namespace SimpleSSD {
@@ -53,6 +54,11 @@ void ICL::read(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
   }
 
   tick = finishedAt;
+
+  Logger::debugprint(Logger::LOG_ICL,
+                     "READ  | LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
+                     " - %" PRIu64 " (%" PRIu64 ")\n",
+                     slpn, nlp, beginAt, finishedAt, finishedAt - beginAt);
 }
 
 void ICL::write(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
@@ -66,6 +72,11 @@ void ICL::write(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
   }
 
   tick = finishedAt;
+
+  Logger::debugprint(Logger::LOG_ICL,
+                     "WRITE | LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
+                     " - %" PRIu64 " (%" PRIu64 ")\n",
+                     slpn, nlp, beginAt, finishedAt, finishedAt - beginAt);
 }
 
 void ICL::flush(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
@@ -79,6 +90,11 @@ void ICL::flush(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
   }
 
   tick = finishedAt;
+
+  Logger::debugprint(Logger::LOG_ICL,
+                     "FLUSH | LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
+                     " - %" PRIu64 " (%" PRIu64 ")\n",
+                     slpn, nlp, beginAt, finishedAt, finishedAt - beginAt);
 }
 
 void ICL::trim(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
@@ -92,6 +108,11 @@ void ICL::trim(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
   }
 
   tick = finishedAt;
+
+  Logger::debugprint(Logger::LOG_ICL,
+                     "TRIM  | LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
+                     " - %" PRIu64 " (%" PRIu64 ")\n",
+                     slpn, nlp, beginAt, finishedAt, finishedAt - beginAt);
 }
 
 void ICL::getLPNInfo(uint64_t &t, uint32_t &s) {

@@ -186,6 +186,9 @@ void Namespace::flush(SQEntryWrapper &req, CQEntryWrapper &resp,
                     STATUS_NAMESPACE_NOT_ATTACHED);
   }
 
+  Logger::debugprint(Logger::LOG_HIL_NVME, "NVM     | FLUSH | NSID %-5d\n",
+                     nsid);
+
   if (!err) {
     uint64_t beginAt = tick;
     pParent->flush(this, tick);
@@ -213,6 +216,9 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
     err = true;
     Logger::warn("nvme_namespace: host tried to write 0 blocks\n");
   }
+
+  Logger::debugprint(Logger::LOG_HIL_NVME, "NVM     | WRITE | NSID %-5d\n",
+                     nsid);
 
   if (!err) {
     uint64_t dmaTick = tick;
@@ -264,6 +270,9 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
     err = true;
     Logger::warn("nvme_namespace: host tried to read 0 blocks\n");
   }
+
+  Logger::debugprint(Logger::LOG_HIL_NVME, "NVM     | READ  | NSID %-5d\n",
+                     nsid);
 
   if (!err) {
     uint64_t dmaTick = tick;

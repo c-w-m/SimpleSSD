@@ -35,7 +35,7 @@ struct Logger {
   std::ostream &errfile;
   std::function<uint64_t()> curTick;
 
-  Logger(std::ostream &o, std::ostream &e, std::function<uint64_t()> &t)
+  Logger(std::ostream &o, std::ostream &e, std::function<uint64_t()> t)
       : outfile(o), errfile(e), curTick(t) {}
 };
 

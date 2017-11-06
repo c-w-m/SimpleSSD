@@ -27,7 +27,7 @@ namespace SimpleSSD {
 
 namespace Logger {
 
-void initLogSystem(std::ostream &, std::ostream &, std::function<uint64_t()> &);
+void initLogSystem(std::ostream &, std::ostream &, std::function<uint64_t()>);
 void destroyLogSystem();
 
 }  // namespace Logger

@@ -118,7 +118,7 @@ void debugprint(LOG_ID id, const uint8_t *buffer, uint64_t size) {
 }
 
 void initLogSystem(std::ostream &out, std::ostream &err,
-                   std::function<uint64_t()> &tickFct) {
+                   std::function<uint64_t()> tickFct) {
   destroyLogSystem();
 
   logger = new Logger(out, err, tickFct);

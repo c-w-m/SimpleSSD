@@ -42,12 +42,14 @@ struct Logger {
 Logger *logger = nullptr;
 
 void panic(const char *format, ...) {
-  va_list args;
+  va_list args, copied;
   std::vector<char> str;
 
   va_start(args, format);
+  va_copy(copied, args);
   str.resize(vsnprintf(nullptr, 0, format, args) + 1);
-  vsnprintf(str.data(), str.size(), format, args);
+  va_end(args);
+  vsnprintf(str.data(), str.size(), format, copied);
   va_end(args);
 
   if (logger) {
@@ -59,12 +61,14 @@ void panic(const char *format, ...) {
 }
 
 void warn(const char *format, ...) {
-  va_list args;
+  va_list args, copied;
   std::vector<char> str;
 
   va_start(args, format);
+  va_copy(copied, args);
   str.resize(vsnprintf(nullptr, 0, format, args) + 1);
-  vsnprintf(str.data(), str.size(), format, args);
+  va_end(args);
+  vsnprintf(str.data(), str.size(), format, copied);
   va_end(args);
 
   if (logger) {
@@ -74,12 +78,14 @@ void warn(const char *format, ...) {
 }
 
 void info(const char *format, ...) {
-  va_list args;
+  va_list args, copied;
   std::vector<char> str;
 
   va_start(args, format);
+  va_copy(copied, args);
   str.resize(vsnprintf(nullptr, 0, format, args) + 1);
-  vsnprintf(str.data(), str.size(), format, args);
+  va_end(args);
+  vsnprintf(str.data(), str.size(), format, copied);
   va_end(args);
 
   if (logger) {
@@ -92,12 +98,14 @@ const std::string logName[LOG_NUM] = {
     "global", "HIL", "HIL::NVMe", "ICL", "ICL::GenericCache", "FTL", "PAL"};
 
 void debugprint(LOG_ID id, const char *format, ...) {
-  va_list args;
+  va_list args, copied;
   std::vector<char> str;
 
   va_start(args, format);
+  va_copy(copied, args);
   str.resize(vsnprintf(nullptr, 0, format, args) + 1);
-  vsnprintf(str.data(), str.size(), format, args);
+  va_end(args);
+  vsnprintf(str.data(), str.size(), format, copied);
   va_end(args);
 
   if (logger && id < LOG_NUM) {

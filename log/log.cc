@@ -105,14 +105,14 @@ void debugprint(LOG_ID id, const char *format, ...) {
   }
 }
 
-void debugprint(LOG_ID id, const char *buffer, uint64_t size) {
+void debugprint(LOG_ID id, const uint8_t *buffer, uint64_t size) {
   if (logger && id < LOG_NUM) {
     uint32_t temp;
 
     temp = id;
     logger->outfile.write((char *)&temp, 4);
     logger->outfile.write((char *)&size, 8);
-    logger->outfile.write(buffer, size);
+    logger->outfile.write((const char *)buffer, size);
   }
 }
 

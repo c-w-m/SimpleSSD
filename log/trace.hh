@@ -36,12 +36,12 @@ typedef enum {
   LOG_NUM
 } LOG_ID;
 
-inline void debugprint(LOG_ID, const char *, ...);
-inline void debugprint(LOG_ID, const char *, uint64_t);
+void debugprint(LOG_ID, const char *, ...);
+void debugprint(LOG_ID, const uint8_t *, uint64_t);
 
-inline void panic(const char *, ...);
-inline void warn(const char *, ...);
-inline void info(const char *, ...);
+void panic(const char *, ...);
+void warn(const char *, ...);
+void info(const char *, ...);
 
 }  // namespace Logger
 

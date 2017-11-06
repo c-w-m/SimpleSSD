@@ -29,6 +29,7 @@ namespace Logger {
 typedef enum {
   LOG_COMMON,
   LOG_HIL,
+  LOG_HIL_NVME,
   LOG_ISL,
   LOG_FTL,
   LOG_PAL,

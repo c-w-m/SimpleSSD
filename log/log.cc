@@ -87,7 +87,8 @@ void info(const char *format, ...) {
   }
 }
 
-const char logName[LOG_NUM][] = {"global", "HIL", "ISL", "FTL", "PAL"};
+const char logName[LOG_NUM][] = {"global", "HIL", "HIL::NVMe",
+                                 "ISL",    "FTL", "PAL"};
 
 void debugprint(LOG_ID id, const char *format, ...) {
   va_list args;

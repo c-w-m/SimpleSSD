@@ -44,8 +44,8 @@ ICL::~ICL() {
 }
 
 void ICL::read(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
-  uint64_t beginAt;
-  uint64_t finishedAt = 0;
+  uint64_t beginAt = tick;
+  uint64_t finishedAt = tick;
 
   for (uint64_t i = 0; i < nlp; i++) {
     beginAt = tick;
@@ -62,8 +62,8 @@ void ICL::read(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
 }
 
 void ICL::write(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
-  uint64_t beginAt;
-  uint64_t finishedAt = 0;
+  uint64_t beginAt = tick;
+  uint64_t finishedAt = tick;
 
   for (uint64_t i = 0; i < nlp; i++) {
     beginAt = tick;
@@ -80,8 +80,8 @@ void ICL::write(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
 }
 
 void ICL::flush(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
-  uint64_t beginAt;
-  uint64_t finishedAt = 0;
+  uint64_t beginAt = tick;
+  uint64_t finishedAt = tick;
 
   for (uint64_t i = 0; i < nlp; i++) {
     beginAt = tick;
@@ -98,8 +98,8 @@ void ICL::flush(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
 }
 
 void ICL::trim(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
-  uint64_t beginAt;
-  uint64_t finishedAt = 0;
+  uint64_t beginAt = tick;
+  uint64_t finishedAt = tick;
 
   for (uint64_t i = 0; i < nlp; i++) {
     beginAt = tick;

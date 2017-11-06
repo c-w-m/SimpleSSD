@@ -30,7 +30,7 @@ typedef enum {
   LOG_COMMON,
   LOG_HIL,
   LOG_HIL_NVME,
-  LOG_ISL,
+  LOG_ICL,
   LOG_FTL,
   LOG_PAL,
   LOG_NUM

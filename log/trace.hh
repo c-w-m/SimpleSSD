@@ -31,6 +31,7 @@ typedef enum {
   LOG_HIL,
   LOG_HIL_NVME,
   LOG_ICL,
+  LOG_ICL_GENERIC_CACHE,
   LOG_FTL,
   LOG_PAL,
   LOG_NUM

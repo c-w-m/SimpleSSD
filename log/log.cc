@@ -18,7 +18,6 @@
  */
 
 #include "log/log.hh"
-#include "log/misc.hh"
 #include "log/trace.hh"
 
 #include <cstdarg>

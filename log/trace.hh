@@ -38,6 +38,10 @@ typedef enum {
 inline void debugprint(LOG_ID, const char *, ...);
 inline void debugprint(LOG_ID, const char *, uint64_t);
 
+inline void panic(const char *, ...);
+inline void warn(const char *, ...);
+inline void info(const char *, ...);
+
 }  // namespace Logger
 
 }  // namespace SimpleSSD

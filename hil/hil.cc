@@ -41,7 +41,7 @@ HIL::~HIL() {
 void HIL::read(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
   // TODO: stat
 
-  Logger::debugprint(Logger::LOG_HIL, "READ  | LPN %" PRIu64 " + %" PRIu64 "\n",
+  Logger::debugprint(Logger::LOG_HIL, "READ  | LPN %" PRIu64 " + %" PRIu64,
                      slpn, nlp);
 
   pICL->read(slpn, nlp, tick);
@@ -64,7 +64,7 @@ void HIL::read(std::list<LPNRange> &range, uint64_t &tick) {
 void HIL::write(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
   // TODO: stat
 
-  Logger::debugprint(Logger::LOG_HIL, "WRITE | LPN %" PRIu64 " + %" PRIu64 "\n",
+  Logger::debugprint(Logger::LOG_HIL, "WRITE | LPN %" PRIu64 " + %" PRIu64,
                      slpn, nlp);
 
   pICL->write(slpn, nlp, tick);
@@ -87,7 +87,7 @@ void HIL::write(std::list<LPNRange> &range, uint64_t &tick) {
 void HIL::flush(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
   // TODO: stat
 
-  Logger::debugprint(Logger::LOG_HIL, "FLUSH | LPN %" PRIu64 " + %" PRIu64 "\n",
+  Logger::debugprint(Logger::LOG_HIL, "FLUSH | LPN %" PRIu64 " + %" PRIu64,
                      slpn, nlp);
 
   pICL->flush(slpn, nlp, tick);
@@ -110,7 +110,7 @@ void HIL::flush(std::list<LPNRange> &range, uint64_t &tick) {
 void HIL::trim(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
   // TODO: stat
 
-  Logger::debugprint(Logger::LOG_HIL, "TRIM  | LPN %" PRIu64 " + %" PRIu64 "\n",
+  Logger::debugprint(Logger::LOG_HIL, "TRIM  | LPN %" PRIu64 " + %" PRIu64,
                      slpn, nlp);
 
   pICL->trim(slpn, nlp, tick);

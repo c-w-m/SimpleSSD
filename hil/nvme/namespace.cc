@@ -186,7 +186,7 @@ void Namespace::flush(SQEntryWrapper &req, CQEntryWrapper &resp,
                     STATUS_NAMESPACE_NOT_ATTACHED);
   }
 
-  Logger::debugprint(Logger::LOG_HIL_NVME, "NVM     | FLUSH | NSID %-5d\n",
+  Logger::debugprint(Logger::LOG_HIL_NVME, "NVM     | FLUSH | NSID %-5d",
                      nsid);
 
   if (!err) {
@@ -195,7 +195,7 @@ void Namespace::flush(SQEntryWrapper &req, CQEntryWrapper &resp,
 
     Logger::debugprint(Logger::LOG_HIL_NVME,
                        "NVM     | FLUSH | NSID %-5d| %" PRIu64 " - %" PRIu64
-                       " (%" PRIu64 ")\n",
+                       " (%" PRIu64 ")",
                        nsid, beginAt, tick, tick - beginAt);
   }
 }
@@ -214,10 +214,10 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
   }
   if (nlb == 0) {
     err = true;
-    Logger::warn("nvme_namespace: host tried to write 0 blocks\n");
+    Logger::warn("nvme_namespace: host tried to write 0 blocks");
   }
 
-  Logger::debugprint(Logger::LOG_HIL_NVME, "NVM     | WRITE | NSID %-5d\n",
+  Logger::debugprint(Logger::LOG_HIL_NVME, "NVM     | WRITE | NSID %-5d",
                      nsid);
 
   if (!err) {
@@ -245,7 +245,7 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
     Logger::debugprint(Logger::LOG_HIL_NVME,
                        "NVM     | WRITE | %" PRIX64 " + %d | NAND %" PRIu64
                        " - %" PRIu64 " (%" PRIu64 ") | DMA %" PRIu64
-                       " - %" PRIu64 " (%" PRIu64 ")\n",
+                       " - %" PRIu64 " (%" PRIu64 ")",
                        slba, nlb, diff, tick, tick - diff, dmaDelayed, dmaTick,
                        dmaTick - dmaDelayed);
 
@@ -268,10 +268,10 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
   }
   if (nlb == 0) {
     err = true;
-    Logger::warn("nvme_namespace: host tried to read 0 blocks\n");
+    Logger::warn("nvme_namespace: host tried to read 0 blocks");
   }
 
-  Logger::debugprint(Logger::LOG_HIL_NVME, "NVM     | READ  | NSID %-5d\n",
+  Logger::debugprint(Logger::LOG_HIL_NVME, "NVM     | READ  | NSID %-5d",
                      nsid);
 
   if (!err) {
@@ -299,7 +299,7 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
     Logger::debugprint(Logger::LOG_HIL_NVME,
                        "NVM     | READ  | %" PRIX64 " + %d | NAND %" PRIu64
                        " - %" PRIu64 " (%" PRIu64 ") | DMA %" PRIu64
-                       " - %" PRIu64 " (%" PRIu64 ")\n",
+                       " - %" PRIu64 " (%" PRIu64 ")",
                        slba, nlb, diff, tick, tick - diff, dmaDelayed, dmaTick,
                        dmaTick - dmaDelayed);
 
@@ -337,7 +337,7 @@ void Namespace::datasetManagement(SQEntryWrapper &req, CQEntryWrapper &resp,
 
     Logger::debugprint(Logger::LOG_HIL_NVME,
                        "NVM     | TRIM  | NSID %-5d| %" PRIu64 " - %" PRIu64
-                       " (%" PRIu64 ")\n",
+                       " (%" PRIu64 ")",
                        nsid, beginAt, tick, tick - beginAt);
   }
 }

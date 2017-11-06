@@ -57,7 +57,7 @@ void ICL::read(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
 
   Logger::debugprint(Logger::LOG_ICL,
                      "READ  | LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
-                     " - %" PRIu64 " (%" PRIu64 ")\n",
+                     " - %" PRIu64 " (%" PRIu64 ")",
                      slpn, nlp, beginAt, finishedAt, finishedAt - beginAt);
 }
 
@@ -75,7 +75,7 @@ void ICL::write(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
 
   Logger::debugprint(Logger::LOG_ICL,
                      "WRITE | LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
-                     " - %" PRIu64 " (%" PRIu64 ")\n",
+                     " - %" PRIu64 " (%" PRIu64 ")",
                      slpn, nlp, beginAt, finishedAt, finishedAt - beginAt);
 }
 
@@ -93,7 +93,7 @@ void ICL::flush(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
 
   Logger::debugprint(Logger::LOG_ICL,
                      "FLUSH | LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
-                     " - %" PRIu64 " (%" PRIu64 ")\n",
+                     " - %" PRIu64 " (%" PRIu64 ")",
                      slpn, nlp, beginAt, finishedAt, finishedAt - beginAt);
 }
 
@@ -111,7 +111,7 @@ void ICL::trim(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
 
   Logger::debugprint(Logger::LOG_ICL,
                      "TRIM  | LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
-                     " - %" PRIu64 " (%" PRIu64 ")\n",
+                     " - %" PRIu64 " (%" PRIu64 ")",
                      slpn, nlp, beginAt, finishedAt, finishedAt - beginAt);
 }
 

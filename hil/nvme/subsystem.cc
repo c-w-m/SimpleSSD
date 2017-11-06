@@ -190,7 +190,7 @@ bool Subsystem::createNamespace(uint32_t nsid, Namespace::Information *info) {
   lNamespaces.push_back(pNS);
   Logger::debugprint(Logger::LOG_HIL_NVME,
                      "NS %-5d| CREATE | LBA size %" PRIu32
-                     " | Capacity %" PRIu64 "\n",
+                     " | Capacity %" PRIu64,
                      nsid, info->lbaSize, info->size);
 
   return true;
@@ -204,7 +204,7 @@ bool Subsystem::destroyNamespace(uint32_t nsid) {
     if ((*iter)->getNSID() == nsid) {
       found = true;
 
-      Logger::debugprint(Logger::LOG_HIL_NVME, "NS %-5d| DELETE\n", nsid);
+      Logger::debugprint(Logger::LOG_HIL_NVME, "NS %-5d| DELETE", nsid);
 
       info = (*iter)->getInfo();
       allocatedLogicalPages -= info->size * info->lbaSize / logicalPageSize;
@@ -421,7 +421,7 @@ bool Subsystem::deleteSQueue(SQEntryWrapper &req, CQEntryWrapper &resp,
   uint16_t sqid = req.entry.dword10 & 0xFFFF;
 
   Logger::debugprint(Logger::LOG_HIL_NVME,
-                     "ADMIN   | Delete I/O Submission Queue\n");
+                     "ADMIN   | Delete I/O Submission Queue");
 
   int ret = pParent->deleteSQueue(sqid);
 
@@ -444,7 +444,7 @@ bool Subsystem::createSQueue(SQEntryWrapper &req, CQEntryWrapper &resp,
   bool pc = req.entry.dword11 & 0x01;
 
   Logger::debugprint(Logger::LOG_HIL_NVME,
-                     "ADMIN   | Create I/O Submission Queue\n");
+                     "ADMIN   | Create I/O Submission Queue");
 
   if (entrySize > pCfgdata->maxQueueEntry) {
     err = true;
@@ -482,7 +482,7 @@ bool Subsystem::getLogPage(SQEntryWrapper &req, CQEntryWrapper &resp,
   uint64_t offset = ((uint64_t)lopu << 32) | lopl;
 
   Logger::debugprint(Logger::LOG_HIL_NVME,
-                     "ADMIN   | Get Log Page | Log %d | Size %d | NSID %d\n",
+                     "ADMIN   | Get Log Page | Log %d | Size %d | NSID %d",
                      lid, req_size, req.entry.namespaceID);
 
   PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2, (uint64_t)req_size);
@@ -515,7 +515,7 @@ bool Subsystem::deleteCQueue(SQEntryWrapper &req, CQEntryWrapper &resp,
   uint16_t cqid = req.entry.dword10 & 0xFFFF;
 
   Logger::debugprint(Logger::LOG_HIL_NVME,
-                     "ADMIN   | Delete I/O Completion Queue\n");
+                     "ADMIN   | Delete I/O Completion Queue");
 
   int ret = pParent->deleteCQueue(cqid);
 
@@ -542,7 +542,7 @@ bool Subsystem::createCQueue(SQEntryWrapper &req, CQEntryWrapper &resp,
   bool pc = req.entry.dword11 & 0x01;
 
   Logger::debugprint(Logger::LOG_HIL_NVME,
-                     "ADMIN   | Create I/O Completion Queue\n");
+                     "ADMIN   | Create I/O Completion Queue");
 
   if (entrySize > pCfgdata->maxQueueEntry) {
     err = true;
@@ -576,7 +576,7 @@ bool Subsystem::identify(SQEntryWrapper &req, CQEntryWrapper &resp,
 
   memset(data, 0, 0x1000);
   Logger::debugprint(Logger::LOG_HIL_NVME,
-                     "ADMIN   | Identify | CNS %d | CNTID %d | NSID %d\n", cns,
+                     "ADMIN   | Identify | CNS %d | CNTID %d | NSID %d", cns,
                      cntid, req.entry.namespaceID);
 
   PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2, (uint64_t)0x1000);
@@ -666,7 +666,7 @@ bool Subsystem::abort(SQEntryWrapper &req, CQEntryWrapper &resp,
   uint16_t cid = (req.entry.dword10 & 0xFFFF0000) >> 16;
 
   Logger::debugprint(Logger::LOG_HIL_NVME,
-                     "ADMIN   | Abort | SQID %d | CID %d\n", sqid, cid);
+                     "ADMIN   | Abort | SQID %d | CID %d", sqid, cid);
 
   int ret = pParent->abort(sqid, cid);
 
@@ -690,7 +690,7 @@ bool Subsystem::setFeatures(SQEntryWrapper &req, CQEntryWrapper &resp,
   bool save = req.entry.dword10 & 0x80000000;
 
   Logger::debugprint(Logger::LOG_HIL_NVME,
-                     "ADMIN   | Set Features | Feature %d | NSID %d\n", fid,
+                     "ADMIN   | Set Features | Feature %d | NSID %d", fid,
                      req.entry.namespaceID);
 
   if (save) {
@@ -740,7 +740,7 @@ bool Subsystem::getFeatures(SQEntryWrapper &req, CQEntryWrapper &resp,
   uint16_t fid = req.entry.dword10 & 0x00FF;
 
   Logger::debugprint(Logger::LOG_HIL_NVME,
-                     "ADMIN   | Get Features | Feature %d | NSID %d\n", fid,
+                     "ADMIN   | Get Features | Feature %d | NSID %d", fid,
                      req.entry.namespaceID);
 
   switch (fid) {
@@ -782,7 +782,7 @@ bool Subsystem::namespaceManagement(SQEntryWrapper &req, CQEntryWrapper &resp,
   uint8_t sel = req.entry.dword10 & 0x0F;
 
   Logger::debugprint(Logger::LOG_HIL_NVME,
-                     "ADMIN   | Namespace Management | OP %d | NSID %d\n", sel,
+                     "ADMIN   | Namespace Management | OP %d | NSID %d", sel,
                      req.entry.namespaceID);
 
   if ((sel == 0x00 && req.entry.namespaceID != NSID_NONE) || sel > 0x01) {
@@ -871,7 +871,7 @@ bool Subsystem::namespaceAttachment(SQEntryWrapper &req, CQEntryWrapper &resp,
   uint32_t ctrlList;
 
   Logger::debugprint(Logger::LOG_HIL_NVME,
-                     "ADMIN   | Namespace Attachment | OP %d | NSID %d\n", sel,
+                     "ADMIN   | Namespace Attachment | OP %d | NSID %d", sel,
                      req.entry.namespaceID);
 
   PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2, (uint64_t)0x1000);

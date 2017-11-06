@@ -44,7 +44,7 @@ ICL::~ICL() {
 }
 
 void ICL::read(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
-  uint64_t beginAt = tick;
+  uint64_t beginAt;
   uint64_t finishedAt = tick;
 
   for (uint64_t i = 0; i < nlp; i++) {
@@ -53,16 +53,16 @@ void ICL::read(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
     finishedAt = MAX(finishedAt, beginAt);
   }
 
-  tick = finishedAt;
-
   Logger::debugprint(Logger::LOG_ICL,
                      "READ  | LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
                      " - %" PRIu64 " (%" PRIu64 ")",
-                     slpn, nlp, beginAt, finishedAt, finishedAt - beginAt);
+                     slpn, nlp, tick, finishedAt, finishedAt - tick);
+
+  tick = finishedAt;
 }
 
 void ICL::write(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
-  uint64_t beginAt = tick;
+  uint64_t beginAt;
   uint64_t finishedAt = tick;
 
   for (uint64_t i = 0; i < nlp; i++) {
@@ -71,16 +71,16 @@ void ICL::write(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
     finishedAt = MAX(finishedAt, beginAt);
   }
 
-  tick = finishedAt;
-
   Logger::debugprint(Logger::LOG_ICL,
                      "WRITE | LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
                      " - %" PRIu64 " (%" PRIu64 ")",
-                     slpn, nlp, beginAt, finishedAt, finishedAt - beginAt);
+                     slpn, nlp, tick, finishedAt, finishedAt - tick);
+
+  tick = finishedAt;
 }
 
 void ICL::flush(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
-  uint64_t beginAt = tick;
+  uint64_t beginAt;
   uint64_t finishedAt = tick;
 
   for (uint64_t i = 0; i < nlp; i++) {
@@ -89,16 +89,16 @@ void ICL::flush(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
     finishedAt = MAX(finishedAt, beginAt);
   }
 
-  tick = finishedAt;
-
   Logger::debugprint(Logger::LOG_ICL,
                      "FLUSH | LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
                      " - %" PRIu64 " (%" PRIu64 ")",
-                     slpn, nlp, beginAt, finishedAt, finishedAt - beginAt);
+                     slpn, nlp, tick, finishedAt, finishedAt - tick);
+
+  tick = finishedAt;
 }
 
 void ICL::trim(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
-  uint64_t beginAt = tick;
+  uint64_t beginAt;
   uint64_t finishedAt = tick;
 
   for (uint64_t i = 0; i < nlp; i++) {
@@ -107,12 +107,12 @@ void ICL::trim(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
     finishedAt = MAX(finishedAt, beginAt);
   }
 
-  tick = finishedAt;
-
   Logger::debugprint(Logger::LOG_ICL,
                      "TRIM  | LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
                      " - %" PRIu64 " (%" PRIu64 ")",
-                     slpn, nlp, beginAt, finishedAt, finishedAt - beginAt);
+                     slpn, nlp, tick, finishedAt, finishedAt - tick);
+
+  tick = finishedAt;
 }
 
 void ICL::getLPNInfo(uint64_t &t, uint32_t &s) {

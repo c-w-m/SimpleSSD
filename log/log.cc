@@ -23,6 +23,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <iostream>
+#include <string>
 #include <vector>
 
 namespace SimpleSSD {
@@ -87,7 +88,7 @@ void info(const char *format, ...) {
   }
 }
 
-const char logName[LOG_NUM][] = {
+const std::string logName[LOG_NUM] = {
     "global", "HIL", "HIL::NVMe", "ICL", "ICL::GenericCache", "FTL", "PAL"};
 
 void debugprint(LOG_ID id, const char *format, ...) {

@@ -204,7 +204,8 @@ bool Subsystem::destroyNamespace(uint32_t nsid) {
     if ((*iter)->getNSID() == nsid) {
       found = true;
 
-      // Logger::debugprint(Logger::LOG_HIL_NVME, "NS %-5d| DELETE\n", nsid);
+      Logger::debugprint(Logger::LOG_HIL_NVME, "NS %-5d| DELETE\n", nsid);
+
       info = (*iter)->getInfo();
       allocatedLogicalPages -= info->size * info->lbaSize / logicalPageSize;
 

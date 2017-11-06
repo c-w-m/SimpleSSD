@@ -152,6 +152,10 @@ void Namespace::getLogPage(SQEntryWrapper &req, CQEntryWrapper &resp,
   uint32_t req_size = (((uint32_t)numdu << 16 | numdl) + 1) * 4;
   uint64_t offset = ((uint64_t)lopu << 32) | lopl;
 
+  Logger::debugprint(Logger::LOG_HIL_NVME,
+                     "ADMIN   | Get Log Page | Log %d | Size %d | NSID %d", lid,
+                     req_size, nsid);
+
   PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2, (uint64_t)req_size);
 
   switch (lid) {
@@ -183,12 +187,13 @@ void Namespace::flush(SQEntryWrapper &req, CQEntryWrapper &resp,
   }
 
   if (!err) {
+    uint64_t beginAt = tick;
     pParent->flush(this, tick);
-    //
-    // DPRINTF(NVMeAll, "NVM     | FLUSH | NSID %-5d| Tick %" PRIu64 "\n", nsid,
-    //         cmdDelay);
-    // DPRINTF(NVMeBreakdown, "N%u|2|F|I%d|F%" PRIu64 "\n", nsid,
-    //         req.entry.dword0.CID, cmdDelay);
+
+    Logger::debugprint(Logger::LOG_HIL_NVME,
+                       "NVM     | FLUSH | NSID %-5d| %" PRIu64 " - %" PRIu64
+                       " (%" PRIu64 ")\n",
+                       nsid, beginAt, tick, tick - beginAt);
   }
 }
 
@@ -206,13 +211,13 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
   }
   if (nlb == 0) {
     err = true;
-    // TODO: warn("nvme_namespace: host tried to write 0 blocks\n");
+    Logger::warn("nvme_namespace: host tried to write 0 blocks\n");
   }
 
   if (!err) {
     uint64_t dmaTick = tick;
     uint64_t diff = tick;
-    // uint64_t dmaDelayed;
+    uint64_t dmaDelayed;
 
     PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2,
                 (uint64_t)nlb * info.lbaSize);
@@ -222,29 +227,23 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
     if (pDisk) {
       uint8_t *buffer = (uint8_t *)calloc(nlb, info.lbaSize);
 
-      /*dmaDelayed = */ PRP.read(0, nlb * info.lbaSize, buffer, dmaTick);
+      dmaDelayed = PRP.read(0, nlb * info.lbaSize, buffer, dmaTick);
       pDisk->write(slba, nlb, buffer);
 
       free(buffer);
     }
     else {
-      /*dmaDelayed = */ PRP.read(0, nlb * info.lbaSize, nullptr, dmaTick);
+      dmaDelayed = PRP.read(0, nlb * info.lbaSize, nullptr, dmaTick);
     }
 
-    tick = MAX(tick, dmaTick);
-
     Logger::debugprint(Logger::LOG_HIL_NVME,
-                       "NVM     | WRITE | %" PRIX64 " + %d | %" PRIu64
+                       "NVM     | WRITE | %" PRIX64 " + %d | NAND %" PRIu64
+                       " - %" PRIu64 " (%" PRIu64 ") | DMA %" PRIu64
                        " - %" PRIu64 " (%" PRIu64 ")\n",
-                       slba, nlb, diff, tick, tick - diff);
+                       slba, nlb, diff, tick, tick - diff, dmaDelayed, dmaTick,
+                       dmaTick - dmaDelayed);
 
-    // DPRINTF(NVMeBreakdown, "N%u|2|W|I%d|F%" PRIu64 "|D%" PRIu64 "\n", nsid,
-    //         req.entry.dword0.CID, totalReq, DMA);
-    //
-    // cmdDelay = MAX(DMA, totalReq);
-    //
-    // DPRINTF(NVMeAll, "NVM     | WRITE | NSID %-5d| Tick %" PRIu64 "\n", nsid,
-    //         cmdDelay);
+    tick = MAX(tick, dmaTick);
   }
 }
 
@@ -263,13 +262,13 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
   }
   if (nlb == 0) {
     err = true;
-    // TODO: warn("nvme_namespace: host tried to read 0 blocks\n");
+    Logger::warn("nvme_namespace: host tried to read 0 blocks\n");
   }
 
   if (!err) {
     uint64_t dmaTick = tick;
     uint64_t diff = tick;
-    // uint64_t dmaDelayed;
+    uint64_t dmaDelayed;
 
     PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2,
                 (uint64_t)nlb * info.lbaSize);
@@ -280,26 +279,22 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
       uint8_t *buffer = (uint8_t *)calloc(nlb, info.lbaSize);
 
       pDisk->read(slba, nlb, buffer);
-      /*dmaDelayed = */ PRP.write(0, nlb * info.lbaSize, buffer, dmaTick);
+      dmaDelayed = PRP.write(0, nlb * info.lbaSize, buffer, dmaTick);
 
       free(buffer);
     }
     else {
-      /*dmaDelayed = */ PRP.write(0, nlb * info.lbaSize, nullptr, dmaTick);
+      dmaDelayed = PRP.write(0, nlb * info.lbaSize, nullptr, dmaTick);
     }
 
-    tick = MAX(tick, dmaTick);
-
     Logger::debugprint(Logger::LOG_HIL_NVME,
-                       "NVM     | READ  | %" PRIX64 " + %d | %" PRIu64
+                       "NVM     | READ  | %" PRIX64 " + %d | NAND %" PRIu64
+                       " - %" PRIu64 " (%" PRIu64 ") | DMA %" PRIu64
                        " - %" PRIu64 " (%" PRIu64 ")\n",
-                       slba, nlb, diff, tick, tick - diff);
+                       slba, nlb, diff, tick, tick - diff, dmaDelayed, dmaTick,
+                       dmaTick - dmaDelayed);
 
-    // DPRINTF(NVMeBreakdown, "N%u|2|R|I%d|F%" PRIu64 "|D%" PRIu64 "\n", nsid,
-    //         req.entry.dword0.CID, cmdDelay, DMA);
-    //
-    // DPRINTF(NVMeAll, "NVM     | READ  | NSID %-5d| Tick %" PRIu64 "\n", nsid,
-    //         cmdDelay);
+    tick = MAX(tick, dmaTick);
   }
 }
 
@@ -322,6 +317,8 @@ void Namespace::datasetManagement(SQEntryWrapper &req, CQEntryWrapper &resp,
 
   if (!err) {
     static DatasetManagementRange range;
+    uint64_t beginAt = tick;
+
     PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2, (uint64_t)0x1000);
 
     for (int i = 0; i < nr; i++) {
@@ -329,10 +326,10 @@ void Namespace::datasetManagement(SQEntryWrapper &req, CQEntryWrapper &resp,
       pParent->trim(this, range.slba, range.nlb, tick);
     }
 
-    // DPRINTF(NVMeAll, "NVM     | TRIM  | NSID %-5d| Tick %" PRIu64 "\n", nsid,
-    //         cmdDelay);
-    // DPRINTF(NVMeBreakdown, "N%u|2|T|I%d|F%" PRIu64 "\n", nsid,
-    //         req.entry.dword0.CID, cmdDelay);
+    Logger::debugprint(Logger::LOG_HIL_NVME,
+                       "NVM     | TRIM  | NSID %-5d| %" PRIu64 " - %" PRIu64
+                       " (%" PRIu64 ")\n",
+                       nsid, beginAt, tick, tick - beginAt);
   }
 }
 

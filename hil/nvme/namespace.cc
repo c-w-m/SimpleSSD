@@ -20,6 +20,7 @@
 #include "hil/nvme/namespace.hh"
 
 #include "hil/nvme/subsystem.hh"
+#include "log/trace.hh"
 #include "util/algorithm.hh"
 
 namespace SimpleSSD {
@@ -108,11 +109,11 @@ void Namespace::setData(uint32_t id, Information *data,
     diskSize = pDisk->open(filename, info.size * info.lbaSize, info.lbaSize);
 
     if (diskSize == 0) {
-      // TODO: panic("Failed to open disk image");
+      Logger::panic("Failed to open disk image");
     }
     else if (diskSize != info.size * info.lbaSize) {
       if (conf.readBoolean(NVME_STRICT_DISK_SIZE)) {
-        // TODO: panic("Disk size not match");
+        Logger::panic("Disk size not match");
       }
     }
   }
@@ -210,6 +211,7 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
 
   if (!err) {
     uint64_t dmaTick = tick;
+    uint64_t diff = tick;
     // uint64_t dmaDelayed;
 
     PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2,
@@ -230,6 +232,11 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
     }
 
     tick = MAX(tick, dmaTick);
+
+    Logger::debugprint(Logger::LOG_HIL_NVME,
+                       "NVM     | WRITE | %" PRIX64 " + %d | %" PRIu64
+                       " - %" PRIu64 " (%" PRIu64 ")\n",
+                       slba, nlb, diff, tick, tick - diff);
 
     // DPRINTF(NVMeBreakdown, "N%u|2|W|I%d|F%" PRIu64 "|D%" PRIu64 "\n", nsid,
     //         req.entry.dword0.CID, totalReq, DMA);
@@ -261,6 +268,7 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
 
   if (!err) {
     uint64_t dmaTick = tick;
+    uint64_t diff = tick;
     // uint64_t dmaDelayed;
 
     PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2,
@@ -281,6 +289,11 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
     }
 
     tick = MAX(tick, dmaTick);
+
+    Logger::debugprint(Logger::LOG_HIL_NVME,
+                       "NVM     | READ  | %" PRIX64 " + %d | %" PRIu64
+                       " - %" PRIu64 " (%" PRIu64 ")\n",
+                       slba, nlb, diff, tick, tick - diff);
 
     // DPRINTF(NVMeBreakdown, "N%u|2|R|I%d|F%" PRIu64 "|D%" PRIu64 "\n", nsid,
     //         req.entry.dword0.CID, cmdDelay, DMA);

@@ -33,6 +33,7 @@ typedef enum {
   LOG_ICL,
   LOG_ICL_GENERIC_CACHE,
   LOG_FTL,
+  LOG_FTL_OLD,
   LOG_PAL,
   LOG_NUM
 } LOG_ID;

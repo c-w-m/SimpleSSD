@@ -157,7 +157,10 @@ bool GenericCache::read(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
 
     if (ret) {
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                         "READ  | Cache hit at (%u, %u)", setIdx, entryIdx);
+                         "READ  | Cache hit at (%u, %u) | %" PRIu64
+                         " - %" PRIu64 " (%" PRIu64 ")",
+                         setIdx, entryIdx, tick, tick + lat, lat);
+
       tick += lat;
     }
     else {
@@ -218,7 +221,10 @@ bool GenericCache::write(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
 
     if (ret) {
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                         "WRITE | Cache hit at (%u, %u)", setIdx, entryIdx);
+                         "WRITE | Cache hit at (%u, %u) | %" PRIu64
+                         " - %" PRIu64 " (%" PRIu64 ")",
+                         setIdx, entryIdx, tick, tick + lat, lat);
+
       tick += lat;
     }
     else {

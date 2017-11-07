@@ -101,6 +101,7 @@ const std::string logName[LOG_NUM] = {
     "ICL",                //!< LOG_ICL
     "ICL::GenericCache",  //!< LOG_ICL_GENERIC_CACHE
     "FTL",                //!< LOG_FTL
+    "FTL::FTLOLD",        //!< LOG_FTL_OLD
     "PAL"                 //!< LOG_PAL
 };
 

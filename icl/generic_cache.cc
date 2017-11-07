@@ -142,7 +142,7 @@ bool GenericCache::read(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
   if (useReadCaching) {
     uint32_t setIdx = calcSet(lpn);
     uint32_t entryIdx;
-    uint64_t lat = latency * bytesize;
+    uint64_t lat = latency;  // * bytesize;
 
     for (entryIdx = 0; entryIdx < entrySize; entryIdx++) {
       Line &line = ppCache[setIdx][entryIdx];
@@ -212,7 +212,7 @@ bool GenericCache::write(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
   if (useWriteCaching) {
     uint32_t setIdx = calcSet(lpn);
     uint32_t entryIdx;
-    uint64_t lat = latency * bytesize;
+    uint64_t lat = latency;  // * bytesize;
 
     for (entryIdx = 0; entryIdx < entrySize; entryIdx++) {
       Line &line = ppCache[setIdx][entryIdx];

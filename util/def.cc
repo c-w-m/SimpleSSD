@@ -25,6 +25,6 @@ LPNRange::_LPNRange() : slpn(0), nlp(0) {}
 
 LPNRange::_LPNRange(uint64_t s, uint64_t n) : slpn(s), nlp(n) {}
 
-Request::_Request() : reqID(0), reqSize(0), slba(0), nlblk(0) {}
+Request::_Request() : reqID(0), offset(0), length(0) {}
 
 }  // namespace SimpleSSD

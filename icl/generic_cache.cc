@@ -167,12 +167,19 @@ bool GenericCache::read(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                          "READ  | Cache miss at %u", setIdx);
 
+      bool cold;
       uint64_t insertAt = tick;
-      entryIdx = flushVictim(setIdx, tick);
+      entryIdx = flushVictim(setIdx, tick, &cold);
 
-      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                         "READ  | Flush (%u, %u), LPN %" PRIu64, setIdx,
-                         entryIdx, ppCache[setIdx][entryIdx].tag);
+      if (cold) {
+        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                           "READ  | Cache cold-miss, no need to flush", setIdx);
+      }
+      else {
+        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                           "READ  | Flush (%u, %u), LPN %" PRIu64, setIdx,
+                           entryIdx, ppCache[setIdx][entryIdx].tag);
+      }
 
       ppCache[setIdx][entryIdx].valid = true;
       ppCache[setIdx][entryIdx].dirty = false;

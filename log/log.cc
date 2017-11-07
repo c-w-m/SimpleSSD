@@ -95,7 +95,14 @@ void info(const char *format, ...) {
 }
 
 const std::string logName[LOG_NUM] = {
-    "global", "HIL", "HIL::NVMe", "ICL", "ICL::GenericCache", "FTL", "PAL"};
+    "global",             //!< LOG_COMMON
+    "HIL",                //!< LOG_HIL
+    "HIL::NVMe",          //!< LOG_HIL_NVME
+    "ICL",                //!< LOG_ICL
+    "ICL::GenericCache",  //!< LOG_ICL_GENERIC_CACHE
+    "FTL",                //!< LOG_FTL
+    "PAL"                 //!< LOG_PAL
+};
 
 void debugprint(LOG_ID id, const char *format, ...) {
   va_list args, copied;

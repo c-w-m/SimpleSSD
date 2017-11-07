@@ -109,8 +109,7 @@ void Controller::readRegister(uint64_t offset, uint64_t size, uint8_t *buffer,
       debugprint(Logger::LOG_HIL_NVME, "BAR0    | READ  | Version");
       break;
     case REG_INTERRUPT_MASK_SET:
-      debugprint(Logger::LOG_HIL_NVME,
-                 "BAR0    | READ  | Interrupt Mask Set");
+      debugprint(Logger::LOG_HIL_NVME, "BAR0    | READ  | Interrupt Mask Set");
       break;
     case REG_INTERRUPT_MASK_CLEAR:
       debugprint(Logger::LOG_HIL_NVME,
@@ -124,8 +123,7 @@ void Controller::readRegister(uint64_t offset, uint64_t size, uint8_t *buffer,
       debugprint(Logger::LOG_HIL_NVME, "BAR0    | READ  | Controller Status");
       break;
     case REG_NVM_SUBSYSTEM_RESET:
-      debugprint(Logger::LOG_HIL_NVME,
-                 "BAR0    | READ  | NVM Subsystem Reset");
+      debugprint(Logger::LOG_HIL_NVME, "BAR0    | READ  | NVM Subsystem Reset");
       break;
     case REG_ADMIN_QUEUE_ATTRIBUTE:
       debugprint(Logger::LOG_HIL_NVME,
@@ -236,8 +234,7 @@ void Controller::writeRegister(uint64_t offset, uint64_t size, uint8_t *buffer,
 
         break;
       case REG_CONTROLLER_STATUS:
-        debugprint(Logger::LOG_HIL_NVME,
-                   "BAR0    | WRITE | Controller Status");
+        debugprint(Logger::LOG_HIL_NVME, "BAR0    | WRITE | Controller Status");
 
         // Clear NSSRO if set
         if (uiTemp32 & 0x00000010) {
@@ -263,35 +260,31 @@ void Controller::writeRegister(uint64_t offset, uint64_t size, uint8_t *buffer,
 
         break;
       case REG_ADMIN_CQUEUE_BASE_ADDR:
-        debugprint(
-            Logger::LOG_HIL_NVME,
-            "BAR0    | WRITE | Admin Completion Queue Base Address | L");
+        debugprint(Logger::LOG_HIL_NVME,
+                   "BAR0    | WRITE | Admin Completion Queue Base Address | L");
 
         memcpy(&(registers.adminCQueueBaseAddress), buffer, 4);
         adminQueueInited++;
 
         break;
       case REG_ADMIN_CQUEUE_BASE_ADDR + 4:
-        debugprint(
-            Logger::LOG_HIL_NVME,
-            "BAR0    | WRITE | Admin Completion Queue Base Address | H");
+        debugprint(Logger::LOG_HIL_NVME,
+                   "BAR0    | WRITE | Admin Completion Queue Base Address | H");
 
         memcpy(((uint8_t *)&(registers.adminCQueueBaseAddress)) + 4, buffer, 4);
         adminQueueInited++;
 
         break;
       case REG_ADMIN_SQUEUE_BASE_ADDR:
-        debugprint(
-            Logger::LOG_HIL_NVME,
-            "BAR0    | WRITE | Admin Submission Queue Base Address | L");
+        debugprint(Logger::LOG_HIL_NVME,
+                   "BAR0    | WRITE | Admin Submission Queue Base Address | L");
         memcpy(&(registers.adminSQueueBaseAddress), buffer, 4);
         adminQueueInited++;
 
         break;
       case REG_ADMIN_SQUEUE_BASE_ADDR + 4:
-        debugprint(
-            Logger::LOG_HIL_NVME,
-            "BAR0    | WRITE | Admin Submission Queue Base Address | H");
+        debugprint(Logger::LOG_HIL_NVME,
+                   "BAR0    | WRITE | Admin Submission Queue Base Address | H");
         memcpy(((uint8_t *)&(registers.adminSQueueBaseAddress)) + 4, buffer, 4);
         adminQueueInited++;
 
@@ -466,8 +459,8 @@ int Controller::createSQueue(uint16_t sqid, uint16_t cqid, uint16_t size,
       ret = 0;
 
       debugprint(Logger::LOG_HIL_NVME,
-                 "SQ %-5d| CREATE | Entry size %d | Priority %d | PC %s",
-                 cqid, size, priority, BOOLEAN_STRING(pc));
+                 "SQ %-5d| CREATE | Entry size %d | Priority %d | PC %s", cqid,
+                 size, priority, BOOLEAN_STRING(pc));
     }
     else {
       ret = 2;  // Invalid CQueue

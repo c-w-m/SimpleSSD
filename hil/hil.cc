@@ -55,7 +55,7 @@ void HIL::write(Request &req, uint64_t &tick) {
                      req.range.slpn, req.range.nlp, req.offset, req.length);
 
   req.reqID = reqCount++;
-  pICL->read(req, tick);
+  pICL->write(req, tick);
 }
 
 void HIL::flush(Request &req, uint64_t &tick) {
@@ -67,7 +67,7 @@ void HIL::flush(Request &req, uint64_t &tick) {
                      req.range.slpn, req.range.nlp, req.offset, req.length);
 
   req.reqID = reqCount++;
-  pICL->read(req, tick);
+  pICL->flush(req, tick);
 }
 
 void HIL::trim(Request &req, uint64_t &tick) {
@@ -79,7 +79,7 @@ void HIL::trim(Request &req, uint64_t &tick) {
                      req.range.slpn, req.range.nlp, req.offset, req.length);
 
   req.reqID = reqCount++;
-  pICL->read(req, tick);
+  pICL->trim(req, tick);
 }
 
 void HIL::getLPNInfo(uint64_t &totalLogicalPages, uint32_t &logicalPageSize) {

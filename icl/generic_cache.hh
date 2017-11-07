@@ -53,10 +53,10 @@ class GenericCache : public Cache {
   GenericCache(ConfigReader *, FTL::FTL *);
   ~GenericCache();
 
-  bool read(uint64_t, uint64_t &);
-  bool write(uint64_t, uint64_t &);
-  bool flush(uint64_t, uint64_t &);
-  bool trim(uint64_t, uint64_t &);
+  bool read(uint64_t, uint64_t, uint64_t &);
+  bool write(uint64_t, uint64_t, uint64_t &);
+  bool flush(uint64_t, uint64_t, uint64_t &);
+  bool trim(uint64_t, uint64_t, uint64_t &);
 };
 
 }  // namespace ICL

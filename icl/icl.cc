@@ -43,74 +43,102 @@ ICL::~ICL() {
   delete pFTL;
 }
 
-void ICL::read(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
+void ICL::read(Request &req, uint64_t &tick) {
   uint64_t beginAt;
   uint64_t finishedAt = tick;
+  uint64_t reqOffset = req.offset;
+  uint64_t reqRemain = req.length;
+  uint64_t size;
 
-  for (uint64_t i = 0; i < nlp; i++) {
+  for (uint64_t i = 0; i < req.range.nlp; i++) {
     beginAt = tick;
-    pCache->read(slpn + i, beginAt);
+    size = MIN(reqRemain, logicalPageSize - reqOffset);
+    pCache->read(req.range.slpn + i, size, beginAt);
+    reqRemain -= size;
+    reqOffset = 0;
     finishedAt = MAX(finishedAt, beginAt);
   }
 
   Logger::debugprint(Logger::LOG_ICL,
                      "READ  | LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
                      " - %" PRIu64 " (%" PRIu64 ")",
-                     slpn, nlp, tick, finishedAt, finishedAt - tick);
+                     req.range.slpn, req.range.nlp, tick, finishedAt,
+                     finishedAt - tick);
 
   tick = finishedAt;
 }
 
-void ICL::write(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
+void ICL::write(Request &req, uint64_t &tick) {
   uint64_t beginAt;
   uint64_t finishedAt = tick;
+  uint64_t reqOffset = req.offset;
+  uint64_t reqRemain = req.length;
+  uint64_t size;
 
-  for (uint64_t i = 0; i < nlp; i++) {
+  for (uint64_t i = 0; i < req.range.nlp; i++) {
     beginAt = tick;
-    pCache->write(slpn + i, beginAt);
+    size = MIN(reqRemain, logicalPageSize - reqOffset);
+    pCache->write(req.range.slpn + i, size, beginAt);
+    reqRemain -= size;
+    reqOffset = 0;
     finishedAt = MAX(finishedAt, beginAt);
   }
 
   Logger::debugprint(Logger::LOG_ICL,
                      "WRITE | LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
                      " - %" PRIu64 " (%" PRIu64 ")",
-                     slpn, nlp, tick, finishedAt, finishedAt - tick);
+                     req.range.slpn, req.range.nlp, tick, finishedAt,
+                     finishedAt - tick);
 
   tick = finishedAt;
 }
 
-void ICL::flush(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
+void ICL::flush(Request &req, uint64_t &tick) {
   uint64_t beginAt;
   uint64_t finishedAt = tick;
+  uint64_t reqOffset = req.offset;
+  uint64_t reqRemain = req.length;
+  uint64_t size;
 
-  for (uint64_t i = 0; i < nlp; i++) {
+  for (uint64_t i = 0; i < req.range.nlp; i++) {
     beginAt = tick;
-    pCache->flush(slpn + i, beginAt);
+    size = MIN(reqRemain, logicalPageSize - reqOffset);
+    pCache->flush(req.range.slpn + i, size, beginAt);
+    reqRemain -= size;
+    reqOffset = 0;
     finishedAt = MAX(finishedAt, beginAt);
   }
 
   Logger::debugprint(Logger::LOG_ICL,
                      "FLUSH | LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
                      " - %" PRIu64 " (%" PRIu64 ")",
-                     slpn, nlp, tick, finishedAt, finishedAt - tick);
+                     req.range.slpn, req.range.nlp, tick, finishedAt,
+                     finishedAt - tick);
 
   tick = finishedAt;
 }
 
-void ICL::trim(uint64_t slpn, uint64_t nlp, uint64_t &tick) {
+void ICL::trim(Request &req, uint64_t &tick) {
   uint64_t beginAt;
   uint64_t finishedAt = tick;
+  uint64_t reqOffset = req.offset;
+  uint64_t reqRemain = req.length;
+  uint64_t size;
 
-  for (uint64_t i = 0; i < nlp; i++) {
+  for (uint64_t i = 0; i < req.range.nlp; i++) {
     beginAt = tick;
-    pCache->trim(slpn + i, beginAt);
+    size = MIN(reqRemain, logicalPageSize - reqOffset);
+    pCache->trim(req.range.slpn + i, size, beginAt);
+    reqRemain -= size;
+    reqOffset = 0;
     finishedAt = MAX(finishedAt, beginAt);
   }
 
   Logger::debugprint(Logger::LOG_ICL,
                      "TRIM  | LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
                      " - %" PRIu64 " (%" PRIu64 ")",
-                     slpn, nlp, tick, finishedAt, finishedAt - tick);
+                     req.range.slpn, req.range.nlp, tick, finishedAt,
+                     finishedAt - tick);
 
   tick = finishedAt;
 }

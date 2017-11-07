@@ -44,7 +44,7 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f) : Cache(c, f) {
   latency += c->iclConfig.readUint(DRAM_TIMING_RCD);
   latency += c->iclConfig.readUint(DRAM_TIMING_CL);
 
-  // latency *= lineSize / (width / 8);
+  latency /= (width / 8); // Latency per byte
 
   ppCache = (Line **)calloc(setSize, sizeof(Line *));
 
@@ -118,7 +118,7 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick) {
 }
 
 // True when hit
-bool GenericCache::read(uint64_t lpn, uint64_t &tick) {
+bool GenericCache::read(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
   bool ret = false;
 
   if (useReadCaching) {
@@ -151,7 +151,7 @@ bool GenericCache::read(uint64_t lpn, uint64_t &tick) {
       tick = MAX(tick, insertAt);
     }
 
-    tick += latency;
+    tick += latency * bytesize;
   }
   else {
     pFTL->read(lpn, tick);
@@ -161,7 +161,7 @@ bool GenericCache::read(uint64_t lpn, uint64_t &tick) {
 }
 
 // True when cold-miss/hit
-bool GenericCache::write(uint64_t lpn, uint64_t &tick) {
+bool GenericCache::write(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
   bool ret = false;
 
   if (useWriteCaching) {
@@ -190,7 +190,7 @@ bool GenericCache::write(uint64_t lpn, uint64_t &tick) {
       ppCache[setIdx][emptyIdx].insertedAt = insertAt;
     }
 
-    tick += latency;
+    tick += latency * bytesize;
   }
   else {
     pFTL->write(lpn, tick);
@@ -200,7 +200,7 @@ bool GenericCache::write(uint64_t lpn, uint64_t &tick) {
 }
 
 // True when hit
-bool GenericCache::flush(uint64_t lpn, uint64_t &tick) {
+bool GenericCache::flush(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
   bool ret = false;
 
   if (useReadCaching || useWriteCaching) {
@@ -232,7 +232,7 @@ bool GenericCache::flush(uint64_t lpn, uint64_t &tick) {
 }
 
 // True when hit
-bool GenericCache::trim(uint64_t lpn, uint64_t &tick) {
+bool GenericCache::trim(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
   bool ret = false;
 
   if (useReadCaching || useWriteCaching) {

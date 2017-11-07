@@ -24,3 +24,4 @@ if env['TARGET_ISA'] == 'null':
 
 Source('config.cc')
 Source('disk.cc')
+Source('def.cc')

@@ -88,10 +88,8 @@ bool Namespace::submitCommand(SQEntryWrapper &req, CQEntryWrapper &resp,
   return true;
 }
 
-void Namespace::setData(uint32_t id, Information *data,
-                        std::list<LPNRange> &ranges) {
+void Namespace::setData(uint32_t id, Information *data) {
   nsid = id;
-  lpnRanges = ranges;
   memcpy(&info, data, sizeof(Information));
 
   if (conf.readBoolean(NVME_ENABLE_DISK_IMAGE) && id == NSID_LOWEST) {
@@ -131,10 +129,6 @@ uint32_t Namespace::getNSID() {
 
 Namespace::Information *Namespace::getInfo() {
   return &info;
-}
-
-std::list<LPNRange> *Namespace::getLPNRange() {
-  return &lpnRanges;
 }
 
 bool Namespace::isAttached() {
@@ -186,8 +180,7 @@ void Namespace::flush(SQEntryWrapper &req, CQEntryWrapper &resp,
                     STATUS_NAMESPACE_NOT_ATTACHED);
   }
 
-  Logger::debugprint(Logger::LOG_HIL_NVME, "NVM     | FLUSH | NSID %-5d",
-                     nsid);
+  Logger::debugprint(Logger::LOG_HIL_NVME, "NVM     | FLUSH | NSID %-5d", nsid);
 
   if (!err) {
     uint64_t beginAt = tick;
@@ -217,8 +210,7 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
     Logger::warn("nvme_namespace: host tried to write 0 blocks");
   }
 
-  Logger::debugprint(Logger::LOG_HIL_NVME, "NVM     | WRITE | NSID %-5d",
-                     nsid);
+  Logger::debugprint(Logger::LOG_HIL_NVME, "NVM     | WRITE | NSID %-5d", nsid);
 
   if (!err) {
     uint64_t dmaTick = tick;
@@ -271,8 +263,7 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
     Logger::warn("nvme_namespace: host tried to read 0 blocks");
   }
 
-  Logger::debugprint(Logger::LOG_HIL_NVME, "NVM     | READ  | NSID %-5d",
-                     nsid);
+  Logger::debugprint(Logger::LOG_HIL_NVME, "NVM     | READ  | NSID %-5d", nsid);
 
   if (!err) {
     uint64_t dmaTick = tick;

@@ -111,9 +111,7 @@ bool Subsystem::createNamespace(uint32_t nsid, Namespace::Information *info) {
 
   // Collect allocated slots
   for (auto &iter : lNamespaces) {
-    std::list<LPNRange> *pList = iter->getLPNRange();
-
-    allocated.insert(allocated.end(), pList->begin(), pList->end());
+    allocated.push_back(iter->getInfo()->range);
   }
 
   // Sort
@@ -160,32 +158,28 @@ bool Subsystem::createNamespace(uint32_t nsid, Namespace::Information *info) {
   }
 
   // Allocated unallocated area to namespace
-  unallocatedLogicalPages = 0;  // This now contain reserved pages
-
   for (auto iter = unallocated.begin(); iter != unallocated.end(); iter++) {
-    if (unallocatedLogicalPages >= requestedLogicalPages) {
-      unallocated.erase(iter, unallocated.end());
+    if (iter->nlp >= requestedLogicalPages) {
+      info->range = *iter;
+      info->range.nlp = requestedLogicalPages;
 
       break;
     }
-
-    iter->nlp = MIN(iter->nlp, requestedLogicalPages - unallocatedLogicalPages);
-    unallocatedLogicalPages += iter->nlp;
   }
 
-  if (unallocated.size() == 0) {
-    Logger::panic("BUG");
+  if (info->range.nlp == 0) {
+    return false;
   }
 
-  allocatedLogicalPages += unallocatedLogicalPages;
+  allocatedLogicalPages += requestedLogicalPages;
 
   // Fill Information
-  info->sizeInByteL = unallocatedLogicalPages * logicalPageSize;
+  info->sizeInByteL = requestedLogicalPages * logicalPageSize;
   info->sizeInByteH = 0;
 
   // Create namespace
   Namespace *pNS = new Namespace(this, pCfgdata);
-  pNS->setData(nsid, info, unallocated);
+  pNS->setData(nsid, info);
 
   lNamespaces.push_back(pNS);
   Logger::debugprint(Logger::LOG_HIL_NVME,
@@ -218,29 +212,6 @@ bool Subsystem::destroyNamespace(uint32_t nsid) {
   }
 
   return found;
-}
-
-void Subsystem::convert(std::list<LPNRange> &out, std::list<LPNRange> *in,
-                        uint64_t slpn, uint64_t nlp) {
-  uint64_t passed = 0;
-  uint64_t len;
-
-  for (auto &iter : *in) {
-    if (passed + iter.nlp < slpn) {
-      continue;
-    }
-
-    len = MIN(nlp, iter.nlp - (slpn - passed));
-    out.push_back(LPNRange(iter.slpn + (slpn - passed), len));
-
-    nlp -= len;
-    slpn += len;
-    passed += iter.nlp;
-
-    if (nlp == 0) {
-      break;
-    }
-  }
 }
 
 void Subsystem::fillIdentifyNamespace(uint8_t *buffer,
@@ -363,8 +334,9 @@ uint32_t Subsystem::validNamespaceCount() {
 
 void Subsystem::read(Namespace *ns, uint64_t slba, uint64_t nlblk, PRPList &prp,
                      uint64_t &tick) {
-  std::list<LPNRange> result;
-  uint32_t lbaratio = logicalPageSize / ns->getInfo()->lbaSize;
+  Request req;
+  Namespace::Information *info = ns->getInfo();
+  uint32_t lbaratio = logicalPageSize / info->lbaSize;
   uint64_t slpn;
   uint64_t nlp;
   uint64_t off;
@@ -373,15 +345,19 @@ void Subsystem::read(Namespace *ns, uint64_t slba, uint64_t nlblk, PRPList &prp,
   off = slba % lbaratio;
   nlp = (nlblk + off + lbaratio - 1) / lbaratio;
 
-  convert(result, ns->getLPNRange(), slpn, nlp);
+  req.range.slpn = slpn + info->range.slpn;
+  req.range.nlp = nlp;
+  req.offset = off * info->lbaSize;
+  req.length = nlblk * info->lbaSize;
 
-  pHIL->read(result, tick);
+  pHIL->read(req, tick);
 }
 
 void Subsystem::write(Namespace *ns, uint64_t slba, uint64_t nlblk,
                       PRPList &prp, uint64_t &tick) {
-  std::list<LPNRange> result;
-  uint32_t lbaratio = logicalPageSize / ns->getInfo()->lbaSize;
+  Request req;
+  Namespace::Information *info = ns->getInfo();
+  uint32_t lbaratio = logicalPageSize / info->lbaSize;
   uint64_t slpn;
   uint64_t nlp;
   uint64_t off;
@@ -390,19 +366,31 @@ void Subsystem::write(Namespace *ns, uint64_t slba, uint64_t nlblk,
   off = slba % lbaratio;
   nlp = (nlblk + off + lbaratio - 1) / lbaratio;
 
-  convert(result, ns->getLPNRange(), slpn, nlp);
+  req.range.slpn = slpn + info->range.slpn;
+  req.range.nlp = nlp;
+  req.offset = off * info->lbaSize;
+  req.length = nlblk * info->lbaSize;
 
-  pHIL->write(result, tick);
+  pHIL->write(req, tick);
 }
 
 void Subsystem::flush(Namespace *ns, uint64_t &tick) {
-  pHIL->flush(*ns->getLPNRange(), tick);
+  Request req;
+  Namespace::Information *info = ns->getInfo();
+
+  req.range.slpn = info->range.slpn;
+  req.range.nlp = info->range.nlp;
+  req.offset = 0;
+  req.length = info->range.nlp * logicalPageSize;
+
+  pHIL->flush(req, tick);
 }
 
 void Subsystem::trim(Namespace *ns, uint64_t slba, uint64_t nlblk,
                      uint64_t &tick) {
-  std::list<LPNRange> result;
-  uint32_t lbaratio = logicalPageSize / ns->getInfo()->lbaSize;
+  Request req;
+  Namespace::Information *info = ns->getInfo();
+  uint32_t lbaratio = logicalPageSize / info->lbaSize;
   uint64_t slpn;
   uint64_t nlp;
   uint64_t off;
@@ -411,9 +399,12 @@ void Subsystem::trim(Namespace *ns, uint64_t slba, uint64_t nlblk,
   off = slba % lbaratio;
   nlp = (nlblk + off + lbaratio - 1) / lbaratio;
 
-  convert(result, ns->getLPNRange(), slpn, nlp);
+  req.range.slpn = slpn + info->range.slpn;
+  req.range.nlp = nlp;
+  req.offset = off * info->lbaSize;
+  req.length = nlblk * info->lbaSize;
 
-  pHIL->trim(result, tick);
+  pHIL->trim(req, tick);
 }
 
 bool Subsystem::deleteSQueue(SQEntryWrapper &req, CQEntryWrapper &resp,
@@ -482,8 +473,8 @@ bool Subsystem::getLogPage(SQEntryWrapper &req, CQEntryWrapper &resp,
   uint64_t offset = ((uint64_t)lopu << 32) | lopl;
 
   Logger::debugprint(Logger::LOG_HIL_NVME,
-                     "ADMIN   | Get Log Page | Log %d | Size %d | NSID %d",
-                     lid, req_size, req.entry.namespaceID);
+                     "ADMIN   | Get Log Page | Log %d | Size %d | NSID %d", lid,
+                     req_size, req.entry.namespaceID);
 
   PRPList PRP(pCfgdata, req.entry.data1, req.entry.data2, (uint64_t)req_size);
 
@@ -665,8 +656,8 @@ bool Subsystem::abort(SQEntryWrapper &req, CQEntryWrapper &resp,
   uint16_t sqid = req.entry.dword10 & 0xFFFF;
   uint16_t cid = (req.entry.dword10 & 0xFFFF0000) >> 16;
 
-  Logger::debugprint(Logger::LOG_HIL_NVME,
-                     "ADMIN   | Abort | SQID %d | CID %d", sqid, cid);
+  Logger::debugprint(Logger::LOG_HIL_NVME, "ADMIN   | Abort | SQID %d | CID %d",
+                     sqid, cid);
 
   int ret = pParent->abort(sqid, cid);
 

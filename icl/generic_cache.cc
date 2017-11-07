@@ -245,6 +245,8 @@ bool GenericCache::write(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
       if (cold) {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                            "WRITE | Cache cold-miss, no need to flush", setIdx);
+
+        tick += lat;
       }
       else {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,

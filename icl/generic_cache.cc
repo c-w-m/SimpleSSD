@@ -142,6 +142,7 @@ bool GenericCache::read(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
   if (useReadCaching) {
     uint32_t setIdx = calcSet(lpn);
     uint32_t entryIdx;
+    uint64_t lat = latency * bytesize;
 
     for (entryIdx = 0; entryIdx < entrySize; entryIdx++) {
       Line &line = ppCache[setIdx][entryIdx];
@@ -157,6 +158,7 @@ bool GenericCache::read(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
     if (ret) {
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                          "READ  | Cache hit at (%u, %u)", setIdx, entryIdx);
+      tick += lat;
     }
     else {
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
@@ -179,9 +181,9 @@ bool GenericCache::read(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
       pFTL->read(lpn, insertAt);
 
       tick = MAX(tick, insertAt);
-    }
 
-    tick += latency * bytesize;
+      // DRAM delay should be hidden by NAND I/O
+    }
   }
   else {
     pFTL->read(lpn, tick);
@@ -200,6 +202,7 @@ bool GenericCache::write(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
   if (useWriteCaching) {
     uint32_t setIdx = calcSet(lpn);
     uint32_t entryIdx;
+    uint64_t lat = latency * bytesize;
 
     for (entryIdx = 0; entryIdx < entrySize; entryIdx++) {
       Line &line = ppCache[setIdx][entryIdx];
@@ -216,6 +219,7 @@ bool GenericCache::write(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
     if (ret) {
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                          "WRITE | Cache hit at (%u, %u)", setIdx, entryIdx);
+      tick += lat;
     }
     else {
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
@@ -240,9 +244,9 @@ bool GenericCache::write(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
       ppCache[setIdx][entryIdx].tag = lpn;
       ppCache[setIdx][entryIdx].lastAccessed = insertAt;
       ppCache[setIdx][entryIdx].insertedAt = insertAt;
-    }
 
-    tick += latency * bytesize;
+      // DRAM delay should be hidden by NAND I/O
+    }
   }
   else {
     pFTL->write(lpn, tick);

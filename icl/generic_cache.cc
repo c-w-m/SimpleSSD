@@ -105,8 +105,10 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick) {
         break;
     }
 
-    // Let's flush 'em
-    pFTL->write(ppCache[setIdx][entryIdx].tag, tick);
+    // Let's flush 'em if dirty
+    if (ppCache[setIdx][entryIdx].dirty) {
+      pFTL->write(ppCache[setIdx][entryIdx].tag, tick);
+    }
 
     // Invalidate
     ppCache[setIdx][entryIdx].valid = false;

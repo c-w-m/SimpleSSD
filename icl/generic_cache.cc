@@ -21,6 +21,7 @@
 
 #include <limits>
 
+#include "log/trace.hh"
 #include "util/algorithm.hh"
 
 namespace SimpleSSD {
@@ -65,14 +66,23 @@ uint32_t GenericCache::calcSet(uint64_t lpn) {
   return lpn & (setSize - 1);
 }
 
-uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick) {
+uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
+                                   bool *isCold) {
   uint32_t entryIdx = entrySize;
   uint64_t min = std::numeric_limits<uint64_t>::max();
+
+  if (isCold) {
+    *isCold = false;
+  }
 
   // Check set has empty entry
   for (uint32_t i = 0; i < entrySize; i++) {
     if (!ppCache[setIdx][i].valid) {
       entryIdx = i;
+
+      if (isCold) {
+        *isCold = true;
+      }
 
       break;
     }
@@ -109,6 +119,11 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick) {
     if (ppCache[setIdx][entryIdx].dirty) {
       pFTL->write(ppCache[setIdx][entryIdx].tag, tick);
     }
+    else {
+      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                         "----- | Line (%u, %u) is clean, no need to flush",
+                         setIdx, entryIdx);
+    }
 
     // Invalidate
     ppCache[setIdx][entryIdx].valid = false;
@@ -121,11 +136,15 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick) {
 bool GenericCache::read(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
   bool ret = false;
 
+  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                     "READ  | LPN %" PRIu64 " | SIZE %" PRIu64, lpn, bytesize);
+
   if (useReadCaching) {
     uint32_t setIdx = calcSet(lpn);
+    uint32_t entryIdx;
 
-    for (uint32_t i = 0; i < entrySize; i++) {
-      Line &line = ppCache[setIdx][i];
+    for (entryIdx = 0; entryIdx < entrySize; entryIdx++) {
+      Line &line = ppCache[setIdx][entryIdx];
 
       if (line.valid && line.tag == lpn) {
         line.lastAccessed = tick;
@@ -135,15 +154,26 @@ bool GenericCache::read(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
       }
     }
 
-    if (!ret) {
-      uint64_t insertAt = tick;
-      uint32_t emptyIdx = flushVictim(setIdx, tick);
+    if (ret) {
+      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                         "READ  | Cache hit at (%u, %u)", setIdx, entryIdx);
+    }
+    else {
+      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                         "READ  | Cache miss at %u", setIdx);
 
-      ppCache[setIdx][emptyIdx].valid = true;
-      ppCache[setIdx][emptyIdx].dirty = false;
-      ppCache[setIdx][emptyIdx].tag = lpn;
-      ppCache[setIdx][emptyIdx].lastAccessed = insertAt;
-      ppCache[setIdx][emptyIdx].insertedAt = insertAt;
+      uint64_t insertAt = tick;
+      entryIdx = flushVictim(setIdx, tick);
+
+      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                         "READ  | Flush (%u, %u), LPN %" PRIu64, setIdx,
+                         entryIdx, ppCache[setIdx][entryIdx].tag);
+
+      ppCache[setIdx][entryIdx].valid = true;
+      ppCache[setIdx][entryIdx].dirty = false;
+      ppCache[setIdx][entryIdx].tag = lpn;
+      ppCache[setIdx][entryIdx].lastAccessed = insertAt;
+      ppCache[setIdx][entryIdx].insertedAt = insertAt;
 
       // Request read and flush at same time
       pFTL->read(lpn, insertAt);
@@ -164,11 +194,15 @@ bool GenericCache::read(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
 bool GenericCache::write(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
   bool ret = false;
 
+  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                     "WRITE | LPN %" PRIu64 " | SIZE %" PRIu64, lpn, bytesize);
+
   if (useWriteCaching) {
     uint32_t setIdx = calcSet(lpn);
+    uint32_t entryIdx;
 
-    for (uint32_t i = 0; i < entrySize; i++) {
-      Line &line = ppCache[setIdx][i];
+    for (entryIdx = 0; entryIdx < entrySize; entryIdx++) {
+      Line &line = ppCache[setIdx][entryIdx];
 
       if (line.valid && line.tag == lpn) {
         line.lastAccessed = tick;
@@ -179,15 +213,33 @@ bool GenericCache::write(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
       }
     }
 
-    if (!ret) {
-      uint64_t insertAt = tick;
-      uint32_t emptyIdx = flushVictim(setIdx, tick);
+    if (ret) {
+      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                         "WRITE | Cache hit at (%u, %u)", setIdx, entryIdx);
+    }
+    else {
+      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                         "WRITE | Cache miss at %u", setIdx);
 
-      ppCache[setIdx][emptyIdx].valid = true;
-      ppCache[setIdx][emptyIdx].dirty = true;
-      ppCache[setIdx][emptyIdx].tag = lpn;
-      ppCache[setIdx][emptyIdx].lastAccessed = insertAt;
-      ppCache[setIdx][emptyIdx].insertedAt = insertAt;
+      bool cold;
+      uint64_t insertAt = tick;
+      entryIdx = flushVictim(setIdx, tick, &cold);
+
+      if (cold) {
+        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                           "WRITE | Cache cold-miss, no need to flush", setIdx);
+      }
+      else {
+        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                           "WRITE | Flush (%u, %u), LPN %" PRIu64, setIdx,
+                           entryIdx, ppCache[setIdx][entryIdx].tag);
+      }
+
+      ppCache[setIdx][entryIdx].valid = true;
+      ppCache[setIdx][entryIdx].dirty = true;
+      ppCache[setIdx][entryIdx].tag = lpn;
+      ppCache[setIdx][entryIdx].lastAccessed = insertAt;
+      ppCache[setIdx][entryIdx].insertedAt = insertAt;
     }
 
     tick += latency * bytesize;
@@ -202,6 +254,9 @@ bool GenericCache::write(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
 // True when hit
 bool GenericCache::flush(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
   bool ret = false;
+
+  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "FLUSH | LPN %" PRIu64,
+                     lpn);
 
   if (useReadCaching || useWriteCaching) {
     uint32_t setIdx = calcSet(lpn);
@@ -234,6 +289,9 @@ bool GenericCache::flush(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
 // True when hit
 bool GenericCache::trim(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
   bool ret = false;
+
+  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "TRIM  | LPN %" PRIu64,
+                     lpn);
 
   if (useReadCaching || useWriteCaching) {
     uint32_t setIdx = calcSet(lpn);

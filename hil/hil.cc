@@ -37,8 +37,10 @@ HIL::~HIL() {
 void HIL::read(Request &req, uint64_t &tick) {
   // TODO: stat
 
-  Logger::debugprint(Logger::LOG_HIL, "READ  | LPN %" PRIu64 " + %" PRIu64,
-                     req.range.slpn, req.range.nlp);
+  Logger::debugprint(Logger::LOG_HIL,
+                     "READ  | LPN %" PRIu64 " + %" PRIu64 "| BYTE %" PRIu64
+                     " + %" PRIu64,
+                     req.range.slpn, req.range.nlp, req.offset, req.length);
 
   req.reqID = reqCount++;
   pICL->read(req, tick);
@@ -47,8 +49,10 @@ void HIL::read(Request &req, uint64_t &tick) {
 void HIL::write(Request &req, uint64_t &tick) {
   // TODO: stat
 
-  Logger::debugprint(Logger::LOG_HIL, "WRITE | LPN %" PRIu64 " + %" PRIu64,
-                     req.range.slpn, req.range.nlp);
+  Logger::debugprint(Logger::LOG_HIL,
+                     "WRITE | LPN %" PRIu64 " + %" PRIu64 "| BYTE %" PRIu64
+                     " + %" PRIu64,
+                     req.range.slpn, req.range.nlp, req.offset, req.length);
 
   req.reqID = reqCount++;
   pICL->read(req, tick);
@@ -57,8 +61,10 @@ void HIL::write(Request &req, uint64_t &tick) {
 void HIL::flush(Request &req, uint64_t &tick) {
   // TODO: stat
 
-  Logger::debugprint(Logger::LOG_HIL, "FLUSH | LPN %" PRIu64 " + %" PRIu64,
-                     req.range.slpn, req.range.nlp);
+  Logger::debugprint(Logger::LOG_HIL,
+                     "FLUSH | LPN %" PRIu64 " + %" PRIu64 "| BYTE %" PRIu64
+                     " + %" PRIu64,
+                     req.range.slpn, req.range.nlp, req.offset, req.length);
 
   req.reqID = reqCount++;
   pICL->read(req, tick);
@@ -67,8 +73,10 @@ void HIL::flush(Request &req, uint64_t &tick) {
 void HIL::trim(Request &req, uint64_t &tick) {
   // TODO: stat
 
-  Logger::debugprint(Logger::LOG_HIL, "TRIM  | LPN %" PRIu64 " + %" PRIu64,
-                     req.range.slpn, req.range.nlp);
+  Logger::debugprint(Logger::LOG_HIL,
+                     "TRIM  | LPN %" PRIu64 " + %" PRIu64 "| BYTE %" PRIu64
+                     " + %" PRIu64,
+                     req.range.slpn, req.range.nlp, req.offset, req.length);
 
   req.reqID = reqCount++;
   pICL->read(req, tick);

@@ -47,7 +47,7 @@ class GenericCache : public Cache {
   Line **ppCache;
 
   uint32_t calcSet(uint64_t);
-  uint32_t flushVictim(uint32_t, uint64_t &);
+  uint32_t flushVictim(uint32_t, uint64_t &, bool * = nullptr);
 
  public:
   GenericCache(ConfigReader *, FTL::FTL *);

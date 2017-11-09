@@ -17,22 +17,17 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __LOG_LOG__
-#define __LOG_LOG__
+#ifndef __LOG_STAT__
+#define __LOG_STAT__
 
+#include <cinttypes>
 #include <functional>
-#include <iostream>
 
 namespace SimpleSSD {
 
 namespace Logger {
 
-void initLogSystem(std::ostream &, std::ostream &, std::function<uint64_t()>);
-void destroyLogSystem();
-
-void initStatSystem(std::ostream &);
-void statHandler(uint64_t);
-void destroyStatSystem();
+void registerStat(uint64_t, std::function<void(uint64_t)>);
 
 }  // namespace Logger
 

@@ -40,12 +40,8 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f) : Cache(c, f) {
   policy = (EVICT_POLICY)c->iclConfig.readInt(ICL_EVICT_POLICY);
 
   // TODO: replace this with DRAM model
-  width = c->iclConfig.readUint(DRAM_CHIP_BUS_WIDTH);
-  latency = c->iclConfig.readUint(DRAM_TIMING_RP);
-  latency += c->iclConfig.readUint(DRAM_TIMING_RCD);
-  latency += c->iclConfig.readUint(DRAM_TIMING_CL);
-
-  // latency /= (width / 8);  // Latency per byte
+  pTiming = c->iclConfig.getDRAMTiming();
+  pStructure = c->iclConfig.getDRAMStructure();
 
   ppCache = (Line **)calloc(setSize, sizeof(Line *));
 
@@ -132,6 +128,14 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
   return entryIdx;
 }
 
+uint64_t GenericCache::calculateDelay(uint64_t bytesize) {
+  uint64_t pageCount = (bytesize > 0) ? (bytesize - 1) / pStructure->pageSize + 1 : 0;
+  uint64_t pageFetch = pTiming->tRP + pTiming->tRCD + pTiming->tCL;
+  double bandwidth = 2.0 * pStructure->busWidth * pStructure->channel / 8.0 / pTiming->tCK;
+
+  return (uint64_t)(pageFetch + pageCount * pStructure->pageSize / bandwidth);
+}
+
 // True when hit
 bool GenericCache::read(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
   bool ret = false;
@@ -142,7 +146,7 @@ bool GenericCache::read(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
   if (useReadCaching) {
     uint32_t setIdx = calcSet(lpn);
     uint32_t entryIdx;
-    uint64_t lat = latency;  // * bytesize;
+    uint64_t lat = calculateDelay(bytesize);
 
     for (entryIdx = 0; entryIdx < entrySize; entryIdx++) {
       Line &line = ppCache[setIdx][entryIdx];
@@ -212,7 +216,7 @@ bool GenericCache::write(uint64_t lpn, uint64_t bytesize, uint64_t &tick) {
   if (useWriteCaching) {
     uint32_t setIdx = calcSet(lpn);
     uint32_t entryIdx;
-    uint64_t lat = latency;  // * bytesize;
+    uint64_t lat = calculateDelay(bytesize);
 
     for (entryIdx = 0; entryIdx < entrySize; entryIdx++) {
       Line &line = ppCache[setIdx][entryIdx];

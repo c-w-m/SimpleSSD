@@ -11,6 +11,8 @@
 
 #include <iostream>
 
+#include "ftl/old/ftl_defs.hh"
+
 #define INT_SIZE 32
 
 class Block {
@@ -23,20 +25,20 @@ class Block {
   };                   // since page_bit_map is assigning one bit for each
                        // page, state should be only zero or one
   int page_per_block;  // total number of page per block
-  Addr block_number;   // physical block number
+  uint64_t block_number;   // physical block number
   int erase_count;     // number of erase count on the block
   unsigned int
       *page_bit_map;  // each bit shows the state of a page
                       // value for each bit: (PAGE_VALID vs. PAGE_INVALID)
                       // since each block has more than 32 (int size) bit,
                       // an array of integer is used
-  Addr page_sequence_number;  // page within the block have to be written in
+  uint64_t page_sequence_number;  // page within the block have to be written in
                               // order
   bool bad_block;             // true: bad_block false:good_block
 
   Block() {}
   void initialize(int page_per_block,
-                  Addr bn);  // initialize page_bit_map, etc.
+                  uint64_t bn);  // initialize page_bit_map, etc.
   void
   erase_block();  // add erase count, reset other variables to initial state
   void set_page_state(
@@ -47,7 +49,7 @@ class Block {
                          // PAGE_INVALID or PAGE_FREE
   bool is_empty();       // return true if block is empty, otherwise, false.
   bool is_full();        // return true if no free page remained in the block
-  STATE write_page(Addr logical_page,
+  STATE write_page(uint64_t logical_page,
                    int &page_offset);  // write a new page into the block.
                                        // if page_offset == -1: write using
                                        // page_sequence_number otherwise,

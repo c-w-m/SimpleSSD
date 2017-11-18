@@ -565,7 +565,7 @@ void PAL2::TimelineScheduling(Command &req, CPDPBP &reqCPD) {
 
 void PAL2::submit(Command &cmd, uint32_t blkidx, uint32_t pageidx) {
   CPDPBP addr;
-  uint32_t finishedAt = 0;
+  uint64_t finishedAt = 0;
 
   addr.Page = pageidx;
 

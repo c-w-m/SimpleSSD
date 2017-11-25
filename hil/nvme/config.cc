@@ -158,15 +158,7 @@ uint64_t Config::readUint(uint32_t idx) {
 }
 
 float Config::readFloat(uint32_t idx) {
-  float ret = 0.f;
-
-  switch (idx) {
-    case NVME_DMA_DELAY:
-      ret = dmaDelay;
-      break;
-  }
-
-  return ret;
+  return 0.f;
 }
 
 std::string Config::readString(uint32_t idx) {

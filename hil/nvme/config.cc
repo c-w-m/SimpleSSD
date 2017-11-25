@@ -26,7 +26,6 @@ namespace HIL {
 
 namespace NVMe {
 
-const char NAME_DMA_DELAY[] = "DMADelay";
 const char NAME_QUEUE_INTERVAL[] = "QueueInterval";
 const char NAME_WORK_INTERVAL[] = "WorkInterval";
 const char NAME_MAX_IO_CQUEUE[] = "MaxIOCQueue";
@@ -43,7 +42,6 @@ const char NAME_USE_COW_DISK[] = "UseCopyOnWriteDisk";
 Config::Config() {
   queueInterval = 1000000;
   workInterval = 50000;
-  dmaDelay = 256.90625f;
   maxIOCQueue = 16;
   maxIOSQueue = 16;
   wrrHigh = 2;
@@ -59,10 +57,7 @@ Config::Config() {
 bool Config::setConfig(const char *name, const char *value) {
   bool ret = true;
 
-  if (MATCH_NAME(NAME_DMA_DELAY)) {
-    dmaDelay = strtof(value, nullptr);
-  }
-  else if (MATCH_NAME(NAME_QUEUE_INTERVAL)) {
+  if (MATCH_NAME(NAME_QUEUE_INTERVAL)) {
     queueInterval = strtoul(value, nullptr, 10);
   }
   else if (MATCH_NAME(NAME_WORK_INTERVAL)) {

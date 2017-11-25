@@ -243,7 +243,7 @@ uint64_t PRPList::read(uint64_t offset, uint64_t length, uint8_t *buffer,
     if (begin) {
       read = MIN(iter.size, length - totalRead);
       pInterface->dmaRead(iter.addr, read, buffer ? buffer + totalRead : NULL,
-                      tick);
+                          tick);
       totalRead += read;
 
       if (totalRead == length) {
@@ -280,7 +280,7 @@ uint64_t PRPList::write(uint64_t offset, uint64_t length, uint8_t *buffer,
     if (begin) {
       written = MIN(iter.size, length - totalWritten);
       pInterface->dmaWrite(iter.addr, written,
-                       buffer ? buffer + totalWritten : NULL, tick);
+                           buffer ? buffer + totalWritten : NULL, tick);
       totalWritten += written;
 
       if (totalWritten == length) {
@@ -292,7 +292,8 @@ uint64_t PRPList::write(uint64_t offset, uint64_t length, uint8_t *buffer,
       begin = true;
       totalWritten = offset - currentOffset;
       written = MIN(iter.size - totalWritten, length);
-      delay = pInterface->dmaWrite(iter.addr + totalWritten, written, buffer, tick);
+      delay =
+          pInterface->dmaWrite(iter.addr + totalWritten, written, buffer, tick);
       totalWritten = written;
     }
 

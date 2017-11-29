@@ -19,8 +19,8 @@
 
 #include "icl/config.hh"
 
-#include "util/algorithm.hh"
 #include "log/trace.hh"
+#include "util/algorithm.hh"
 
 namespace SimpleSSD {
 
@@ -32,6 +32,7 @@ const char NAME_USE_READ_PREFETCH[] = "EnableReadPrefetch";
 const char NAME_EVICT_POLICY[] = "EvictPolicy";
 const char NAME_SET_SIZE[] = "CacheSetSize";
 const char NAME_WAY_SIZE[] = "CacheWaySize";
+const char NAME_TWEAK_PARTIAL_IO[] = "TweakPartialIO";
 
 Config::Config() {
   readCaching = false;
@@ -40,6 +41,8 @@ Config::Config() {
   evictPolicy = POLICY_LEAST_RECENTLY_USED;
   cacheSetSize = 8192;
   cacheWaySize = 1;
+
+  tweakPartialIO = false;
 
   /* LPDDR3-1600 4Gbit 1x32 */
   dram.channel = 1;
@@ -53,27 +56,27 @@ Config::Config() {
   dram.useDLL = false;
   dram.pageSize = 4096;
 
-  dramTiming.tCK = 1250;
-  dramTiming.tRCD = 18000;
-  dramTiming.tCL = 15000;
-  dramTiming.tRP = 18000;
-  dramTiming.tRAS = 42000;
-  dramTiming.tWR = 15000;
-  dramTiming.tRTP = 7500;
-  dramTiming.tBURST = 5000;
-  dramTiming.tCCD_L = 0;
-  dramTiming.tRFC = 130000;
-  dramTiming.tREFI = 3900;
-  dramTiming.tWTR = 7500;
-  dramTiming.tRTW = 2500;
-  dramTiming.tCS = 2500;
-  dramTiming.tRRD = 10000;
-  dramTiming.tRRD_L = 0;
-  dramTiming.tXAW = 50000;
-  dramTiming.tXP = 0;
-  dramTiming.tXPDLL = 0;
-  dramTiming.tXS = 0;
-  dramTiming.tXSDLL = 0;
+    dramTiming.tCK = 1250;
+    dramTiming.tRCD = 18000;
+    dramTiming.tCL = 15000;
+    dramTiming.tRP = 18000;
+    dramTiming.tRAS = 42000;
+    dramTiming.tWR = 15000;
+    dramTiming.tRTP = 7500;
+    dramTiming.tBURST = 5000;
+    dramTiming.tCCD_L = 0;
+    dramTiming.tRFC = 130000;
+    dramTiming.tREFI = 3900;
+    dramTiming.tWTR = 7500;
+    dramTiming.tRTW = 2500;
+    dramTiming.tCS = 2500;
+    dramTiming.tRRD = 10000;
+    dramTiming.tRRD_L = 0;
+    dramTiming.tXAW = 50000;
+    dramTiming.tXP = 0;
+    dramTiming.tXPDLL = 0;
+    dramTiming.tXS = 0;
+    dramTiming.tXSDLL = 0;
 
   dramPower.pIDD0[0] = 8.f;
   dramPower.pIDD0[1] = 60.f;
@@ -122,6 +125,9 @@ bool Config::setConfig(const char *name, const char *value) {
   else if (MATCH_NAME(NAME_WAY_SIZE)) {
     cacheWaySize = strtoul(value, nullptr, 10);
   }
+  else if (MATCH_NAME(NAME_TWEAK_PARTIAL_IO)) {
+    tweakPartialIO = convertBool(value);
+  }
   else {
     ret = false;
   }
@@ -164,28 +170,28 @@ uint64_t Config::readUint(uint32_t idx) {
       ret = dram.channel;
       break;
     case DRAM_RANK:
-      ret = dram.rank;
-      break;
-    case DRAM_BANK:
-      ret = dram.bank;
-      break;
-    case DRAM_CHIP:
-      ret = dram.chip;
-      break;
-    case DRAM_CHIP_SIZE:
-      ret = dram.chipSize;
-      break;
-    case DRAM_CHIP_BUS_WIDTH:
-      ret = dram.busWidth;
-      break;
-    case DRAM_BURST_LENGTH:
-      ret = dram.burstLength;
-      break;
-    case DRAM_ACTIVATION_LIMIT:
-      ret = dram.activationLimit;
-      break;
-    case DRAM_PAGE_SIZE:
-      ret = dram.pageSize;
+        ret = dram.rank;
+        break;
+      case DRAM_BANK:
+        ret = dram.bank;
+        break;
+      case DRAM_CHIP:
+        ret = dram.chip;
+        break;
+      case DRAM_CHIP_SIZE:
+        ret = dram.chipSize;
+        break;
+      case DRAM_CHIP_BUS_WIDTH:
+        ret = dram.busWidth;
+        break;
+      case DRAM_BURST_LENGTH:
+        ret = dram.burstLength;
+        break;
+      case DRAM_ACTIVATION_LIMIT:
+        ret = dram.activationLimit;
+        break;
+      case DRAM_PAGE_SIZE:
+        ret = dram.pageSize;
       break;
     case DRAM_TIMING_CK:
       ret = dramTiming.tCK;
@@ -354,6 +360,9 @@ bool Config::readBoolean(uint32_t idx) {
       break;
     case ICL_USE_READ_PREFETCH:
       ret = readPrefetch;
+      break;
+    case ICL_TWEAK_PARTIAL_IO:
+      ret = tweakPartialIO;
       break;
     case DRAM_DLL:
       ret = dram.useDLL;

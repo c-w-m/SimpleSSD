@@ -34,6 +34,7 @@ typedef enum {
   ICL_EVICT_POLICY,
   ICL_SET_SIZE,
   ICL_WAY_SIZE,
+  ICL_TWEAK_PARTIAL_IO,
 
   /* DRAM config for dram_ctrl TODO: seperate this */
   /* Structure */
@@ -165,6 +166,8 @@ class Config : public BaseConfig {
   EVICT_POLICY evictPolicy;  //!< Default: POLICY_LEAST_RECENTLY_USED
   uint64_t cacheSetSize;     //!< Default: 8192
   uint64_t cacheWaySize;     //!< Default: 1
+
+  bool tweakPartialIO;  //!< Default: false
 
   DRAMStructure dram;
   DRAMTiming dramTiming;

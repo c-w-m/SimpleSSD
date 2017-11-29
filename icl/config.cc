@@ -130,10 +130,10 @@ bool Config::setConfig(const char *name, const char *value) {
 
 void Config::update() {
   if (popcount(cacheSetSize) != 1) {
-    // TODO: panic("cache set size should be power of 2");
+    Logger::panic("cache set size should be power of 2");
   }
   if (popcount(cacheEntrySize) != 1) {
-    // TODO: panic("cache entry size should be power of 2");
+    Logger::panic("cache entry size should be power of 2");
   }
 }
 

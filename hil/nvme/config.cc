@@ -18,7 +18,9 @@
  */
 
 #include "hil/nvme/config.hh"
+
 #include "util/algorithm.hh"
+#include "log/trace.hh"
 
 namespace SimpleSSD {
 
@@ -102,7 +104,7 @@ bool Config::setConfig(const char *name, const char *value) {
 
 void Config::update() {
   if (popcount(lbaSize) != 1) {
-    // TODO: invalid lba size
+    Logger::panic("Invalid LBA size");
   }
 }
 

@@ -30,7 +30,7 @@ namespace ICL {
 
 GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f) : Cache(c, f) {
   setSize = c->iclConfig.readUint(ICL_SET_SIZE);
-  entrySize = c->iclConfig.readUint(ICL_ENTRY_SIZE);
+  entrySize = c->iclConfig.readUint(ICL_WAY_SIZE);
   lineSize = f->getInfo()->pageSize;
 
   useReadCaching = c->iclConfig.readBoolean(ICL_USE_READ_CACHE);

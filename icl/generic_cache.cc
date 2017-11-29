@@ -28,10 +28,13 @@ namespace SimpleSSD {
 
 namespace ICL {
 
-GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f) : Cache(c, f) {
+GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
+    : Cache(c, f), gen(rd()) {
   setSize = c->iclConfig.readUint(ICL_SET_SIZE);
   waySize = c->iclConfig.readUint(ICL_WAY_SIZE);
   lineSize = f->getInfo()->pageSize;
+
+  dist = std::uniform_int_distribution<>(0, waySize - 1);
 
   useReadCaching = c->iclConfig.readBoolean(ICL_USE_READ_CACHE);
   useWriteCaching = c->iclConfig.readBoolean(ICL_USE_WRITE_CACHE);
@@ -87,8 +90,8 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
   // If no empty entry
   if (entryIdx == waySize) {
     switch (policy) {
-      case POLICY_FIRST_ENTRY:
-        entryIdx = 0;
+      case POLICY_RANDOM:
+        entryIdx = dist(gen);
 
         break;
       case POLICY_FIFO:
@@ -129,9 +132,11 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
 }
 
 uint64_t GenericCache::calculateDelay(uint64_t bytesize) {
-  uint64_t pageCount = (bytesize > 0) ? (bytesize - 1) / pStructure->pageSize + 1 : 0;
+  uint64_t pageCount =
+      (bytesize > 0) ? (bytesize - 1) / pStructure->pageSize + 1 : 0;
   uint64_t pageFetch = pTiming->tRP + pTiming->tRCD + pTiming->tCL;
-  double bandwidth = 2.0 * pStructure->busWidth * pStructure->channel / 8.0 / pTiming->tCK;
+  double bandwidth =
+      2.0 * pStructure->busWidth * pStructure->channel / 8.0 / pTiming->tCK;
 
   return (uint64_t)(pageFetch + pageCount * pStructure->pageSize / bandwidth);
 }

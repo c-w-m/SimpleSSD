@@ -99,9 +99,9 @@ typedef enum {
 } ICL_CONFIG;
 
 typedef enum {
-  POLICY_FIRST_ENTRY,          //!< Always select first entry in the set
-  POLICY_FIFO,                 //!< Select entry that lastly inserted
-  POLICY_LEAST_RECENTLY_USED,  //!< Select entry that least recently used
+  POLICY_RANDOM,               //!< Select way in random
+  POLICY_FIFO,                 //!< Select way that lastly inserted
+  POLICY_LEAST_RECENTLY_USED,  //!< Select way that least recently used
 } EVICT_POLICY;
 
 class Config : public BaseConfig {

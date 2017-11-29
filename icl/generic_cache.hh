@@ -20,7 +20,7 @@
 #ifndef __ICL_GENERIC_CACHE__
 #define __ICL_GENERIC_CACHE__
 
-#include <unordered_map>
+#include <random>
 
 #include "icl/cache.hh"
 
@@ -39,6 +39,9 @@ class GenericCache : public Cache {
   bool useReadPrefetch;
 
   EVICT_POLICY policy;
+  std::random_device rd;
+  std::mt19937 gen;
+  std::uniform_int_distribution<> dist;
 
   // TODO: replace this with DRAM model
   Config::DRAMTiming *pTiming;

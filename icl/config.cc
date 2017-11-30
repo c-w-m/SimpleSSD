@@ -56,27 +56,27 @@ Config::Config() {
   dram.useDLL = false;
   dram.pageSize = 4096;
 
-    dramTiming.tCK = 1250;
-    dramTiming.tRCD = 18000;
-    dramTiming.tCL = 15000;
-    dramTiming.tRP = 18000;
-    dramTiming.tRAS = 42000;
-    dramTiming.tWR = 15000;
-    dramTiming.tRTP = 7500;
-    dramTiming.tBURST = 5000;
-    dramTiming.tCCD_L = 0;
-    dramTiming.tRFC = 130000;
-    dramTiming.tREFI = 3900;
-    dramTiming.tWTR = 7500;
-    dramTiming.tRTW = 2500;
-    dramTiming.tCS = 2500;
-    dramTiming.tRRD = 10000;
-    dramTiming.tRRD_L = 0;
-    dramTiming.tXAW = 50000;
-    dramTiming.tXP = 0;
-    dramTiming.tXPDLL = 0;
-    dramTiming.tXS = 0;
-    dramTiming.tXSDLL = 0;
+  dramTiming.tCK = 1250;
+  dramTiming.tRCD = 18000;
+  dramTiming.tCL = 15000;
+  dramTiming.tRP = 18000;
+  dramTiming.tRAS = 42000;
+  dramTiming.tWR = 15000;
+  dramTiming.tRTP = 7500;
+  dramTiming.tBURST = 5000;
+  dramTiming.tCCD_L = 0;
+  dramTiming.tRFC = 130000;
+  dramTiming.tREFI = 3900;
+  dramTiming.tWTR = 7500;
+  dramTiming.tRTW = 2500;
+  dramTiming.tCS = 2500;
+  dramTiming.tRRD = 10000;
+  dramTiming.tRRD_L = 0;
+  dramTiming.tXAW = 50000;
+  dramTiming.tXP = 0;
+  dramTiming.tXPDLL = 0;
+  dramTiming.tXS = 0;
+  dramTiming.tXSDLL = 0;
 
   dramPower.pIDD0[0] = 8.f;
   dramPower.pIDD0[1] = 60.f;
@@ -170,28 +170,28 @@ uint64_t Config::readUint(uint32_t idx) {
       ret = dram.channel;
       break;
     case DRAM_RANK:
-        ret = dram.rank;
-        break;
-      case DRAM_BANK:
-        ret = dram.bank;
-        break;
-      case DRAM_CHIP:
-        ret = dram.chip;
-        break;
-      case DRAM_CHIP_SIZE:
-        ret = dram.chipSize;
-        break;
-      case DRAM_CHIP_BUS_WIDTH:
-        ret = dram.busWidth;
-        break;
-      case DRAM_BURST_LENGTH:
-        ret = dram.burstLength;
-        break;
-      case DRAM_ACTIVATION_LIMIT:
-        ret = dram.activationLimit;
-        break;
-      case DRAM_PAGE_SIZE:
-        ret = dram.pageSize;
+      ret = dram.rank;
+      break;
+    case DRAM_BANK:
+      ret = dram.bank;
+      break;
+    case DRAM_CHIP:
+      ret = dram.chip;
+      break;
+    case DRAM_CHIP_SIZE:
+      ret = dram.chipSize;
+      break;
+    case DRAM_CHIP_BUS_WIDTH:
+      ret = dram.busWidth;
+      break;
+    case DRAM_BURST_LENGTH:
+      ret = dram.burstLength;
+      break;
+    case DRAM_ACTIVATION_LIMIT:
+      ret = dram.activationLimit;
+      break;
+    case DRAM_PAGE_SIZE:
+      ret = dram.pageSize;
       break;
     case DRAM_TIMING_CK:
       ret = dramTiming.tCK;

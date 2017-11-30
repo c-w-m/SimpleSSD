@@ -86,29 +86,29 @@ bool FTLOLD::initialize() {
   return ftl->initialize();
 }
 
-void FTLOLD::read(uint64_t slpn, uint64_t &tick) {
+void FTLOLD::read(Request &req, uint64_t &tick) {
   uint64_t begin = tick;
 
-  tick = ftl->read(slpn, 1, begin);
+  tick = ftl->read(req.lpn, 1, begin);
 
   Logger::debugprint(Logger::LOG_FTL_OLD,
                      "READ  | LPN %" PRIu64 " | %" PRIu64 " - %" PRIu64
                      " (%" PRIu64 ")",
-                     slpn, begin, tick, tick - begin);
+                     req.lpn, begin, tick, tick - begin);
 }
 
-void FTLOLD::write(uint64_t slpn, uint64_t &tick) {
+void FTLOLD::write(Request &req, uint64_t &tick) {
   uint64_t begin = tick;
 
-  tick = ftl->write(slpn, 1, begin);
+  tick = ftl->write(req.lpn, 1, begin);
 
   Logger::debugprint(Logger::LOG_FTL_OLD,
                      "WRITE | LPN %" PRIu64 " | %" PRIu64 " - %" PRIu64
                      " (%" PRIu64 ")",
-                     slpn, begin, tick, tick - begin);
+                     req.lpn, begin, tick, tick - begin);
 }
 
-void FTLOLD::trim(uint64_t slpn, uint64_t &tick) {
+void FTLOLD::trim(Request &req, uint64_t &tick) {
   Logger::debugprint(Logger::LOG_FTL_OLD, "TRIM  | NOT IMPLEMENTED");
 }
 

@@ -34,7 +34,7 @@ HIL::~HIL() {
   delete pICL;
 }
 
-void HIL::read(Request &req, uint64_t &tick) {
+void HIL::read(ICL::Request &req, uint64_t &tick) {
   // TODO: stat
 
   Logger::debugprint(Logger::LOG_HIL,
@@ -46,7 +46,7 @@ void HIL::read(Request &req, uint64_t &tick) {
   pICL->read(req, tick);
 }
 
-void HIL::write(Request &req, uint64_t &tick) {
+void HIL::write(ICL::Request &req, uint64_t &tick) {
   // TODO: stat
 
   Logger::debugprint(Logger::LOG_HIL,
@@ -58,7 +58,7 @@ void HIL::write(Request &req, uint64_t &tick) {
   pICL->write(req, tick);
 }
 
-void HIL::flush(Request &req, uint64_t &tick) {
+void HIL::flush(ICL::Request &req, uint64_t &tick) {
   // TODO: stat
 
   Logger::debugprint(Logger::LOG_HIL,
@@ -70,7 +70,7 @@ void HIL::flush(Request &req, uint64_t &tick) {
   pICL->flush(req, tick);
 }
 
-void HIL::trim(Request &req, uint64_t &tick) {
+void HIL::trim(ICL::Request &req, uint64_t &tick) {
   // TODO: stat
 
   Logger::debugprint(Logger::LOG_HIL,

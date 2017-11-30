@@ -22,6 +22,7 @@
 
 #include "ftl/ftl.hh"
 #include "util/config.hh"
+#include "util/def.hh"
 
 namespace SimpleSSD {
 
@@ -47,10 +48,10 @@ class Cache {
   Cache(ConfigReader *, FTL::FTL *);
   virtual ~Cache();
 
-  virtual bool read(uint64_t, uint64_t, uint64_t &) = 0;
-  virtual bool write(uint64_t, uint64_t, uint64_t &) = 0;
-  virtual bool flush(uint64_t, uint64_t, uint64_t &) = 0;
-  virtual bool trim(uint64_t, uint64_t, uint64_t &) = 0;
+  virtual bool read(FTL::Request &, uint64_t &) = 0;
+  virtual bool write(FTL::Request &, uint64_t &) = 0;
+  virtual bool flush(FTL::Request &, uint64_t &) = 0;
+  virtual bool trim(FTL::Request &, uint64_t &) = 0;
 };
 
 }  // namespace ICL

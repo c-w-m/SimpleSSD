@@ -334,7 +334,7 @@ uint32_t Subsystem::validNamespaceCount() {
 
 void Subsystem::read(Namespace *ns, uint64_t slba, uint64_t nlblk, PRPList &prp,
                      uint64_t &tick) {
-  Request req;
+  ICL::Request req;
   Namespace::Information *info = ns->getInfo();
   uint32_t lbaratio = logicalPageSize / info->lbaSize;
   uint64_t slpn;
@@ -355,7 +355,7 @@ void Subsystem::read(Namespace *ns, uint64_t slba, uint64_t nlblk, PRPList &prp,
 
 void Subsystem::write(Namespace *ns, uint64_t slba, uint64_t nlblk,
                       PRPList &prp, uint64_t &tick) {
-  Request req;
+  ICL::Request req;
   Namespace::Information *info = ns->getInfo();
   uint32_t lbaratio = logicalPageSize / info->lbaSize;
   uint64_t slpn;
@@ -375,7 +375,7 @@ void Subsystem::write(Namespace *ns, uint64_t slba, uint64_t nlblk,
 }
 
 void Subsystem::flush(Namespace *ns, uint64_t &tick) {
-  Request req;
+  ICL::Request req;
   Namespace::Information *info = ns->getInfo();
 
   req.range.slpn = info->range.slpn;
@@ -388,7 +388,7 @@ void Subsystem::flush(Namespace *ns, uint64_t &tick) {
 
 void Subsystem::trim(Namespace *ns, uint64_t slba, uint64_t nlblk,
                      uint64_t &tick) {
-  Request req;
+  ICL::Request req;
   Namespace::Information *info = ns->getInfo();
   uint32_t lbaratio = logicalPageSize / info->lbaSize;
   uint64_t slpn;

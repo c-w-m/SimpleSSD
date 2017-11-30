@@ -50,17 +50,17 @@ class GenericCache : public Cache {
   Line **ppCache;
 
   uint32_t calcSet(uint64_t);
-  uint32_t flushVictim(uint32_t, uint64_t &, bool * = nullptr);
+  uint32_t flushVictim(FTL::Request, uint64_t &, bool * = nullptr);
   uint64_t calculateDelay(uint64_t);
 
  public:
   GenericCache(ConfigReader *, FTL::FTL *);
-  ~GenericCache();
+  ~GenericCache() override;
 
-  bool read(uint64_t, uint64_t, uint64_t &);
-  bool write(uint64_t, uint64_t, uint64_t &);
-  bool flush(uint64_t, uint64_t, uint64_t &);
-  bool trim(uint64_t, uint64_t, uint64_t &);
+  bool read(FTL::Request &, uint64_t &) override;
+  bool write(FTL::Request &, uint64_t &) override;
+  bool flush(FTL::Request &, uint64_t &) override;
+  bool trim(FTL::Request &, uint64_t &) override;
 };
 
 }  // namespace ICL

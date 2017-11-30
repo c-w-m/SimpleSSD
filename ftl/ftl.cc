@@ -51,22 +51,22 @@ FTL::~FTL() {
   delete pFTL;
 }
 
-void FTL::read(uint64_t lpn, uint64_t &tick) {
-  Logger::debugprint(Logger::LOG_FTL, "READ  | LPN %" PRIu64, lpn);
+void FTL::read(Request &req, uint64_t &tick) {
+  Logger::debugprint(Logger::LOG_FTL, "READ  | LPN %" PRIu64, req.lpn);
 
-  pFTL->read(lpn, tick);
+  pFTL->read(req, tick);
 }
 
-void FTL::write(uint64_t lpn, uint64_t &tick) {
-  Logger::debugprint(Logger::LOG_FTL, "WRITE | LPN %" PRIu64, lpn);
+void FTL::write(Request &req, uint64_t &tick) {
+  Logger::debugprint(Logger::LOG_FTL, "WRITE | LPN %" PRIu64, req.lpn);
 
-  pFTL->write(lpn, tick);
+  pFTL->write(req, tick);
 }
 
-void FTL::trim(uint64_t lpn, uint64_t &tick) {
-  Logger::debugprint(Logger::LOG_FTL, "TRIM  | LPN %" PRIu64, lpn);
+void FTL::trim(Request &req, uint64_t &tick) {
+  Logger::debugprint(Logger::LOG_FTL, "TRIM  | LPN %" PRIu64, req.lpn);
 
-  pFTL->trim(lpn, tick);
+  pFTL->trim(req, tick);
 }
 
 Parameter *FTL::getInfo() {

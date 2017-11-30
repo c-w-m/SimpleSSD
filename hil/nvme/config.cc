@@ -19,8 +19,8 @@
 
 #include "hil/nvme/config.hh"
 
-#include "util/algorithm.hh"
 #include "log/trace.hh"
+#include "util/algorithm.hh"
 
 namespace SimpleSSD {
 

@@ -6,8 +6,8 @@
 //  Copyright (c) 2015 narges shahidi. All rights reserved.
 //
 
-#include "ftl.hh"
 #include "ftl_mappingtable.hh"
+#include "ftl.hh"
 
 MappingTable::MappingTable(FTL *f) : ftl(f) {
   param = f->getParameter();

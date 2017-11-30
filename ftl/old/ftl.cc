@@ -8,8 +8,8 @@
 //  Modified by Donghyun Gouk <kukdh1@camelab.org>
 //
 
-#include "PAL2.h"
 #include "ftl.hh"
+#include "PAL2.h"
 #include "ftl_statistics.hh"
 
 #ifndef MAX

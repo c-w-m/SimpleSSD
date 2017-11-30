@@ -19,6 +19,8 @@
 
 #include "util/config.hh"
 
+#include "log/trace.hh"
+
 #ifdef _MSC_VER
 #define strcasecmp _stricmp
 #else
@@ -75,7 +77,7 @@ int ConfigReader::parserHandler(void *context, const char *section,
   }
 
   if (!handled) {
-    // TODO: warn("Config [%s] %s = %s not handled\n", section, name, value);
+    Logger::warn("Config [%s] %s = %s not handled\n", section, name, value);
   }
 
   return 1;

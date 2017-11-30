@@ -17,33 +17,30 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __UTIL_CONFIG_READER__
-#define __UTIL_CONFIG_READER__
+#ifndef __UTIL_TWEAK_CONFIG__
+#define __UTIL_TWEAK_CONFIG__
 
-#include <cinttypes>
-#include <string>
-
-#include "ftl/config.hh"
-#include "hil/nvme/config.hh"
-#include "icl/config.hh"
-#include "lib/ini/ini.h"
-#include "pal/config.hh"
-#include "util/tweak_config.hh"
+#include "util/base_config.hh"
 
 namespace SimpleSSD {
 
-class ConfigReader {
+typedef enum { TWEAK_PARTIAL_IO } TWEAK_CONFIG;
+
+class TweakConfig : public BaseConfig {
  private:
-  static int parserHandler(void *, const char *, const char *, const char *);
+  bool enablePartialIO;  //!< Default: false
 
  public:
-  FTL::Config ftlConfig;
-  HIL::NVMe::Config nvmeConfig;
-  ICL::Config iclConfig;
-  PAL::Config palConfig;
-  TweakConfig tweakConfig;
+  TweakConfig();
 
-  bool init(std::string);
+  bool setConfig(const char *, const char *);
+  void update();
+
+  int64_t readInt(uint32_t);
+  uint64_t readUint(uint32_t);
+  float readFloat(uint32_t);
+  std::string readString(uint32_t);
+  bool readBoolean(uint32_t);
 };
 
 }  // namespace SimpleSSD

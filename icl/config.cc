@@ -32,7 +32,6 @@ const char NAME_USE_READ_PREFETCH[] = "EnableReadPrefetch";
 const char NAME_EVICT_POLICY[] = "EvictPolicy";
 const char NAME_SET_SIZE[] = "CacheSetSize";
 const char NAME_WAY_SIZE[] = "CacheWaySize";
-const char NAME_TWEAK_PARTIAL_IO[] = "TweakPartialIO";
 
 Config::Config() {
   readCaching = false;
@@ -41,8 +40,6 @@ Config::Config() {
   evictPolicy = POLICY_LEAST_RECENTLY_USED;
   cacheSetSize = 8192;
   cacheWaySize = 1;
-
-  tweakPartialIO = false;
 
   /* LPDDR3-1600 4Gbit 1x32 */
   dram.channel = 1;
@@ -124,9 +121,6 @@ bool Config::setConfig(const char *name, const char *value) {
   }
   else if (MATCH_NAME(NAME_WAY_SIZE)) {
     cacheWaySize = strtoul(value, nullptr, 10);
-  }
-  else if (MATCH_NAME(NAME_TWEAK_PARTIAL_IO)) {
-    tweakPartialIO = convertBool(value);
   }
   else {
     ret = false;
@@ -360,9 +354,6 @@ bool Config::readBoolean(uint32_t idx) {
       break;
     case ICL_USE_READ_PREFETCH:
       ret = readPrefetch;
-      break;
-    case ICL_TWEAK_PARTIAL_IO:
-      ret = tweakPartialIO;
       break;
     case DRAM_DLL:
       ret = dram.useDLL;

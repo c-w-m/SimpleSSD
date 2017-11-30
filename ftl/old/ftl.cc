@@ -9,7 +9,7 @@
 //
 
 #include "ftl.hh"
-#include "PAL2.h"
+#include "pal/old/PAL2.h"
 #include "ftl_statistics.hh"
 
 #ifndef MAX

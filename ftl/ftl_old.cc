@@ -23,12 +23,12 @@
 
 #include "ftl/ftl_old.hh"
 
-#include "ftl/old/Latency.h"
-#include "ftl/old/LatencyMLC.h"
-#include "ftl/old/LatencySLC.h"
-#include "ftl/old/LatencyTLC.h"
-#include "ftl/old/PAL2.h"
-#include "ftl/old/PALStatistics.h"
+#include "pal/old/Latency.h"
+#include "pal/old/LatencyMLC.h"
+#include "pal/old/LatencySLC.h"
+#include "pal/old/LatencyTLC.h"
+#include "pal/old/PAL2.h"
+#include "pal/old/PALStatistics.h"
 #include "ftl/old/ftl.hh"
 #include "ftl/old/ftl_defs.hh"
 #include "log/trace.hh"

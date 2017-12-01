@@ -26,10 +26,7 @@
 #include "ftl/abstract_ftl.hh"
 #include "ftl/common/block.hh"
 #include "ftl/ftl.hh"
-
-class PAL2;
-class PALStatistics;
-class Latency;
+#include "pal/pal.hh"
 
 namespace SimpleSSD {
 
@@ -37,9 +34,7 @@ namespace FTL {
 
 class PageMapping : public AbstractFTL {
  private:
-  ::PAL2 *pal;
-  ::PALStatistics *stats;
-  ::Latency *lat;
+  PAL::PAL *pPAL;
 
   Config &conf;
   Parameter *pFTLParam;

@@ -19,15 +19,15 @@
 
 #include "ftl/page_mapping.hh"
 
+#include "ftl/old/ftl.hh"
+#include "ftl/old/ftl_defs.hh"
+#include "log/trace.hh"
 #include "pal/old/Latency.h"
 #include "pal/old/LatencyMLC.h"
 #include "pal/old/LatencySLC.h"
 #include "pal/old/LatencyTLC.h"
 #include "pal/old/PAL2.h"
 #include "pal/old/PALStatistics.h"
-#include "ftl/old/ftl.hh"
-#include "ftl/old/ftl_defs.hh"
-#include "log/trace.hh"
 #include "util/algorithm.hh"
 
 namespace SimpleSSD {
@@ -35,30 +35,9 @@ namespace SimpleSSD {
 namespace FTL {
 
 PageMapping::PageMapping(Parameter *p, PAL::PAL *l, ConfigReader *c)
-    : AbstractFTL(p, l), conf(c->ftlConfig), pFTLParam(p) {
-  switch (c->palConfig.readInt(PAL::NAND_FLASH_TYPE)) {
-    case PAL::NAND_SLC:
-      lat = new LatencySLC(c->palConfig.readUint(PAL::NAND_DMA_SPEED),
-                           c->palConfig.readUint(PAL::NAND_PAGE_SIZE));
-      break;
-    case PAL::NAND_MLC:
-      lat = new LatencyMLC(c->palConfig.readUint(PAL::NAND_DMA_SPEED),
-                           c->palConfig.readUint(PAL::NAND_PAGE_SIZE));
-      break;
-    case PAL::NAND_TLC:
-      lat = new LatencyTLC(c->palConfig.readUint(PAL::NAND_DMA_SPEED),
-                           c->palConfig.readUint(PAL::NAND_PAGE_SIZE));
-      break;
-  }
+    : AbstractFTL(p, l), pPAL(l), conf(c->ftlConfig), pFTLParam(p) {}
 
-  stats = new PALStatistics(&c->palConfig, lat);
-  pal = new PAL2(stats, &c->palConfig, lat);
-}
-
-PageMapping::~PageMapping() {
-  delete pal;
-  delete stats;
-}
+PageMapping::~PageMapping() {}
 
 bool PageMapping::initialize() {
   uint64_t nPagesToWarmup;
@@ -70,10 +49,13 @@ bool PageMapping::initialize() {
   nPagesToWarmup = nTotalPages * conf.readFloat(FTL_WARM_UP_RATIO);
   nPagesToWarmup = MIN(nPagesToWarmup, nTotalPages);
 
-  for (uint32_t lpn = 0; lpn < nPagesToWarmup; lpn++) {
-    req.lpn = lpn;
+  for (uint64_t lpn = 0; lpn < pFTLParam->totalLogicalBlocks;
+       lpn += nTotalPages) {
+    for (uint32_t page = 0; page < nPagesToWarmup; page++) {
+      req.lpn = lpn + page;
 
-    writeInternal(req, tick, false);
+      writeInternal(req, tick, false);
+    }
   }
 
   return true;
@@ -116,29 +98,17 @@ float PageMapping::freeBlockRatio() {
   return (float)blocks.size() / pFTLParam->totalPhysicalBlocks;
 }
 
-void PageMapping::selectVictimBlock(std::vector<uint32_t> &list) {
+void PageMapping::selectVictimBlock(std::vector<uint32_t> &list) {}
 
-}
+void PageMapping::doGarbageCollection(uint64_t &tick) {}
 
-void PageMapping::doGarbageCollection(uint64_t &tick) {
+void PageMapping::readInternal(Request &req, uint64_t &tick) {}
 
-}
+void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {}
 
-void PageMapping::readInternal(Request &req, uint64_t &tick) {
+void PageMapping::trimInternal(Request &req, uint64_t &tick) {}
 
-}
-
-void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
-
-}
-
-void PageMapping::trimInternal(Request &req, uint64_t &tick) {
-
-}
-
-void PageMapping::eraseInternal(uint32_t blockIndex, uint64_t &tick) {
-  
-}
+void PageMapping::eraseInternal(uint32_t blockIndex, uint64_t &tick) {}
 
 }  // namespace FTL
 

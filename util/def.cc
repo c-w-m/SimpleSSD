@@ -40,12 +40,17 @@ Request::_Request() : reqID(0), reqSubID(0), lpn(0), offset(0), length(0) {}
 namespace PAL {
 
 Request::_Request()
-    : reqID(0), reqSubID(0), blkIndex(0), pageIndex(0), offset(0), length(0) {}
+    : reqID(0),
+      reqSubID(0),
+      blockIndex(0),
+      pageIndex(0),
+      offset(0),
+      length(0) {}
 
 Request::_Request(FTL::Request &r)
     : reqID(r.reqID),
       reqSubID(r.reqSubID),
-      blkIndex(0),
+      blockIndex(0),
       pageIndex(0),
       offset(r.offset),
       length(r.length) {}

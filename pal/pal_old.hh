@@ -17,62 +17,39 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __UTIL_DEF__
-#define __UTIL_DEF__
+#ifndef __PAL_PAL_OLD__
+#define __PAL_PAL_OLD__
 
 #include <cinttypes>
-#include <list>
+#include <vector>
+
+#include "pal/abstract_pal.hh"
+#include "util/old/SimpleSSD_types.h"
+
+class PAL2;
+class PALStatistics;
+class Latency;
 
 namespace SimpleSSD {
 
-typedef struct _LPNRange {
-  uint64_t slpn;
-  uint64_t nlp;
-
-  _LPNRange();
-  _LPNRange(uint64_t, uint64_t);
-} LPNRange;
-
-namespace ICL {
-
-typedef struct _Request {
-  uint64_t reqID;
-  uint64_t offset;
-  uint64_t length;
-  LPNRange range;
-
-  _Request();
-} Request;
-
-}  // namespace ICL
-
-namespace FTL {
-
-typedef struct _Request {
-  uint64_t reqID;  // ID of ICL::Request
-  uint64_t reqSubID;
-  uint64_t lpn;
-  uint32_t offset;
-  uint32_t length;
-
-  _Request();
-} Request;
-
-}  // namespace FTL
-
 namespace PAL {
 
-typedef struct _Request {
-  uint64_t reqID;  // ID of ICL::Request
-  uint64_t reqSubID;
-  uint32_t blockIndex;
-  uint32_t pageIndex;
-  uint32_t offset;
-  uint32_t length;
+class PALOLD : public AbstractPAL {
+ private:
+  ::PAL2 *pal;
+  ::PALStatistics *stats;
+  ::Latency *lat;
 
-  _Request();
-  _Request(FTL::Request &);
-} Request;
+  void convertCPDPBP(Request &, std::vector<::CPDPBP> &);
+
+ public:
+  PALOLD(Parameter &, Config &);
+  ~PALOLD() override;
+
+  void read(Request &, uint64_t &) override;
+  void write(Request &, uint64_t &) override;
+  void erase(Request &, uint64_t &) override;
+};
 
 }  // namespace PAL
 

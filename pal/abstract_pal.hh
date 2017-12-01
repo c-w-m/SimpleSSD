@@ -17,62 +17,30 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __UTIL_DEF__
-#define __UTIL_DEF__
+#ifndef __PAL_ABSTRACT_PAL__
+#define __PAL_ABSTRACT_PAL__
 
 #include <cinttypes>
-#include <list>
+
+#include "pal/pal.hh"
 
 namespace SimpleSSD {
 
-typedef struct _LPNRange {
-  uint64_t slpn;
-  uint64_t nlp;
-
-  _LPNRange();
-  _LPNRange(uint64_t, uint64_t);
-} LPNRange;
-
-namespace ICL {
-
-typedef struct _Request {
-  uint64_t reqID;
-  uint64_t offset;
-  uint64_t length;
-  LPNRange range;
-
-  _Request();
-} Request;
-
-}  // namespace ICL
-
-namespace FTL {
-
-typedef struct _Request {
-  uint64_t reqID;  // ID of ICL::Request
-  uint64_t reqSubID;
-  uint64_t lpn;
-  uint32_t offset;
-  uint32_t length;
-
-  _Request();
-} Request;
-
-}  // namespace FTL
-
 namespace PAL {
 
-typedef struct _Request {
-  uint64_t reqID;  // ID of ICL::Request
-  uint64_t reqSubID;
-  uint32_t blockIndex;
-  uint32_t pageIndex;
-  uint32_t offset;
-  uint32_t length;
+class AbstractPAL {
+ protected:
+  Parameter &param;
+  Config &conf;
 
-  _Request();
-  _Request(FTL::Request &);
-} Request;
+ public:
+  AbstractPAL(Parameter &p, Config &c) : param(p), conf(c) {}
+  virtual ~AbstractPAL(){};
+
+  virtual void read(Request &, uint64_t &) = 0;
+  virtual void write(Request &, uint64_t &) = 0;
+  virtual void erase(Request &, uint64_t &) = 0;
+};
 
 }  // namespace PAL
 

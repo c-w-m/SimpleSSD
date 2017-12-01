@@ -37,7 +37,7 @@ const char NAME_WRR_MEDIUM[] = "WRRMedium";
 const char NAME_ENABLE_DEFAULT_NAMESPACE[] = "DefaultNamespace";
 const char NAME_LBA_SIZE[] = "LBASize";
 const char NAME_ENABLE_DISK_IMAGE[] = "EnableDiskImage";
-const char NAME_STRICT_DISK_SIZE[] = "StrickSizeCheck";
+const char NAME_STRICT_DISK_SIZE[] = "StrictSizeCheck";
 const char NAME_DISK_IMAGE_PATH[] = "DiskImageFile";
 const char NAME_USE_COW_DISK[] = "UseCopyOnWriteDisk";
 

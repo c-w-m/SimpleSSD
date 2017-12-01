@@ -24,12 +24,9 @@
 
 #include "ftl/abstract_ftl.hh"
 #include "ftl/ftl.hh"
+#include "ftl/old/ftl_defs.hh"
 
-class Parameter;
 class FTL;
-class PAL2;
-class PALStatistics;
-class Latency;
 
 namespace SimpleSSD {
 
@@ -37,11 +34,8 @@ namespace FTL {
 
 class FTLOLD : public AbstractFTL {
  private:
-  ::PAL2 *pal;
-  ::PALStatistics *stats;
-  ::Latency *lat;
   ::FTL *ftl;
-  ::Parameter *old;
+  ::Parameter old;
 
   Config *pConf;
 

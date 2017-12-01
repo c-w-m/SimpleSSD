@@ -23,15 +23,15 @@
 
 #include "ftl/ftl_old.hh"
 
+#include "ftl/old/ftl.hh"
+#include "ftl/old/ftl_defs.hh"
+#include "log/trace.hh"
 #include "pal/old/Latency.h"
 #include "pal/old/LatencyMLC.h"
 #include "pal/old/LatencySLC.h"
 #include "pal/old/LatencyTLC.h"
 #include "pal/old/PAL2.h"
 #include "pal/old/PALStatistics.h"
-#include "ftl/old/ftl.hh"
-#include "ftl/old/ftl_defs.hh"
-#include "log/trace.hh"
 
 namespace SimpleSSD {
 
@@ -39,47 +39,25 @@ namespace FTL {
 
 FTLOLD::FTLOLD(Parameter *p, PAL::PAL *l, ConfigReader *c)
     : AbstractFTL(p, l), pConf(&c->ftlConfig) {
-  switch (c->palConfig.readInt(PAL::NAND_FLASH_TYPE)) {
-    case PAL::NAND_SLC:
-      lat = new LatencySLC(c->palConfig.readUint(PAL::NAND_DMA_SPEED),
-                           c->palConfig.readUint(PAL::NAND_PAGE_SIZE));
-      break;
-    case PAL::NAND_MLC:
-      lat = new LatencyMLC(c->palConfig.readUint(PAL::NAND_DMA_SPEED),
-                           c->palConfig.readUint(PAL::NAND_PAGE_SIZE));
-      break;
-    case PAL::NAND_TLC:
-      lat = new LatencyTLC(c->palConfig.readUint(PAL::NAND_DMA_SPEED),
-                           c->palConfig.readUint(PAL::NAND_PAGE_SIZE));
-      break;
-  }
+  old.physical_block_number = p->totalPhysicalBlocks;
+  old.logical_block_number = p->totalLogicalBlocks;
+  old.physical_page_number = p->totalPhysicalBlocks * p->pagesInBlock;
+  old.logical_page_number = p->totalLogicalBlocks * p->pagesInBlock;
+  old.mapping_N = pConf->readUint(FTL_NKMAP_N);
+  old.mapping_K = pConf->readUint(FTL_NKMAP_K);
+  old.gc_threshold = pConf->readFloat(FTL_GC_THRESHOLD_RATIO);
+  old.page_size = 1;
+  old.over_provide = pConf->readFloat(FTL_OVERPROVISION_RATIO);
+  old.warmup = pConf->readFloat(FTL_WARM_UP_RATIO);
+  old.erase_cycle = pConf->readUint(FTL_ERASE_CYCLE);
+  old.page_byte = p->pageSize;
+  old.page_per_block = p->pagesInBlock;
 
-  stats = new PALStatistics(&c->palConfig, lat);
-  pal = new PAL2(stats, &c->palConfig, lat);
-  old = new ::Parameter();
-
-  old->physical_block_number = p->totalPhysicalBlocks;
-  old->logical_block_number = p->totalLogicalBlocks;
-  old->physical_page_number = p->totalPhysicalBlocks * p->pagesInBlock;
-  old->logical_page_number = p->totalLogicalBlocks * p->pagesInBlock;
-  old->mapping_N = pConf->readUint(FTL_NKMAP_N);
-  old->mapping_K = pConf->readUint(FTL_NKMAP_K);
-  old->gc_threshold = pConf->readFloat(FTL_GC_THRESHOLD_RATIO);
-  old->page_size = 1;
-  old->over_provide = pConf->readFloat(FTL_OVERPROVISION_RATIO);
-  old->warmup = pConf->readFloat(FTL_WARM_UP_RATIO);
-  old->erase_cycle = pConf->readUint(FTL_ERASE_CYCLE);
-  old->page_byte = p->pageSize;
-  old->page_per_block = p->pagesInBlock;
-
-  ftl = new ::FTL(old, pal);
+  ftl = new ::FTL(&old, l);
 }
 
 FTLOLD::~FTLOLD() {
   delete ftl;
-  delete pal;
-  delete stats;
-  delete old;
 }
 
 bool FTLOLD::initialize() {
@@ -89,7 +67,7 @@ bool FTLOLD::initialize() {
 void FTLOLD::read(Request &req, uint64_t &tick) {
   uint64_t begin = tick;
 
-  tick = ftl->read(req.lpn, 1, begin);
+  tick = ftl->read(req, begin);
 
   Logger::debugprint(Logger::LOG_FTL_OLD,
                      "READ  | LPN %" PRIu64 " | %" PRIu64 " - %" PRIu64
@@ -100,7 +78,7 @@ void FTLOLD::read(Request &req, uint64_t &tick) {
 void FTLOLD::write(Request &req, uint64_t &tick) {
   uint64_t begin = tick;
 
-  tick = ftl->write(req.lpn, 1, begin);
+  tick = ftl->write(req, begin);
 
   Logger::debugprint(Logger::LOG_FTL_OLD,
                      "WRITE | LPN %" PRIu64 " | %" PRIu64 " - %" PRIu64

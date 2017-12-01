@@ -561,13 +561,17 @@ bool HybridMapping::check_partial_merge(const Addr target_block,
 STATE HybridMapping::do_direct_erase(const Addr target_block,
                                      const Addr target_group,
                                      const Addr *target_lpns) {
+  SimpleSSD::PAL::Request req;
+
   if (log_block_MT->removeLogBlock(target_group, target_block) != SUCCESS) {
     my_assert("Problem in direct erase: removing from log block list failed! ");
     return FAIL;
   }
   erase_block(target_block);
-  lastGCTick +=
-      ftl->eraseInternal(target_block * param->page_per_block, curTick());
+
+  req.blockIndex = target_block;
+
+  lastGCTick += ftl->eraseInternal(req, curTick());
   direct_erase_count++;
   return SUCCESS;
 }
@@ -575,6 +579,8 @@ STATE HybridMapping::do_direct_erase(const Addr target_block,
 STATE HybridMapping::do_switch_merge(const Addr target_block,
                                      const Addr target_group,
                                      const Addr *target_lpns) {
+  SimpleSSD::PAL::Request req;
+
   if (target_lpns[0] == -1) {
     my_assert("Fail to do switch merge");
     return FAIL;
@@ -599,8 +605,10 @@ STATE HybridMapping::do_switch_merge(const Addr target_block,
   data_block_MT->set_pbn(logical_block, target_block);
   log_block_MT->removeLogBlock(target_group, target_block);
   erase_block(current_pbn);
-  lastGCTick +=
-      ftl->eraseInternal(current_pbn * param->page_per_block, curTick());
+
+  req.blockIndex = current_pbn;
+
+  lastGCTick += ftl->eraseInternal(req, curTick());
 
   switch_merge_count++;
   return SUCCESS;
@@ -609,6 +617,8 @@ STATE HybridMapping::do_switch_merge(const Addr target_block,
 STATE HybridMapping::do_reorder_merge(const Addr target_block,
                                       const Addr target_group,
                                       const Addr *target_lpns) {
+  SimpleSSD::PAL::Request req;
+
   if (target_lpns[0]) {
     my_assert("Fail to do reorder merge");
     return FAIL;
@@ -631,7 +641,10 @@ STATE HybridMapping::do_reorder_merge(const Addr target_block,
     Addr new_lpn = logical_block * param->page_per_block + i;
     Addr read_ppn;
     if (getppn(new_lpn, read_ppn) == SUCCESS) {
-      lastGCTick += ftl->readInternal(read_ppn, curTick(), true);
+      req.blockIndex = read_ppn / param->page_per_block;
+      req.pageIndex = read_ppn % param->page_per_block;
+
+      lastGCTick += ftl->readInternal(req, curTick(), true);
       map_gc_move_read_count++;
     }
     invalid_old_page(new_lpn);  // invalidate and remove from lpmt if exists
@@ -640,8 +653,11 @@ STATE HybridMapping::do_reorder_merge(const Addr target_block,
       my_assert("Fail to write block! ");
       return FAIL;
     }
-    Addr write_ppn = new_pbn * param->page_per_block + i;
-    lastGCTick += ftl->writeInternal(write_ppn, curTick(), true);
+
+    req.blockIndex = new_pbn;
+    req.pageIndex = i;
+
+    lastGCTick += ftl->writeInternal(req, curTick(), true);
     map_gc_move_write_count++;
   }
   if (log_block_MT->removeLogBlock(target_group, target_block) != SUCCESS) {
@@ -652,10 +668,14 @@ STATE HybridMapping::do_reorder_merge(const Addr target_block,
   erase_block(current_pbn);
   erase_block(target_block);
 
-  lastGCTick +=
-      ftl->eraseInternal(current_pbn * param->page_per_block, curTick());
-  lastGCTick +=
-      ftl->eraseInternal(target_block * param->page_per_block, curTick());
+  req.blockIndex = current_pbn;
+  req.pageIndex = 0;
+
+  lastGCTick += ftl->eraseInternal(req, curTick());
+
+  req.blockIndex = target_block;
+
+  lastGCTick += ftl->eraseInternal(req, curTick());
 
   reorder_merge_count++;
   return SUCCESS;
@@ -664,6 +684,8 @@ STATE HybridMapping::do_reorder_merge(const Addr target_block,
 STATE HybridMapping::do_partial_merge(const Addr target_block,
                                       const Addr target_group,
                                       const Addr *target_lpns) {
+  SimpleSSD::PAL::Request req;
+
   if (target_lpns[0] == -1) {
     my_assert("Fail to do partial merge");
     return FAIL;
@@ -687,15 +709,19 @@ STATE HybridMapping::do_partial_merge(const Addr target_block,
     Addr new_lpn = logical_block * param->page_per_block + i;
     Addr read_ppn;
     if (getppn(new_lpn, read_ppn) == SUCCESS) {
-      lastGCTick += ftl->readInternal(read_ppn, curTick(), true);
+      req.blockIndex = read_ppn / param->page_per_block;
+      req.pageIndex = read_ppn % param->page_per_block;
+
+      lastGCTick += ftl->readInternal(req, curTick(), true);
       map_gc_move_read_count++;
     }
     invalid_old_page(new_lpn);
 
     int temp_i = i;
     if (physical_blocks[target_block].write_page(new_lpn, temp_i) == SUCCESS) {
-      Addr write_ppn = target_block * param->page_per_block + i;
-      lastGCTick += ftl->writeInternal(write_ppn, curTick(), true);
+      req.blockIndex = target_block;
+      req.pageIndex = i;
+      lastGCTick += ftl->writeInternal(req, curTick(), true);
       map_gc_move_write_count++;
     }
   }
@@ -705,8 +731,9 @@ STATE HybridMapping::do_partial_merge(const Addr target_block,
   }
   data_block_MT->set_pbn(logical_block, target_block);
   erase_block(current_pbn);
-  lastGCTick +=
-      ftl->eraseInternal(current_pbn * param->page_per_block, curTick());
+  req.blockIndex = current_pbn;
+  req.pageIndex = 0;
+  lastGCTick += ftl->eraseInternal(req, curTick());
   partial_merge_count++;
   return SUCCESS;
 }
@@ -714,6 +741,8 @@ STATE HybridMapping::do_partial_merge(const Addr target_block,
 STATE HybridMapping::do_full_merge(const Addr target_block,
                                    const Addr target_group,
                                    const Addr *target_lpns) {
+  SimpleSSD::PAL::Request req;
+
   for (int i = 0; i < param->page_per_block; i++) {
     if (physical_blocks[target_block].get_page_state(i) != Block::PAGE_VALID)
       continue;
@@ -733,7 +762,9 @@ STATE HybridMapping::do_full_merge(const Addr target_block,
       Addr copy_lpn = target_lbn * param->page_per_block + j;
       Addr copy_ppn;
       if (getppn(copy_lpn, copy_ppn) == SUCCESS) {
-        lastGCTick += ftl->readInternal(copy_ppn, curTick(), true);
+        req.blockIndex = copy_ppn / param->page_per_block;
+        req.pageIndex = copy_ppn % param->page_per_block;
+        lastGCTick += ftl->readInternal(req, curTick(), true);
         map_gc_move_read_count++;
       }
 
@@ -745,8 +776,10 @@ STATE HybridMapping::do_full_merge(const Addr target_block,
 
       invalid_old_page(copy_lpn);  // invalid the page in physical blocks,
                                    // remove from lpmt if it's there
-      Addr new_ppn = free_block * param->page_per_block + j;
-      lastGCTick += ftl->writeInternal(new_ppn, curTick(), true);
+      req.blockIndex = free_block;
+      req.pageIndex = j;
+
+      lastGCTick += ftl->writeInternal(req, curTick(), true);
       map_gc_move_write_count++;
     }
 
@@ -755,8 +788,11 @@ STATE HybridMapping::do_full_merge(const Addr target_block,
       my_assert("Fail to find the current pbn for a logical block");
     }
     erase_block(current_pbn);
-    lastGCTick +=
-        ftl->eraseInternal(current_pbn * param->page_per_block, curTick());
+
+    req.blockIndex = current_pbn;
+    req.pageIndex = 0;
+
+    lastGCTick += ftl->eraseInternal(req, curTick());
     data_block_MT->set_pbn(target_lbn, free_block);
   }
 
@@ -765,8 +801,11 @@ STATE HybridMapping::do_full_merge(const Addr target_block,
   }
 
   erase_block(target_block);
-  lastGCTick +=
-      ftl->eraseInternal(target_group * param->page_per_block, curTick());
+
+  req.blockIndex = target_block;
+  req.pageIndex = 0;
+
+  lastGCTick += ftl->eraseInternal(req, curTick());
   full_merge_count++;
 
   return SUCCESS;

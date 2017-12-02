@@ -82,6 +82,19 @@ void HIL::trim(ICL::Request &req, uint64_t &tick) {
   pICL->trim(req, tick);
 }
 
+void HIL::format(LPNRange &range, bool erase, uint64_t &tick) {
+  if (erase) {
+    pICL->format(range, tick);
+  }
+  else {
+    ICL::Request req;
+
+    req.range = range;
+
+    pICL->trim(req, tick);
+  }
+}
+
 void HIL::getLPNInfo(uint64_t &totalLogicalPages, uint32_t &logicalPageSize) {
   pICL->getLPNInfo(totalLogicalPages, logicalPageSize);
 }

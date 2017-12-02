@@ -46,6 +46,8 @@ class HIL {
   void flush(ICL::Request &, uint64_t &);
   void trim(ICL::Request &, uint64_t &);
 
+  void format(LPNRange &, bool, uint64_t &);
+
   void getLPNInfo(uint64_t &, uint32_t &);
 };
 

@@ -48,6 +48,8 @@ class FTLOLD : public AbstractFTL {
   void read(Request &, uint64_t &);
   void write(Request &, uint64_t &);
   void trim(Request &, uint64_t &);
+
+  void format(LPNRange &, uint64_t &) override;
 };
 
 }  // namespace FTL

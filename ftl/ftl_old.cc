@@ -90,6 +90,10 @@ void FTLOLD::trim(Request &req, uint64_t &tick) {
   Logger::debugprint(Logger::LOG_FTL_OLD, "TRIM  | NOT IMPLEMENTED");
 }
 
+void FTLOLD::format(LPNRange &range, uint64_t &tick) {
+  Logger::debugprint(Logger::LOG_FTL_OLD, "FORMAT| NOT IMPLEMENTED");
+}
+
 }  // namespace FTL
 
 }  // namespace SimpleSSD

@@ -52,6 +52,8 @@ class Cache {
   virtual bool write(FTL::Request &, uint64_t &) = 0;
   virtual bool flush(FTL::Request &, uint64_t &) = 0;
   virtual bool trim(FTL::Request &, uint64_t &) = 0;
+
+  virtual void format(LPNRange &, uint64_t &) = 0;
 };
 
 }  // namespace ICL

@@ -61,6 +61,8 @@ class GenericCache : public Cache {
   bool write(FTL::Request &, uint64_t &) override;
   bool flush(FTL::Request &, uint64_t &) override;
   bool trim(FTL::Request &, uint64_t &) override;
+
+  void format(LPNRange &, uint64_t &) override;
 };
 
 }  // namespace ICL

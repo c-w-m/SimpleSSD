@@ -354,6 +354,42 @@ bool GenericCache::trim(FTL::Request &req, uint64_t &tick) {
   return ret;
 }
 
+void GenericCache::format(LPNRange &range, uint64_t &tick) {
+  bool ret = false;
+
+  if (useReadCaching || useWriteCaching) {
+    uint64_t lpn;
+    uint32_t setIdx;
+    uint32_t way;
+
+    for (uint64_t i = 0; i < range.nlp; i++) {
+      lpn = range.slpn + i;
+      setIdx = calcSet(lpn);
+
+      for (way = 0; way < waySize; way++) {
+        Line &line = ppCache[setIdx][way];
+
+        if (line.valid && line.tag == lpn) {
+          ret = true;
+
+          break;
+        }
+      }
+
+      if (ret) {
+        // invalidate
+        ppCache[setIdx][way].valid = false;
+      }
+    }
+
+    // we have to trim this
+    pFTL->format(range, tick);
+  }
+  else {
+    pFTL->format(range, tick);
+  }
+}
+
 }  // namespace ICL
 
 }  // namespace SimpleSSD

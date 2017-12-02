@@ -168,6 +168,10 @@ void ICL::trim(Request &req, uint64_t &tick) {
   tick = finishedAt;
 }
 
+void ICL::format(LPNRange &range, uint64_t &tick) {
+  pCache->format(range, tick);
+}
+
 void ICL::getLPNInfo(uint64_t &t, uint32_t &s) {
   t = totalLogicalPages;
   s = logicalPageSize;

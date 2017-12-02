@@ -76,6 +76,10 @@ void FTL::trim(Request &req, uint64_t &tick) {
   pFTL->trim(req, tick);
 }
 
+void FTL::format(LPNRange &range, uint64_t &tick) {
+  pFTL->format(range, tick);
+}
+
 Parameter *FTL::getInfo() {
   return &param;
 }

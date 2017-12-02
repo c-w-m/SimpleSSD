@@ -99,6 +99,39 @@ void PageMapping::trim(Request &req, uint64_t &tick) {
                      req.lpn, begin, tick, tick - begin);
 }
 
+void PageMapping::format(LPNRange &range, uint64_t &tick) {
+  PAL::Request req;
+  std::vector<uint32_t> list;
+
+  for (auto iter = table.begin(); iter != table.end();) {
+    if (iter->first >= range.slpn && iter->first < range.slpn + range.nlp) {
+      // Do trim
+      auto block = blocks.find(iter->second.first);
+
+      if (block == blocks.end()) {
+        Logger::panic("Block is not in use");
+      }
+
+      block->second.invalidate(iter->second.second);
+
+      // Collect block indices
+      list.push_back(iter->second.first);
+
+      iter = table.erase(iter);
+    }
+    else {
+      iter++;
+    }
+  }
+
+  // Get blocks to erase
+  std::sort(list.begin(), list.end());
+  std::unique(list.begin(), list.end());
+
+  // Do GC only in specified blocks
+  tick = doGarbageCollection(list, tick);
+}
+
 float PageMapping::freeBlockRatio() {
   return (float)freeBlocks.size() / pFTLParam->totalPhysicalBlocks;
 }
@@ -202,13 +235,15 @@ void PageMapping::selectVictimBlock(std::vector<uint32_t> &list,
   }
 }
 
-uint64_t PageMapping::doGarbageCollection(uint64_t tick) {
-  std::vector<uint32_t> blocksToReclaim;
+uint64_t PageMapping::doGarbageCollection(
+    std::vector<uint32_t> &blocksToReclaim, uint64_t tick) {
   PAL::Request req;
   uint64_t beginAt;
   uint64_t finishedAt = tick;
 
-  selectVictimBlock(blocksToReclaim, tick);
+  if (blocksToReclaim.size() == 0) {
+    return tick;
+  }
 
   // Allocate new free block
   if (!lastFreeBlock.first) {
@@ -367,7 +402,10 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
 
   // GC if needed
   if (freeBlockRatio() < conf.readFloat(FTL_GC_THRESHOLD_RATIO)) {
-    doGarbageCollection(tick);
+    std::vector<uint32_t> list;
+
+    selectVictimBlock(list, tick);
+    doGarbageCollection(list, tick);
   }
 }
 
@@ -381,7 +419,11 @@ void PageMapping::trimInternal(Request &req, uint64_t &tick) {
       Logger::panic("Block is not in use");
     }
 
+    // Invalidate block
     block->second.invalidate(mapping->second.second);
+
+    // Remove mapping
+    table.erase(mapping);
   }
 }
 

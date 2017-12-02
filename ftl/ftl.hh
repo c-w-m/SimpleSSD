@@ -53,6 +53,8 @@ class FTL {
   void write(Request &, uint64_t &);
   void trim(Request &, uint64_t &);
 
+  void format(LPNRange &, uint64_t &);
+
   Parameter *getInfo();
 };
 

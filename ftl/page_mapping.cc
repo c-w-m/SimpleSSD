@@ -19,6 +19,7 @@
 
 #include "ftl/page_mapping.hh"
 
+#include <algorithm>
 #include <limits>
 
 #include "ftl/old/ftl.hh"
@@ -136,7 +137,70 @@ uint32_t PageMapping::getFreeBlock() {
   return blockIndex;
 }
 
-void PageMapping::selectVictimBlock(std::vector<uint32_t> &list) {}
+void PageMapping::selectVictimBlock(std::vector<uint32_t> &list,
+                                    uint64_t tick) {
+  static const GC_MODE mode = (GC_MODE)conf.readInt(FTL_GC_MODE);
+  static const EVICT_POLICY policy =
+      (EVICT_POLICY)conf.readInt(FTL_GC_EVICT_POLICY);
+  static uint64_t nBlocks = conf.readInt(FTL_GC_RECLAIM_BLOCK);
+  std::vector<std::pair<uint32_t, float>> weight;
+  uint64_t i = 0;
+
+  list.clear();
+
+  // Calculate number of blocks to reclaim
+  if (mode == GC_MODE_1) {
+    static const float t = conf.readFloat(FTL_GC_RECLAIM_THRESHOLD);
+
+    nBlocks = pFTLParam->totalPhysicalBlocks * t - freeBlocks.size();
+  }
+  else {
+    Logger::panic("Invalid GC mode");
+  }
+
+  // Calculate weights of all blocks
+  weight.resize(blocks.size());
+
+  if (policy == POLICY_GREEDY) {
+    for (auto &iter : blocks) {
+      weight.at(i).first = iter.first;
+      weight.at(i).second = iter.second.getValidPageCount();
+
+      i++;
+    }
+  }
+  else if (policy == POLICY_COST_BENEFIT) {
+    float temp;
+
+    for (auto &iter : blocks) {
+      temp = (float)iter.second.getValidPageCount() / pFTLParam->pagesInBlock;
+
+      weight.at(i).first = iter.first;
+      weight.at(i).second =
+          temp / ((1 - temp) * (tick - iter.second.getLastAccessedTime()));
+
+      i++;
+    }
+  }
+  else {
+    Logger::panic("Invalid evict policy");
+  }
+
+  // Sort weights
+  std::sort(
+      weight.begin(), weight.end(),
+      [](std::pair<uint32_t, float> a, std::pair<uint32_t, float> b) -> bool {
+        return a.second < b.second;
+      });
+
+  // Select victims
+  i = 0;
+  list.resize(nBlocks);
+
+  for (auto &iter : list) {
+    iter = weight.at(i++).first;
+  }
+}
 
 uint64_t PageMapping::doGarbageCollection(uint64_t tick) {
   return tick;

@@ -19,8 +19,8 @@
 
 #include "ftl/ftl.hh"
 
-#include "ftl/abstract_ftl.hh"
 #include "ftl/ftl_old.hh"
+#include "ftl/page_mapping.hh"
 #include "log/trace.hh"
 
 namespace SimpleSSD {
@@ -40,7 +40,14 @@ FTL::FTL(ConfigReader *c) : pConf(c) {
   param.pagesInBlock = palparam->page;
   param.pageSize = palparam->superPageSize;
 
-  pFTL = new FTLOLD(&param, pPAL, pConf);
+  switch (pConf->ftlConfig.readInt(FTL_MAPPING_MODE)) {
+    case FTL_PAGE_MAPPING:
+      pFTL = new PageMapping(&param, pPAL, pConf);
+      break;
+    case FTL_NK_MAPPING:
+      pFTL = new FTLOLD(&param, pPAL, pConf);
+      break;
+  }
 
   // Initialize pFTL
   pFTL->initialize();

@@ -109,6 +109,7 @@ uint32_t PageMapping::getFreeBlock() {
     uint32_t eraseCount = std::numeric_limits<uint32_t>::max();
     auto found = freeBlocks.end();
 
+    // Found least erased block
     for (auto iter = freeBlocks.begin(); iter != freeBlocks.end(); iter++) {
       uint32_t current = iter->second.getEraseCount();
       if (current < eraseCount) {

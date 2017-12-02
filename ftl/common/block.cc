@@ -74,9 +74,6 @@ bool Block::read(uint32_t pageIndex, uint64_t tick) {
   if (valid) {
     lastAccessed = tick;
   }
-  else {
-    Logger::panic("Read invalid page");
-  }
 
   return valid;
 }

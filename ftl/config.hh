@@ -31,8 +31,11 @@ typedef enum {
   FTL_MAPPING_MODE,
   FTL_OVERPROVISION_RATIO,
   FTL_GC_THRESHOLD_RATIO,
-  FTL_ERASE_CYCLE,
+  FTL_BAD_BLOCK_THRESHOLD,
   FTL_WARM_UP_RATIO,
+  FTL_GC_MODE,
+  FTL_GC_RECLAIM_BLOCK,
+  FTL_GC_RECLAIM_THRESHOLD,
 
   /* N+K Mapping configuration*/
   FTL_NKMAP_N,
@@ -44,13 +47,21 @@ typedef enum {
   FTL_NK_MAPPING,
 } FTL_MAPPING;
 
+typedef enum {
+  FTL_GC_MODE_0,
+  FTL_GC_MODE_1,
+} FTL_GC;
+
 class Config : public BaseConfig {
  private:
-  FTL_MAPPING mapping;  //!< Default: FTL_NK_MAPPING
-  float overProvision;  //!< Default: 0.25 (25%)
-  float gcThreshold;    //!< Default: 0.05 (5%)
-  uint64_t eraseCycle;  //!< Default: 100000
-  float warmup;         //!< Default: 1.0 (100%)
+  FTL_MAPPING mapping;         //!< Default: FTL_NK_MAPPING
+  float overProvision;         //!< Default: 0.25 (25%)
+  float gcThreshold;           //!< Default: 0.05 (5%)
+  uint64_t badBlockThreshold;  //!< Default: 100000
+  float warmup;                //!< Default: 1.0 (100%)
+  uint64_t reclaimBlock;       //!< Default: 1
+  float reclaimThreshold;      //!< Default: 0.1 (10%)
+  FTL_GC gcMode;               //!< Default: FTL_GC_MODE_0
 
   uint64_t N;  //!< Default: 32
   uint64_t K;  //!< Default: 32

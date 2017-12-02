@@ -19,24 +19,32 @@
 
 #include "ftl/config.hh"
 
+#include "log/trace.hh"
+
 namespace SimpleSSD {
 
 namespace FTL {
 
-const char NAME_MAPPING_MODE[] = "FTLMapping";
-const char NAME_OVERPROVISION_RATIO[] = "FTLOP";
-const char NAME_GC_THRESHOLD[] = "FTLGCThreshold";
-const char NAME_ERASE_CYCLE[] = "FTLEraseCycle";
+const char NAME_MAPPING_MODE[] = "MappingMode";
+const char NAME_OVERPROVISION_RATIO[] = "OverProvisioningRatio";
+const char NAME_GC_THRESHOLD[] = "GCThreshold";
+const char NAME_BAD_BLOCK_THRESHOLD[] = "EraseThreshold";
 const char NAME_WARM_UP_RATIO[] = "Warmup";
-const char NAME_NKMAP_N[] = "FTLMapN";
-const char NAME_NKMAP_K[] = "FTLMapK";
+const char NAME_NKMAP_N[] = "MapN";
+const char NAME_NKMAP_K[] = "MapK";
+const char NAME_GC_MODE[] = "GCMode";
+const char NAME_GC_RECLAIM_BLOCK[] = "GCReclaimBlocks";
+const char NAME_GC_RECLAIM_THRESHOLD[] = "GCReclaimThreshold";
 
 Config::Config() {
   mapping = FTL_NK_MAPPING;
   overProvision = 0.25f;
   gcThreshold = 0.05f;
-  eraseCycle = 100000;
+  badBlockThreshold = 100000;
   warmup = 1.f;
+  reclaimBlock = 1;
+  reclaimThreshold = 0.1f;
+  gcMode = FTL_GC_MODE_0;
 
   N = 32;
   K = 32;
@@ -54,11 +62,20 @@ bool Config::setConfig(const char *name, const char *value) {
   else if (MATCH_NAME(NAME_GC_THRESHOLD)) {
     gcThreshold = strtof(value, nullptr);
   }
-  else if (MATCH_NAME(NAME_ERASE_CYCLE)) {
-    eraseCycle = strtoul(value, nullptr, 10);
+  else if (MATCH_NAME(NAME_BAD_BLOCK_THRESHOLD)) {
+    badBlockThreshold = strtoul(value, nullptr, 10);
   }
   else if (MATCH_NAME(NAME_WARM_UP_RATIO)) {
     warmup = strtof(value, nullptr);
+  }
+  else if (MATCH_NAME(NAME_GC_MODE)) {
+    gcMode = (FTL_GC)strtoul(value, nullptr, 10);
+  }
+  else if (MATCH_NAME(NAME_GC_RECLAIM_BLOCK)) {
+    reclaimBlock = strtoul(value, nullptr, 10);
+  }
+  else if (MATCH_NAME(NAME_GC_RECLAIM_THRESHOLD)) {
+    reclaimThreshold = strtof(value, nullptr);
   }
   else if (MATCH_NAME(NAME_NKMAP_N)) {
     N = strtoul(value, nullptr, 10);
@@ -73,7 +90,15 @@ bool Config::setConfig(const char *name, const char *value) {
   return ret;
 }
 
-void Config::update() {}
+void Config::update() {
+  if (reclaimBlock == 0) {
+    Logger::panic("Invalid GCReclaimBlocks");
+  }
+
+  if (reclaimThreshold < gcThreshold) {
+    Logger::panic("Invalid GCReclaimThreshold");
+  }
+}
 
 int64_t Config::readInt(uint32_t idx) {
   int64_t ret = 0;
@@ -81,6 +106,9 @@ int64_t Config::readInt(uint32_t idx) {
   switch (idx) {
     case FTL_MAPPING_MODE:
       ret = mapping;
+      break;
+    case FTL_GC_MODE:
+      ret = gcMode;
       break;
   }
 
@@ -91,8 +119,11 @@ uint64_t Config::readUint(uint32_t idx) {
   uint64_t ret = 0;
 
   switch (idx) {
-    case FTL_ERASE_CYCLE:
-      ret = eraseCycle;
+    case FTL_BAD_BLOCK_THRESHOLD:
+      ret = badBlockThreshold;
+      break;
+    case FTL_GC_RECLAIM_BLOCK:
+      ret = reclaimBlock;
       break;
     case FTL_NKMAP_N:
       ret = N;
@@ -117,6 +148,9 @@ float Config::readFloat(uint32_t idx) {
       break;
     case FTL_WARM_UP_RATIO:
       ret = warmup;
+      break;
+    case FTL_GC_RECLAIM_THRESHOLD:
+      ret = reclaimThreshold;
       break;
   }
 

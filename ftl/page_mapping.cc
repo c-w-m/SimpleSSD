@@ -254,8 +254,11 @@ void PageMapping::eraseInternal(PAL::Request &req, uint64_t &tick) {
 
   pPAL->erase(req, tick);
 
-  // Insert block to free block list
-  freeBlocks.insert({req.blockIndex, block->second});
+  // Check erase count
+  if (block->second.getEraseCount() < conf.readUint(FTL_BAD_BLOCK_THRESHOLD)) {
+    // Insert block to free block list
+    freeBlocks.insert({req.blockIndex, block->second});
+  }
 
   // Remove block from block list
   blocks.erase(block);

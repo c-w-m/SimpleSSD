@@ -169,7 +169,15 @@ void ICL::trim(Request &req, uint64_t &tick) {
 }
 
 void ICL::format(LPNRange &range, uint64_t &tick) {
+  uint64_t beginAt = tick;
+
   pCache->format(range, tick);
+
+  Logger::debugprint(Logger::LOG_ICL,
+                     "FORMAT| LPN %" PRIu64 " + %" PRIu64 " | %" PRIu64
+                     " - %" PRIu64 " (%" PRIu64 ")",
+                     range.slpn, range.nlp, beginAt, tick,
+                     tick - beginAt);
 }
 
 void ICL::getLPNInfo(uint64_t &t, uint32_t &s) {

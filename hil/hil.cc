@@ -83,6 +83,9 @@ void HIL::trim(ICL::Request &req, uint64_t &tick) {
 }
 
 void HIL::format(LPNRange &range, bool erase, uint64_t &tick) {
+  Logger::debugprint(Logger::LOG_HIL, "FORMAT| LPN %" PRIu64 " + %" PRIu64,
+                     range.slpn, range.nlp);
+
   if (erase) {
     pICL->format(range, tick);
   }

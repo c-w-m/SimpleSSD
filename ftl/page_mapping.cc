@@ -126,7 +126,8 @@ void PageMapping::format(LPNRange &range, uint64_t &tick) {
 
   // Get blocks to erase
   std::sort(list.begin(), list.end());
-  std::unique(list.begin(), list.end());
+  auto last = std::unique(list.begin(), list.end());
+  list.erase(last, list.end());
 
   // Do GC only in specified blocks
   tick = doGarbageCollection(list, tick);

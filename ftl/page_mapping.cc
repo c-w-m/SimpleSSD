@@ -203,7 +203,88 @@ void PageMapping::selectVictimBlock(std::vector<uint32_t> &list,
 }
 
 uint64_t PageMapping::doGarbageCollection(uint64_t tick) {
-  return tick;
+  std::vector<uint32_t> blocksToReclaim;
+  PAL::Request req;
+  uint64_t beginAt;
+  uint64_t finishedAt = tick;
+
+  selectVictimBlock(blocksToReclaim, tick);
+
+  // Allocate new free block
+  if (!lastFreeBlock.first) {
+    lastFreeBlock.first = true;
+    lastFreeBlock.second = getFreeBlock();
+  }
+
+  // Get block
+  auto freeBlock = blocks.find(lastFreeBlock.second);
+
+  for (auto &iter : blocksToReclaim) {
+    auto block = blocks.find(iter);
+    uint64_t lpn;
+
+    beginAt = tick;
+
+    if (block == blocks.end()) {
+      Logger::panic("Invalid block");
+    }
+
+    // Copy valid pages to free block
+    for (uint32_t pageIndex = 0; pageIndex < pFTLParam->pagesInBlock;
+         pageIndex++) {
+      // Valid?
+      if (block->second.read(pageIndex, &lpn, tick)) {
+        // Get mapping table entry
+        auto mapping = table.find(lpn);
+
+        if (mapping == table.end()) {
+          Logger::panic("Invalid mapping table entry");
+        }
+
+        // Issue Read
+        req.blockIndex = mapping->second.first;
+        req.pageIndex = mapping->second.second;
+
+        pPAL->read(req, beginAt);
+
+        // Invalidate
+        block->second.invalidate(pageIndex);
+
+        // Update mapping table
+        mapping->second.first = lastFreeBlock.second;
+        mapping->second.second = freeBlock->second.getNextWritePageIndex();
+
+        // Issue Write
+        req.blockIndex = mapping->second.first;
+        req.pageIndex = mapping->second.second;
+
+        pPAL->write(req, beginAt);
+
+        // If this block is full, invalidate lastFreeBlock
+        if (freeBlock->second.getNextWritePageIndex() == 0) {
+          lastFreeBlock.second = getFreeBlock();
+
+          freeBlock = blocks.find(lastFreeBlock.second);
+        }
+      }
+    }
+
+    // Erase block
+    req.blockIndex = block->first;
+    req.pageIndex = 0;
+
+    eraseInternal(req, beginAt);
+
+    // Merge timing
+    finishedAt = MAX(finishedAt, beginAt);
+  }
+
+  // If this block is full, invalidate lastFreeBlock
+  if (freeBlock->second.getNextWritePageIndex() == 0) {
+    lastFreeBlock.first = false;
+  }
+
+  return finishedAt;
 }
 
 void PageMapping::readInternal(Request &req, uint64_t &tick) {

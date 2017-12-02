@@ -35,16 +35,17 @@ const char NAME_NKMAP_K[] = "MapK";
 const char NAME_GC_MODE[] = "GCMode";
 const char NAME_GC_RECLAIM_BLOCK[] = "GCReclaimBlocks";
 const char NAME_GC_RECLAIM_THRESHOLD[] = "GCReclaimThreshold";
+const char NAME_GC_EVICT_POLICY[] = "EvictPolicy";
 
 Config::Config() {
-  mapping = FTL_NK_MAPPING;
+  mapping = NK_MAPPING;
   overProvision = 0.25f;
   gcThreshold = 0.05f;
   badBlockThreshold = 100000;
   warmup = 1.f;
   reclaimBlock = 1;
   reclaimThreshold = 0.1f;
-  gcMode = FTL_GC_MODE_0;
+  gcMode = GC_MODE_0;
 
   N = 32;
   K = 32;
@@ -54,7 +55,7 @@ bool Config::setConfig(const char *name, const char *value) {
   bool ret = true;
 
   if (MATCH_NAME(NAME_MAPPING_MODE)) {
-    mapping = (FTL_MAPPING)strtoul(value, nullptr, 10);
+    mapping = (MAPPING)strtoul(value, nullptr, 10);
   }
   else if (MATCH_NAME(NAME_OVERPROVISION_RATIO)) {
     overProvision = strtof(value, nullptr);
@@ -69,13 +70,16 @@ bool Config::setConfig(const char *name, const char *value) {
     warmup = strtof(value, nullptr);
   }
   else if (MATCH_NAME(NAME_GC_MODE)) {
-    gcMode = (FTL_GC)strtoul(value, nullptr, 10);
+    gcMode = (GC_MODE)strtoul(value, nullptr, 10);
   }
   else if (MATCH_NAME(NAME_GC_RECLAIM_BLOCK)) {
     reclaimBlock = strtoul(value, nullptr, 10);
   }
   else if (MATCH_NAME(NAME_GC_RECLAIM_THRESHOLD)) {
     reclaimThreshold = strtof(value, nullptr);
+  }
+  else if (MATCH_NAME(NAME_GC_EVICT_POLICY)) {
+    evictPolicy = (EVICT_POLICY)strtoul(value, nullptr, 10);
   }
   else if (MATCH_NAME(NAME_NKMAP_N)) {
     N = strtoul(value, nullptr, 10);
@@ -109,6 +113,9 @@ int64_t Config::readInt(uint32_t idx) {
       break;
     case FTL_GC_MODE:
       ret = gcMode;
+      break;
+    case FTL_GC_EVICT_POLICY:
+      ret = evictPolicy;
       break;
   }
 

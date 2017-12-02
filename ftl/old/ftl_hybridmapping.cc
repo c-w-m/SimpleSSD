@@ -264,7 +264,6 @@ void LBMT::Group::to_string() {
  */
 
 HybridMapping::HybridMapping(FTL *f) : MappingTable(f) {
-  lastGCTick = 0;
   N_Data = param->mapping_N;
   K_Log = param->mapping_K;
 
@@ -560,7 +559,7 @@ bool HybridMapping::check_partial_merge(const Addr target_block,
 
 STATE HybridMapping::do_direct_erase(const Addr target_block,
                                      const Addr target_group,
-                                     const Addr *target_lpns) {
+                                     const Addr *target_lpns, Tick &tick) {
   SimpleSSD::PAL::Request req;
 
   if (log_block_MT->removeLogBlock(target_group, target_block) != SUCCESS) {
@@ -571,14 +570,14 @@ STATE HybridMapping::do_direct_erase(const Addr target_block,
 
   req.blockIndex = target_block;
 
-  lastGCTick += ftl->eraseInternal(req, curTick());
+  ftl->eraseInternal(req, tick);
   direct_erase_count++;
   return SUCCESS;
 }
 
 STATE HybridMapping::do_switch_merge(const Addr target_block,
                                      const Addr target_group,
-                                     const Addr *target_lpns) {
+                                     const Addr *target_lpns, Tick &tick) {
   SimpleSSD::PAL::Request req;
 
   if (target_lpns[0] == -1) {
@@ -608,7 +607,7 @@ STATE HybridMapping::do_switch_merge(const Addr target_block,
 
   req.blockIndex = current_pbn;
 
-  lastGCTick += ftl->eraseInternal(req, curTick());
+  ftl->eraseInternal(req, tick);
 
   switch_merge_count++;
   return SUCCESS;
@@ -616,7 +615,7 @@ STATE HybridMapping::do_switch_merge(const Addr target_block,
 
 STATE HybridMapping::do_reorder_merge(const Addr target_block,
                                       const Addr target_group,
-                                      const Addr *target_lpns) {
+                                      const Addr *target_lpns, Tick &tick) {
   SimpleSSD::PAL::Request req;
 
   if (target_lpns[0]) {
@@ -644,7 +643,7 @@ STATE HybridMapping::do_reorder_merge(const Addr target_block,
       req.blockIndex = read_ppn / param->page_per_block;
       req.pageIndex = read_ppn % param->page_per_block;
 
-      lastGCTick += ftl->readInternal(req, curTick(), true);
+      ftl->readInternal(req, tick, true);
       map_gc_move_read_count++;
     }
     invalid_old_page(new_lpn);  // invalidate and remove from lpmt if exists
@@ -657,7 +656,7 @@ STATE HybridMapping::do_reorder_merge(const Addr target_block,
     req.blockIndex = new_pbn;
     req.pageIndex = i;
 
-    lastGCTick += ftl->writeInternal(req, curTick(), true);
+    ftl->writeInternal(req, tick, true);
     map_gc_move_write_count++;
   }
   if (log_block_MT->removeLogBlock(target_group, target_block) != SUCCESS) {
@@ -671,11 +670,11 @@ STATE HybridMapping::do_reorder_merge(const Addr target_block,
   req.blockIndex = current_pbn;
   req.pageIndex = 0;
 
-  lastGCTick += ftl->eraseInternal(req, curTick());
+  ftl->eraseInternal(req, tick);
 
   req.blockIndex = target_block;
 
-  lastGCTick += ftl->eraseInternal(req, curTick());
+  ftl->eraseInternal(req, tick);
 
   reorder_merge_count++;
   return SUCCESS;
@@ -683,7 +682,7 @@ STATE HybridMapping::do_reorder_merge(const Addr target_block,
 
 STATE HybridMapping::do_partial_merge(const Addr target_block,
                                       const Addr target_group,
-                                      const Addr *target_lpns) {
+                                      const Addr *target_lpns, Tick &tick) {
   SimpleSSD::PAL::Request req;
 
   if (target_lpns[0] == -1) {
@@ -712,7 +711,7 @@ STATE HybridMapping::do_partial_merge(const Addr target_block,
       req.blockIndex = read_ppn / param->page_per_block;
       req.pageIndex = read_ppn % param->page_per_block;
 
-      lastGCTick += ftl->readInternal(req, curTick(), true);
+      ftl->readInternal(req, tick, true);
       map_gc_move_read_count++;
     }
     invalid_old_page(new_lpn);
@@ -721,7 +720,7 @@ STATE HybridMapping::do_partial_merge(const Addr target_block,
     if (physical_blocks[target_block].write_page(new_lpn, temp_i) == SUCCESS) {
       req.blockIndex = target_block;
       req.pageIndex = i;
-      lastGCTick += ftl->writeInternal(req, curTick(), true);
+      ftl->writeInternal(req, tick, true);
       map_gc_move_write_count++;
     }
   }
@@ -733,14 +732,14 @@ STATE HybridMapping::do_partial_merge(const Addr target_block,
   erase_block(current_pbn);
   req.blockIndex = current_pbn;
   req.pageIndex = 0;
-  lastGCTick += ftl->eraseInternal(req, curTick());
+  ftl->eraseInternal(req, tick);
   partial_merge_count++;
   return SUCCESS;
 }
 
 STATE HybridMapping::do_full_merge(const Addr target_block,
                                    const Addr target_group,
-                                   const Addr *target_lpns) {
+                                   const Addr *target_lpns, Tick &tick) {
   SimpleSSD::PAL::Request req;
 
   for (int i = 0; i < param->page_per_block; i++) {
@@ -764,7 +763,7 @@ STATE HybridMapping::do_full_merge(const Addr target_block,
       if (getppn(copy_lpn, copy_ppn) == SUCCESS) {
         req.blockIndex = copy_ppn / param->page_per_block;
         req.pageIndex = copy_ppn % param->page_per_block;
-        lastGCTick += ftl->readInternal(req, curTick(), true);
+        ftl->readInternal(req, tick, true);
         map_gc_move_read_count++;
       }
 
@@ -779,7 +778,7 @@ STATE HybridMapping::do_full_merge(const Addr target_block,
       req.blockIndex = free_block;
       req.pageIndex = j;
 
-      lastGCTick += ftl->writeInternal(req, curTick(), true);
+      ftl->writeInternal(req, tick, true);
       map_gc_move_write_count++;
     }
 
@@ -792,7 +791,7 @@ STATE HybridMapping::do_full_merge(const Addr target_block,
     req.blockIndex = current_pbn;
     req.pageIndex = 0;
 
-    lastGCTick += ftl->eraseInternal(req, curTick());
+    ftl->eraseInternal(req, tick);
     data_block_MT->set_pbn(target_lbn, free_block);
   }
 
@@ -805,14 +804,14 @@ STATE HybridMapping::do_full_merge(const Addr target_block,
   req.blockIndex = target_block;
   req.pageIndex = 0;
 
-  lastGCTick += ftl->eraseInternal(req, curTick());
+  ftl->eraseInternal(req, tick);
   full_merge_count++;
 
   return SUCCESS;
 }
 
-STATE HybridMapping::merge(const Addr lpn) {
-  MappingTable::merge(lpn);
+STATE HybridMapping::merge(const Addr lpn, Tick &tick) {
+  MappingTable::merge(lpn, tick);
 
   const Addr group_number = lpn / param->page_per_block / N_Data;
   Addr merge_target;
@@ -838,7 +837,7 @@ STATE HybridMapping::merge(const Addr lpn) {
    * check direct erase
    */
   if (check_direct_erase(merge_target, group_number, target_lpns)) {
-    out_state = do_direct_erase(merge_target, group_number, target_lpns);
+    out_state = do_direct_erase(merge_target, group_number, target_lpns, tick);
     delete target_lpns;
     return out_state;
   }
@@ -847,7 +846,7 @@ STATE HybridMapping::merge(const Addr lpn) {
    * check switch merge
    */
   if (check_switch_merge(merge_target, group_number, target_lpns)) {
-    out_state = do_switch_merge(merge_target, group_number, target_lpns);
+    out_state = do_switch_merge(merge_target, group_number, target_lpns, tick);
     delete target_lpns;
     return out_state;
   }
@@ -856,7 +855,7 @@ STATE HybridMapping::merge(const Addr lpn) {
    * check reorder merge
    */
   if (check_reorder_merge(merge_target, group_number, target_lpns)) {
-    out_state = do_reorder_merge(merge_target, group_number, target_lpns);
+    out_state = do_reorder_merge(merge_target, group_number, target_lpns, tick);
     delete target_lpns;
     return out_state;
   }
@@ -866,7 +865,7 @@ STATE HybridMapping::merge(const Addr lpn) {
    */
 
   if (check_partial_merge(merge_target, group_number, target_lpns)) {
-    out_state = do_partial_merge(merge_target, group_number, target_lpns);
+    out_state = do_partial_merge(merge_target, group_number, target_lpns, tick);
     delete target_lpns;
     return out_state;
   }
@@ -875,7 +874,7 @@ STATE HybridMapping::merge(const Addr lpn) {
    * do full merge
    */
 
-  out_state = do_full_merge(merge_target, group_number, target_lpns);
+  out_state = do_full_merge(merge_target, group_number, target_lpns, tick);
   delete target_lpns;
   return out_state;
 }
@@ -940,8 +939,7 @@ void HybridMapping::map_to_string(const Addr group_number) {
   log_page_MT->to_string(group_number);
   log_block_MT->to_string(group_number);
 }
-Tick HybridMapping::GarbageCollection() {
-  lastGCTick = 0;
+Tick HybridMapping::GarbageCollection(Tick tick) {
   global_gc_count++;
 
   STATE state = FAIL;
@@ -958,7 +956,7 @@ Tick HybridMapping::GarbageCollection() {
       }
     }
     if (max > 0) {
-      state = merge(selected_group_number * N_Data * param->page_per_block);
+      state = merge(selected_group_number * N_Data * param->page_per_block, tick);
     }
     else {
       gc_flag = false;
@@ -967,7 +965,7 @@ Tick HybridMapping::GarbageCollection() {
   }
   gc_flag = false;
 
-  return lastGCTick;
+  return tick;
 }
 
 void HybridMapping::PrintStats() {

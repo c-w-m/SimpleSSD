@@ -81,7 +81,7 @@ Tick FTL::write(SimpleSSD::FTL::Request &req, Tick arrived, bool init) {
 
   ftl_statistics.write_req_arrive(arrived);
 
-  FTLmapping->write(req.lpn, ppn);
+  FTLmapping->write(req.lpn, ppn, arrived);
   if (!init) {
     palRequest.blockIndex = ppn / param->page_per_block;
     palRequest.pageIndex = ppn % param->page_per_block;
@@ -90,7 +90,7 @@ Tick FTL::write(SimpleSSD::FTL::Request &req, Tick arrived, bool init) {
   }
 
   if (FTLmapping->need_gc()) {
-    FTLmapping->GarbageCollection();
+    FTLmapping->GarbageCollection(finished);
   }
 
   if (!init) {

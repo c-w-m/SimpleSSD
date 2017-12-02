@@ -54,7 +54,7 @@ void ICL::read(Request &req, uint64_t &tick) {
   reqInternal.offset = req.offset;
 
   for (uint64_t i = 0; i < req.range.nlp; i++) {
-    reqInternal.reqSubID = i;
+    reqInternal.reqSubID = i + 1;
     beginAt = tick;
 
     reqInternal.length = MIN(reqRemain, logicalPageSize - reqInternal.offset);
@@ -84,7 +84,7 @@ void ICL::write(Request &req, uint64_t &tick) {
   reqInternal.offset = req.offset;
 
   for (uint64_t i = 0; i < req.range.nlp; i++) {
-    reqInternal.reqSubID = i;
+    reqInternal.reqSubID = i + 1;
     beginAt = tick;
 
     reqInternal.length = MIN(reqRemain, logicalPageSize - reqInternal.offset);
@@ -114,7 +114,7 @@ void ICL::flush(Request &req, uint64_t &tick) {
   reqInternal.offset = req.offset;
 
   for (uint64_t i = 0; i < req.range.nlp; i++) {
-    reqInternal.reqSubID = i;
+    reqInternal.reqSubID = i + 1;
     beginAt = tick;
 
     reqInternal.length = MIN(reqRemain, logicalPageSize - reqInternal.offset);
@@ -144,7 +144,7 @@ void ICL::trim(Request &req, uint64_t &tick) {
   reqInternal.offset = req.offset;
 
   for (uint64_t i = 0; i < req.range.nlp; i++) {
-    reqInternal.reqSubID = i;
+    reqInternal.reqSubID = i + 1;
     beginAt = tick;
 
     reqInternal.length = MIN(reqRemain, logicalPageSize - reqInternal.offset);

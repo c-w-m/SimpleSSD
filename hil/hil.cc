@@ -42,7 +42,7 @@ void HIL::read(ICL::Request &req, uint64_t &tick) {
                      " + %" PRIu64,
                      req.range.slpn, req.range.nlp, req.offset, req.length);
 
-  req.reqID = reqCount++;
+  req.reqID = ++reqCount;
   pICL->read(req, tick);
 }
 
@@ -54,7 +54,7 @@ void HIL::write(ICL::Request &req, uint64_t &tick) {
                      " + %" PRIu64,
                      req.range.slpn, req.range.nlp, req.offset, req.length);
 
-  req.reqID = reqCount++;
+  req.reqID = ++reqCount;
   pICL->write(req, tick);
 }
 
@@ -66,7 +66,7 @@ void HIL::flush(ICL::Request &req, uint64_t &tick) {
                      " + %" PRIu64,
                      req.range.slpn, req.range.nlp, req.offset, req.length);
 
-  req.reqID = reqCount++;
+  req.reqID = ++reqCount;
   pICL->flush(req, tick);
 }
 
@@ -78,7 +78,7 @@ void HIL::trim(ICL::Request &req, uint64_t &tick) {
                      " + %" PRIu64,
                      req.range.slpn, req.range.nlp, req.offset, req.length);
 
-  req.reqID = reqCount++;
+  req.reqID = ++reqCount;
   pICL->trim(req, tick);
 }
 

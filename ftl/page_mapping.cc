@@ -235,6 +235,7 @@ void PageMapping::trimInternal(Request &req, uint64_t &tick) {
 }
 
 void PageMapping::eraseInternal(PAL::Request &req, uint64_t &tick) {
+  static uint64_t threshold = conf.readUint(FTL_BAD_BLOCK_THRESHOLD);
   auto block = blocks.find(req.blockIndex);
 
   // Sanity checks
@@ -256,7 +257,7 @@ void PageMapping::eraseInternal(PAL::Request &req, uint64_t &tick) {
   pPAL->erase(req, tick);
 
   // Check erase count
-  if (block->second.getEraseCount() < conf.readUint(FTL_BAD_BLOCK_THRESHOLD)) {
+  if (block->second.getEraseCount() < threshold) {
     // Insert block to free block list
     freeBlocks.insert({req.blockIndex, block->second});
   }

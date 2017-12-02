@@ -71,7 +71,7 @@ void PageMapping::read(Request &req, uint64_t &tick) {
 
   readInternal(req, tick);
 
-  Logger::debugprint(Logger::LOG_FTL_OLD,
+  Logger::debugprint(Logger::LOG_FTL_PAGE_MAPPING,
                      "READ  | LPN %" PRIu64 " | %" PRIu64 " - %" PRIu64
                      " (%" PRIu64 ")",
                      req.lpn, begin, tick, tick - begin);
@@ -82,7 +82,7 @@ void PageMapping::write(Request &req, uint64_t &tick) {
 
   writeInternal(req, tick);
 
-  Logger::debugprint(Logger::LOG_FTL_OLD,
+  Logger::debugprint(Logger::LOG_FTL_PAGE_MAPPING,
                      "WRITE | LPN %" PRIu64 " | %" PRIu64 " - %" PRIu64
                      " (%" PRIu64 ")",
                      req.lpn, begin, tick, tick - begin);
@@ -93,7 +93,7 @@ void PageMapping::trim(Request &req, uint64_t &tick) {
 
   trimInternal(req, tick);
 
-  Logger::debugprint(Logger::LOG_FTL_OLD,
+  Logger::debugprint(Logger::LOG_FTL_PAGE_MAPPING,
                      "TRIM  | LPN %" PRIu64 " | %" PRIu64 " - %" PRIu64
                      " (%" PRIu64 ")",
                      req.lpn, begin, tick, tick - begin);

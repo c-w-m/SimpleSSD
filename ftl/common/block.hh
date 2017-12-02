@@ -30,20 +30,26 @@ namespace FTL {
 class Block {
  private:
   const uint32_t pageCount;
+  uint32_t lastWrittenIndex;
 
   std::vector<bool> validBits;
 
   uint64_t lastAccessed;
+  uint32_t eraseCount;
+
+  uint32_t decreasePageIndex(uint32_t);
 
  public:
   Block(uint32_t);
   ~Block();
 
   uint64_t getLastAccessedTime();
-  void setLastAccessedTime(uint64_t);
-  bool getValid(uint32_t);
-  void setValid(uint32_t, bool);
+  uint32_t getEraseCount();
   uint32_t getValidPageCount();
+  uint32_t getLastWrittenPageIndex();
+  bool read(uint32_t, uint64_t);
+  bool write(uint32_t, uint64_t);
+  void erase();
 };
 
 }  // namespace FTL

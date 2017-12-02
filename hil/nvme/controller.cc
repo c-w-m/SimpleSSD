@@ -679,7 +679,7 @@ void Controller::identify(uint8_t *data) {
       //         commands
       // [01:01] 1 for Support Format NVM command
       // [00:00] 1 for Support Security Send and Security Receive commands
-      data[0x0100] = 0x08;
+      data[0x0100] = 0x0A;
       data[0x0101] = 0x00;
     }
 

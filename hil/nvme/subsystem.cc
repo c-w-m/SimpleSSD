@@ -975,6 +975,7 @@ bool Subsystem::formatNVM(SQEntryWrapper &req, CQEntryWrapper &resp,
 
   return true;
 }
+
 }  // namespace NVMe
 
 }  // namespace HIL

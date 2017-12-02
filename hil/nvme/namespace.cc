@@ -49,7 +49,8 @@ bool Namespace::submitCommand(SQEntryWrapper &req, CQEntryWrapper &resp,
   uint64_t beginAt = tick;
 
   if (beginAt < formatFinishedAt) {
-    resp.makeStatus(false, false, TYPE_GENERIC_COMMAND_STATUS, STATUS_FORMAT_IN_PROGRESS);
+    resp.makeStatus(false, false, TYPE_GENERIC_COMMAND_STATUS,
+                    STATUS_FORMAT_IN_PROGRESS);
 
     return true;
   }

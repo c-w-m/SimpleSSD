@@ -347,14 +347,16 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
 
   block->second.write(pageIndex, req.lpn, tick);
 
-  palRequest.blockIndex = block->first;
-  palRequest.pageIndex = pageIndex;
-
-  pPAL->write(palRequest, tick);
-
   // update mapping to table
-  mapping->second.first = palRequest.blockIndex;
-  mapping->second.second = palRequest.pageIndex;
+  mapping->second.first = block->first;
+  mapping->second.second = pageIndex;
+
+  if (sendToPAL) {
+    palRequest.blockIndex = mapping->second.first;
+    palRequest.pageIndex = mapping->second.second;
+
+    pPAL->write(palRequest, tick);
+  }
 
   // If this block is full, invalidate lastFreeBlock
   pageIndex = block->second.getNextWritePageIndex();

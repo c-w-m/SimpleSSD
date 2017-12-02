@@ -19,15 +19,11 @@
 
 #include "ftl/page_mapping.hh"
 
+#include <limits>
+
 #include "ftl/old/ftl.hh"
 #include "ftl/old/ftl_defs.hh"
 #include "log/trace.hh"
-#include "pal/old/Latency.h"
-#include "pal/old/LatencyMLC.h"
-#include "pal/old/LatencySLC.h"
-#include "pal/old/LatencyTLC.h"
-#include "pal/old/PAL2.h"
-#include "pal/old/PALStatistics.h"
 #include "util/algorithm.hh"
 
 namespace SimpleSSD {
@@ -35,7 +31,15 @@ namespace SimpleSSD {
 namespace FTL {
 
 PageMapping::PageMapping(Parameter *p, PAL::PAL *l, ConfigReader *c)
-    : AbstractFTL(p, l), pPAL(l), conf(c->ftlConfig), pFTLParam(p) {}
+    : AbstractFTL(p, l), pPAL(l), conf(c->ftlConfig), pFTLParam(p) {
+  Block temp(pFTLParam->pagesInBlock);
+
+  for (uint32_t i = 0; i < pFTLParam->totalPhysicalBlocks; i++) {
+    freeBlocks.insert({i, temp});
+  }
+
+  lastFreeBlock.first = false;
+}
 
 PageMapping::~PageMapping() {}
 
@@ -95,20 +99,175 @@ void PageMapping::trim(Request &req, uint64_t &tick) {
 }
 
 float PageMapping::freeBlockRatio() {
-  return (float)blocks.size() / pFTLParam->totalPhysicalBlocks;
+  return (float)freeBlocks.size() / pFTLParam->totalPhysicalBlocks;
+}
+
+uint32_t PageMapping::getFreeBlock() {
+  uint32_t blockIndex = 0;
+
+  if (freeBlocks.size() > 0) {
+    uint32_t eraseCount = std::numeric_limits<uint32_t>::max();
+    auto found = freeBlocks.end();
+
+    for (auto iter = freeBlocks.begin(); iter != freeBlocks.end(); iter++) {
+      uint32_t current = iter->second.getEraseCount();
+      if (current < eraseCount) {
+        eraseCount = current;
+        blockIndex = iter->first;
+        found = iter;
+      }
+    }
+
+    // Remove found block from free block list
+    freeBlocks.erase(found);
+  }
+  else {
+    Logger::panic("No free block left");
+  }
+
+  return blockIndex;
 }
 
 void PageMapping::selectVictimBlock(std::vector<uint32_t> &list) {}
 
-void PageMapping::doGarbageCollection(uint64_t &tick) {}
+uint64_t PageMapping::doGarbageCollection(uint64_t tick) {
+  return tick;
+}
 
-void PageMapping::readInternal(Request &req, uint64_t &tick) {}
+void PageMapping::readInternal(Request &req, uint64_t &tick) {
+  PAL::Request palRequest(req);
 
-void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {}
+  auto mapping = table.find(req.lpn);
 
-void PageMapping::trimInternal(Request &req, uint64_t &tick) {}
+  if (mapping != table.end()) {
+    palRequest.blockIndex = mapping->second.first;
+    palRequest.pageIndex = mapping->second.second;
 
-void PageMapping::eraseInternal(uint32_t blockIndex, uint64_t &tick) {}
+    auto block = blocks.find(palRequest.blockIndex);
+
+    if (block == blocks.end()) {
+      Logger::panic("Block is not in use");
+    }
+
+    block->second.read(palRequest.pageIndex, tick);
+
+    pPAL->read(palRequest, tick);
+  }
+}
+
+void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
+  PAL::Request palRequest(req);
+
+  // Allocate new free block
+  if (!lastFreeBlock.first) {
+    lastFreeBlock.first = true;
+    lastFreeBlock.second = getFreeBlock();
+
+    auto block = blocks.find(lastFreeBlock.second);
+
+    if (block != blocks.end()) {
+      Logger::panic("This is not free block");
+    }
+
+    blocks.insert({lastFreeBlock.second, Block(pFTLParam->pagesInBlock)});
+  }
+
+  auto mapping = table.find(req.lpn);
+
+  if (mapping != table.end()) {
+    // Invalidate current page
+    auto block = blocks.find(mapping->second.first);
+
+    if (block == blocks.end()) {
+      Logger::panic("No such block");
+    }
+
+    block->second.invalidate(mapping->second.second);
+  }
+
+  // Write data to free block
+  auto block = blocks.find(lastFreeBlock.second);
+
+  if (block == blocks.end()) {
+    Logger::panic("No such block");
+  }
+
+  uint32_t pageIndex = block->second.getNextWritePageIndex();
+
+  block->second.write(pageIndex, tick);
+
+  palRequest.blockIndex = block->first;
+  palRequest.pageIndex = pageIndex;
+
+  pPAL->write(palRequest, tick);
+
+  // Add new mapping to table
+  mapping->second.first = palRequest.blockIndex;
+  mapping->second.second = palRequest.pageIndex;
+
+  // If this block is full, invalidate lastFreeBlock
+  pageIndex = block->second.getNextWritePageIndex();
+
+  if (pageIndex == 0) {
+    lastFreeBlock.first = false;
+  }
+
+  // GC if needed
+  if (freeBlockRatio() < conf.readFloat(FTL_GC_THRESHOLD_RATIO)) {
+    doGarbageCollection(tick);
+  }
+}
+
+void PageMapping::trimInternal(Request &req, uint64_t &tick) {
+  auto mapping = table.find(req.lpn);
+
+  if (mapping != table.end()) {
+    auto block = blocks.find(mapping->second.first);
+
+    if (block == blocks.end()) {
+      Logger::panic("Block is not in use");
+    }
+
+    block->second.invalidate(mapping->second.second);
+
+    // If no valid pages in block, erase
+    if (block->second.getValidPageCount() == 0) {
+      PAL::Request palRequest(req);
+
+      palRequest.blockIndex = mapping->second.first;
+
+      eraseInternal(palRequest, tick);
+    }
+  }
+}
+
+void PageMapping::eraseInternal(PAL::Request &req, uint64_t &tick) {
+  auto block = blocks.find(req.blockIndex);
+
+  // Sanity checks
+  if (block == blocks.end()) {
+    Logger::panic("No such block");
+  }
+
+  if (freeBlocks.find(req.blockIndex) != freeBlocks.end()) {
+    Logger::panic("Corrupted");
+  }
+
+  if (block->second.getValidPageCount() != 0) {
+    Logger::panic("There are valid pages in victim block");
+  }
+
+  // Erase block
+  block->second.erase();
+
+  pPAL->erase(req, tick);
+
+  // Insert block to free block list
+  freeBlocks.insert({req.blockIndex, block->second});
+
+  // Remove block from block list
+  blocks.erase(block);
+}
 
 }  // namespace FTL
 

@@ -40,16 +40,18 @@ class PageMapping : public AbstractFTL {
   Parameter *pFTLParam;
 
   std::unordered_map<uint64_t, std::pair<uint32_t, uint32_t>> table;
-  std::unordered_map<uint32_t, uint32_t> eraseCount;
   std::unordered_map<uint32_t, Block> blocks;
+  std::unordered_map<uint32_t, Block> freeBlocks;
+  std::pair<bool, uint32_t> lastFreeBlock;
 
   float freeBlockRatio();
+  uint32_t getFreeBlock();
   void selectVictimBlock(std::vector<uint32_t> &);
-  void doGarbageCollection(uint64_t &);
+  uint64_t doGarbageCollection(uint64_t);
   void readInternal(Request &, uint64_t &);
   void writeInternal(Request &, uint64_t &, bool = true);
   void trimInternal(Request &, uint64_t &);
-  void eraseInternal(uint32_t, uint64_t &);
+  void eraseInternal(PAL::Request &, uint64_t &);
 
  public:
   PageMapping(Parameter *, PAL::PAL *, ConfigReader *);

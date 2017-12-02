@@ -26,21 +26,22 @@ namespace SimpleSSD {
 namespace FTL {
 
 Block::Block(uint32_t count)
-    : pageCount(count), lastWrittenIndex(0), lastAccessed(0), eraseCount(0) {
+    : pageCount(count), nextWritePageIndex(0), lastAccessed(0), eraseCount(0) {
   validBits.resize(pageCount);
+  erasedBits.resize(pageCount);
+
+  erase();
+  eraseCount = 0;
 }
 
 Block::~Block() {}
 
-uint32_t Block::decreasePageIndex(uint32_t pageIndex) {
-  if (pageIndex == 0) {
-    pageIndex = pageCount - 1;
-  }
-  else {
-    pageIndex--;
-  }
+void Block::increasePageIndex(uint32_t &pageIndex) {
+  pageIndex++;
 
-  return pageIndex;
+  if (pageIndex == pageCount) {
+    pageIndex = 0;
+  }
 }
 
 uint64_t Block::getLastAccessedTime() {
@@ -63,8 +64,8 @@ uint32_t Block::getValidPageCount() {
   return ret;
 }
 
-uint32_t Block::getLastWrittenPageIndex() {
-  return lastWrittenIndex;
+uint32_t Block::getNextWritePageIndex() {
+  return nextWritePageIndex;
 }
 
 bool Block::read(uint32_t pageIndex, uint64_t tick) {
@@ -81,31 +82,39 @@ bool Block::read(uint32_t pageIndex, uint64_t tick) {
 }
 
 bool Block::write(uint32_t pageIndex, uint64_t tick) {
-  bool valid = validBits.at(pageIndex);
+  bool valid = erasedBits.at(pageIndex);
 
-  if (!valid) {
-    if (decreasePageIndex(pageIndex) != lastWrittenIndex) {
+  if (valid) {
+    if (pageIndex != nextWritePageIndex) {
       Logger::panic("Write to block should sequential");
     }
 
     lastAccessed = tick;
+    erasedBits.at(pageIndex) = false;
     validBits.at(pageIndex) = true;
 
-    lastWrittenIndex = pageIndex;
+    increasePageIndex(nextWritePageIndex);
   }
   else {
-    Logger::panic("Write to valid page");
+    Logger::panic("Write to dirty page");
   }
 
-  return !valid;
+  return valid;
 }
 
 void Block::erase() {
   for (auto iter : validBits) {
     iter = false;
   }
+  for (auto iter : erasedBits) {
+    iter = true;
+  }
 
   eraseCount++;
+}
+
+void Block::invalidate(uint32_t pageIndex) {
+  validBits.at(pageIndex) = false;
 }
 
 }  // namespace FTL

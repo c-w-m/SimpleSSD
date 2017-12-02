@@ -229,14 +229,7 @@ void PageMapping::trimInternal(Request &req, uint64_t &tick) {
 
     block->second.invalidate(mapping->second.second);
 
-    // If no valid pages in block, erase
-    if (block->second.getValidPageCount() == 0) {
-      PAL::Request palRequest(req);
-
-      palRequest.blockIndex = mapping->second.first;
-
-      eraseInternal(palRequest, tick);
-    }
+    tick = doGarbageCollection(tick);
   }
 }
 

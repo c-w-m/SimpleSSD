@@ -49,7 +49,7 @@ FTLOLD::FTLOLD(Parameter *p, PAL::PAL *l, ConfigReader *c)
   old.page_size = 1;
   old.over_provide = pConf->readFloat(FTL_OVERPROVISION_RATIO);
   old.warmup = pConf->readFloat(FTL_WARM_UP_RATIO);
-  old.erase_cycle = pConf->readUint(FTL_ERASE_CYCLE);
+  old.erase_cycle = pConf->readUint(FTL_BAD_BLOCK_THRESHOLD);
   old.page_byte = p->pageSize;
   old.page_per_block = p->pagesInBlock;
 

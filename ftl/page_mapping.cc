@@ -118,6 +118,13 @@ uint32_t PageMapping::getFreeBlock() {
       }
     }
 
+    // Insert found block to block list
+    if (blocks.find(blockIndex) != blocks.end()) {
+      Logger::panic("Corrupted");
+    }
+
+    blocks.insert({blockIndex, found->second});
+
     // Remove found block from free block list
     freeBlocks.erase(found);
   }
@@ -162,14 +169,6 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   if (!lastFreeBlock.first) {
     lastFreeBlock.first = true;
     lastFreeBlock.second = getFreeBlock();
-
-    auto block = blocks.find(lastFreeBlock.second);
-
-    if (block != blocks.end()) {
-      Logger::panic("This is not free block");
-    }
-
-    blocks.insert({lastFreeBlock.second, Block(pFTLParam->pagesInBlock)});
   }
 
   auto mapping = table.find(req.lpn);

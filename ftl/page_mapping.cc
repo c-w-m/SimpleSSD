@@ -293,8 +293,6 @@ void PageMapping::trimInternal(Request &req, uint64_t &tick) {
     }
 
     block->second.invalidate(mapping->second.second);
-
-    tick = doGarbageCollection(tick);
   }
 }
 

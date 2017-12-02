@@ -221,7 +221,7 @@ void PageMapping::readInternal(Request &req, uint64_t &tick) {
       Logger::panic("Block is not in use");
     }
 
-    block->second.read(palRequest.pageIndex, tick);
+    block->second.read(palRequest.pageIndex, nullptr, tick);
 
     pPAL->read(palRequest, tick);
   }
@@ -258,7 +258,7 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
 
   uint32_t pageIndex = block->second.getNextWritePageIndex();
 
-  block->second.write(pageIndex, tick);
+  block->second.write(pageIndex, req.lpn, tick);
 
   palRequest.blockIndex = block->first;
   palRequest.pageIndex = pageIndex;

@@ -41,10 +41,10 @@ FTL::FTL(ConfigReader *c) : pConf(c) {
   param.pageSize = palparam->superPageSize;
 
   switch (pConf->ftlConfig.readInt(FTL_MAPPING_MODE)) {
-    case FTL_PAGE_MAPPING:
+    case PAGE_MAPPING:
       pFTL = new PageMapping(&param, pPAL, pConf);
       break;
-    case FTL_NK_MAPPING:
+    case NK_MAPPING:
       pFTL = new FTLOLD(&param, pPAL, pConf);
       break;
   }

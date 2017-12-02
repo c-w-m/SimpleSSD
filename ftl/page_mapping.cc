@@ -329,6 +329,12 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
 
     block->second.invalidate(mapping->second.second);
   }
+  else {
+    // Create empty mapping
+    table.insert({req.lpn, std::pair<uint32_t, uint32_t>()});
+
+    mapping = table.find(req.lpn);
+  }
 
   // Write data to free block
   auto block = blocks.find(lastFreeBlock.second);
@@ -346,7 +352,7 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
 
   pPAL->write(palRequest, tick);
 
-  // Add new mapping to table
+  // update mapping to table
   mapping->second.first = palRequest.blockIndex;
   mapping->second.second = palRequest.pageIndex;
 

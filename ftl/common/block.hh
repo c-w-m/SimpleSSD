@@ -34,6 +34,7 @@ class Block {
 
   std::vector<bool> validBits;
   std::vector<bool> erasedBits;
+  std::vector<uint64_t> lpns;
 
   uint64_t lastAccessed;
   uint32_t eraseCount;
@@ -48,8 +49,8 @@ class Block {
   uint32_t getEraseCount();
   uint32_t getValidPageCount();
   uint32_t getNextWritePageIndex();
-  bool read(uint32_t, uint64_t);
-  bool write(uint32_t, uint64_t);
+  bool read(uint32_t, uint64_t *, uint64_t);
+  bool write(uint32_t, uint64_t, uint64_t);
   void erase();
   void invalidate(uint32_t);
 };

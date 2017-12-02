@@ -111,6 +111,7 @@ void Block::erase() {
   }
 
   eraseCount++;
+  nextWritePageIndex = 0;
 }
 
 void Block::invalidate(uint32_t pageIndex) {

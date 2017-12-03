@@ -183,7 +183,10 @@ void PageMapping::selectVictimBlock(std::vector<uint32_t> &list,
   list.clear();
 
   // Calculate number of blocks to reclaim
-  if (mode == GC_MODE_1) {
+  if (mode == GC_MODE_0) {
+    // DO NOTHING
+  }
+  else if (mode == GC_MODE_1) {
     static const float t = conf.readFloat(FTL_GC_RECLAIM_THRESHOLD);
 
     nBlocks = pFTLParam->totalPhysicalBlocks * t - freeBlocks.size();

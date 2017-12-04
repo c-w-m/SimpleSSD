@@ -118,8 +118,8 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
     addr.Plane = 0;
   }
   else {
-    addr.Block = req.blockIndex / param.plane;
-    addr.Plane = req.blockIndex % param.plane;
+    addr.Block = req.blockIndex % param.block;
+    addr.Plane = req.blockIndex / param.block;
   }
 
   for (uint32_t c = 0; c < param.channel; c++) {

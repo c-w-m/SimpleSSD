@@ -126,7 +126,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
     for (uint32_t p = 0; p < param.package; p++) {
       for (uint32_t d = 0; d < param.die; d++) {
         addr.Channel = c;
-        addr.Package = 0;
+        addr.Package = p;
         addr.Die = d;
 
         list.push_back(addr);

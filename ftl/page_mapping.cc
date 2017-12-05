@@ -293,7 +293,7 @@ uint64_t PageMapping::doGarbageCollection(
         mapping->second.first = lastFreeBlock.second;
         mapping->second.second = freeBlock->second.getNextWritePageIndex();
 
-        freeBlock->second.write(req.pageIndex, lpn, beginAt);
+        freeBlock->second.write(mapping->second.second, lpn, beginAt);
 
         // Issue Write
         req.blockIndex = mapping->second.first;

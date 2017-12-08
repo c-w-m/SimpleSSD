@@ -287,9 +287,6 @@ bool GenericCache::write(FTL::Request &req, uint64_t &tick) {
 bool GenericCache::flush(FTL::Request &req, uint64_t &tick) {
   bool ret = false;
 
-  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "FLUSH | LPN %" PRIu64,
-                     req.lpn);
-
   if (useReadCaching || useWriteCaching) {
     uint32_t setIdx = calcSet(req.lpn);
     uint32_t i;

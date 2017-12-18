@@ -41,6 +41,18 @@ typedef struct {
   uint16_t maxQueueEntry;
 } ConfigData;
 
+class DMAInterface {
+ protected:
+  Interface *pInterface;
+
+ public:
+  DMAInterface(ConfigData *);
+  virtual ~DMAInterface() = 0;
+
+  virtual uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t &) = 0;
+  virtual uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t &) = 0;
+};
+
 struct PRP {
   uint64_t addr;
   uint64_t size;
@@ -49,9 +61,8 @@ struct PRP {
   PRP(uint64_t, uint64_t);
 };
 
-class PRPList {
+class PRPList : public DMAInterface {
  private:
-  Interface *pInterface;
   std::vector<PRP> prpList;
   uint64_t totalSize;
   uint64_t pagesize;
@@ -63,8 +74,8 @@ class PRPList {
   PRPList(ConfigData *, uint64_t, uint64_t, uint64_t);
   PRPList(ConfigData *, uint64_t, uint64_t, bool);
 
-  uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t &);
-  uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t &);
+  uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t &) override;
+  uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t &) override;
 };
 
 union SGLDescriptor {
@@ -89,9 +100,8 @@ struct Chunk {
   Chunk(uint64_t, uint32_t, bool);
 };
 
-class SGL {
+class SGL : public DMAInterface {
  private:
-  Interface *pInterface;
   std::vector<Chunk> list;
   uint64_t totalSize;
 
@@ -101,8 +111,8 @@ class SGL {
  public:
   SGL(ConfigData *, uint64_t, uint64_t);
 
-  uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t &);
-  uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t &);
+  uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t &) override;
+  uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t &) override;
 };
 
 }  // namespace NVMe

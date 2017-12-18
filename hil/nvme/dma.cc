@@ -33,9 +33,7 @@ PRP::PRP() : addr(0), size(0) {}
 PRP::PRP(uint64_t address, uint64_t s) : addr(address), size(s) {}
 
 PRPList::PRPList(ConfigData *cfg, uint64_t prp1, uint64_t prp2, uint64_t size)
-    : pInterface(cfg->pInterface),
-      totalSize(size),
-      pagesize(cfg->memoryPageSize) {
+    : DMAInterface(cfg), totalSize(size), pagesize(cfg->memoryPageSize) {
   uint64_t prp1Size = getPRPSize(prp1);
   uint64_t prp2Size = getPRPSize(prp2);
 
@@ -79,9 +77,7 @@ PRPList::PRPList(ConfigData *cfg, uint64_t prp1, uint64_t prp2, uint64_t size)
 }
 
 PRPList::PRPList(ConfigData *cfg, uint64_t base, uint64_t size, bool cont)
-    : pInterface(cfg->pInterface),
-      totalSize(size),
-      pagesize(cfg->memoryPageSize) {
+    : DMAInterface(cfg), totalSize(size), pagesize(cfg->memoryPageSize) {
   if (cont) {
     prpList.push_back(PRP(base, size));
   }
@@ -227,8 +223,7 @@ Chunk::Chunk() : addr(0), length(0), ignore(true) {}
 
 Chunk::Chunk(uint64_t a, uint32_t l, bool i) : addr(a), length(l), ignore(i) {}
 
-SGL::SGL(ConfigData *cfg, uint64_t prp1, uint64_t prp2)
-    : pInterface(cfg->pInterface) {
+SGL::SGL(ConfigData *cfg, uint64_t prp1, uint64_t prp2) : DMAInterface(cfg) {
   SGLDescriptor desc;
 
   // Create first SGL descriptor from PRP pointers
@@ -363,8 +358,8 @@ uint64_t SGL::write(uint64_t offset, uint64_t length, uint8_t *buffer,
       written = MIN(iter.length, length - totalWritten);
 
       if (!iter.ignore) {
-        pInterface->dmaWrite(iter.addr, written, buffer ? buffer + totalWritten : NULL,
-                            tick);
+        pInterface->dmaWrite(iter.addr, written,
+                             buffer ? buffer + totalWritten : NULL, tick);
       }
 
       totalWritten += written;
@@ -380,7 +375,8 @@ uint64_t SGL::write(uint64_t offset, uint64_t length, uint8_t *buffer,
       written = MIN(iter.length - totalWritten, length);
 
       if (!iter.ignore) {
-        delay = pInterface->dmaWrite(iter.addr + totalWritten, written, buffer, tick);
+        delay = pInterface->dmaWrite(iter.addr + totalWritten, written, buffer,
+                                     tick);
       }
 
       totalWritten = written;

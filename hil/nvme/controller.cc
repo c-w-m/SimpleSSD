@@ -912,7 +912,7 @@ void Controller::identify(uint8_t *data) {
       // [00:00] 1 for Support SGLs in NVM Command Set
       data[0x0218] = 0x01;
       data[0x0219] = 0x00;
-      data[0x021A] = 0x15;
+      data[0x021A] = 0x17;
       data[0x021B] = 0x00;
     }
 

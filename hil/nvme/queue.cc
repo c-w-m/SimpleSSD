@@ -35,7 +35,11 @@ CQEntry::_CQEntry() {
 
 SQEntryWrapper::_SQEntryWrapper(SQEntry &sqdata, uint16_t sqid, uint16_t cqid,
                                 uint16_t sqhead)
-    : entry(sqdata), sqID(sqid), cqID(cqid), sqHead(sqhead), useSGL(false) {}
+    : entry(sqdata), sqID(sqid), cqID(cqid), sqHead(sqhead), useSGL(true) {
+  if ((sqdata.dword0.fuse >> 6) == 0x00) {
+    useSGL = false;
+  }
+}
 
 CQEntryWrapper::_CQEntryWrapper(SQEntryWrapper &sqew) {
   cqID = sqew.cqID;

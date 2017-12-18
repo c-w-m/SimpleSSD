@@ -35,7 +35,7 @@ CQEntry::_CQEntry() {
 
 SQEntryWrapper::_SQEntryWrapper(SQEntry &sqdata, uint16_t sqid, uint16_t cqid,
                                 uint16_t sqhead)
-    : entry(sqdata), sqID(sqid), cqID(cqid), sqHead(sqhead) {}
+    : entry(sqdata), sqID(sqid), cqID(cqid), sqHead(sqhead), useSGL(false) {}
 
 CQEntryWrapper::_CQEntryWrapper(SQEntryWrapper &sqew) {
   cqID = sqew.cqID;
@@ -88,7 +88,7 @@ uint16_t Queue::getSize() {
   return size;
 }
 
-void Queue::setBase(PRPList *p, uint64_t s) {
+void Queue::setBase(DMAInterface *p, uint64_t s) {
   base = p;
   stride = s;
 }

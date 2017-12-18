@@ -67,6 +67,44 @@ class PRPList {
   uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t &);
 };
 
+union SGLDescriptor {
+  uint8_t data[16];
+  struct {
+    uint64_t address;
+    uint32_t length;
+    uint8_t reserved[3];
+    uint8_t id;
+  };
+
+  SGLDescriptor();
+};
+
+struct Chunk {
+  uint64_t addr;
+  uint32_t length;
+
+  bool ignore;
+
+  Chunk();
+  Chunk(uint64_t, uint32_t, bool);
+};
+
+class SGL {
+ private:
+  Interface *pInterface;
+  std::vector<Chunk> list;
+  uint64_t totalSize;
+
+  void parseSGLDescriptor(SGLDescriptor &);
+  void parseSGLSegment(uint64_t, uint32_t);
+
+ public:
+  SGL(ConfigData *, uint64_t, uint64_t);
+
+  uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t &);
+  uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t &);
+};
+
 }  // namespace NVMe
 
 }  // namespace HIL

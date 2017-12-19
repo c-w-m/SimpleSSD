@@ -50,17 +50,6 @@ typedef union _SQEntry {
     uint32_t dword14;
     uint32_t dword15;
   };
-  struct {
-    struct {
-      uint8_t opcode;
-      uint8_t reserved1;
-      uint16_t commandID;
-    } dword0;
-    uint8_t fcType;
-    uint8_t reserved2[3];
-    uint32_t reserved3[13];
-    uint32_t fcTypeSpecific;
-  } fabric;
 
   _SQEntry();
 } SQEntry;

@@ -35,6 +35,7 @@ namespace NVMe {
 #define MAKE_SGL_ID(type, subtype) \
   (uint8_t)(((type << 4) & 0xF0) | (subtype & 0x0F))
 #define SGL_TYPE(id) (uint8_t)(id >> 4)
+#define SGL_SUBTYPE(id) (uint8_t)(id & 0x0F)
 
 typedef union _HealthInfo {
   uint8_t data[0x200];
@@ -269,6 +270,15 @@ typedef enum {
   STATUS_ATTRIBUTE_CONFLICT = 0x80,
   STATUS_INVALID_PROTECTION_INFORMATION,
   STATUS_WRITE_TO_READ_ONLY_RANGE,
+
+  /** Fabric Command Errors **/
+  STATUS_CONNECT_INCOMPATIBLE_FORMAT = 0x80,
+  STATUS_CONNECT_CONTROLLER_BUSY,
+  STATUS_CONNECT_INVALID_PARAMETERS,
+  STATUS_CONNECT_RESTART_DISCOVERY,
+  STATUS_CONNECT_INVALID_HOST,
+  STATUS_DISCOVERY_RESTART = 0x90,
+  STATUS_AUTHENTICATION_REQUIRED
 } ERROR_CODE;
 
 typedef enum {

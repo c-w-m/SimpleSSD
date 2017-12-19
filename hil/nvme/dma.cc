@@ -223,12 +223,17 @@ Chunk::Chunk() : addr(0), length(0), ignore(true) {}
 
 Chunk::Chunk(uint64_t a, uint32_t l, bool i) : addr(a), length(l), ignore(i) {}
 
-SGL::SGL(ConfigData *cfg, uint64_t prp1, uint64_t prp2) : DMAInterface(cfg) {
+SGL::SGL(ConfigData *cfg, uint64_t prp1, uint64_t prp2)
+    : DMAInterface(cfg), totalSize(0) {
   SGLDescriptor desc;
 
   // Create first SGL descriptor from PRP pointers
   memcpy(desc.data, &prp1, 8);
   memcpy(desc.data + 8, &prp2, 8);
+
+  if (SGL_SUBTYPE(desc.id) != SUBTYPE_ADDRESS) {
+    Logger::panic("Unexpected SGL subtype");
+  }
 
   // Check type
   if (SGL_TYPE(desc.id) == TYPE_DATA_BLOCK_DESCRIPTOR ||
@@ -248,9 +253,13 @@ void SGL::parseSGLDescriptor(SGLDescriptor &desc) {
     case TYPE_DATA_BLOCK_DESCRIPTOR:
     case TYPE_KEYED_DATA_BLOCK_DESCRIPTOR:
       list.push_back(Chunk(desc.address, desc.length, false));
+      totalSize += desc.length;
+
       break;
     case TYPE_BIT_BUCKET_DESCRIPTOR:
       list.push_back(Chunk(desc.address, desc.length, true));
+      totalSize += desc.length;
+
       break;
     default:
       Logger::panic("Invalid SGL descriptor");

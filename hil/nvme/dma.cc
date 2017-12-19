@@ -231,10 +231,6 @@ SGL::SGL(ConfigData *cfg, uint64_t prp1, uint64_t prp2)
   memcpy(desc.data, &prp1, 8);
   memcpy(desc.data + 8, &prp2, 8);
 
-  if (SGL_SUBTYPE(desc.id) != SUBTYPE_ADDRESS) {
-    Logger::panic("Unexpected SGL subtype");
-  }
-
   // Check type
   if (SGL_TYPE(desc.id) == TYPE_DATA_BLOCK_DESCRIPTOR ||
       SGL_TYPE(desc.id) == TYPE_KEYED_DATA_BLOCK_DESCRIPTOR) {
@@ -264,6 +260,10 @@ void SGL::parseSGLDescriptor(SGLDescriptor &desc) {
     default:
       Logger::panic("Invalid SGL descriptor");
       break;
+  }
+
+  if (SGL_SUBTYPE(desc.id) != SUBTYPE_ADDRESS) {
+    Logger::panic("Unexpected SGL subtype");
   }
 }
 

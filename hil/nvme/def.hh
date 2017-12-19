@@ -35,6 +35,7 @@ namespace NVMe {
 #define MAKE_SGL_ID(type, subtype) \
   (uint8_t)(((type << 4) & 0xF0) | (subtype & 0x0F))
 #define SGL_TYPE(id) (uint8_t)(id >> 4)
+#define SGL_SUBTYPE(id) (uint8_t)(id & 0x0F)
 
 typedef union _HealthInfo {
   uint8_t data[0x200];

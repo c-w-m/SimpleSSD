@@ -931,7 +931,30 @@ void Controller::identify(uint8_t *data) {
     memset(data + 0x0400, 0, 768);
 
     // NVMe over Fabric
-    memset(data + 0x0700, 0, 256);
+    {
+      // I/O Queue Command Capsule Supported Size
+      *(uint32_t *)(data +0x0700) = 4;
+
+      // I/O Queue Response Capsule Supported Size
+      *(uint32_t *)(data + 0x0704) = 1;
+
+      // In Capsule Data Offset
+      *(uint16_t *)(data + 0x0706) = 0;
+
+      // Controller Attributes
+      {
+        // [Bits ] Description
+        // [01:07] Reserved
+        // [00:00] 0 for dynamic controller model, 1 for static controller model
+        data[0x0708] = 0x00;
+      }
+
+      // Maximum SGL Data Block Descriptors
+      data[0x0709] = 0x00;  // Unlimited
+
+      // Reserved
+      memset(data + 0x070A, 0, 244);
+    }
   }
 
   /** Power State Descriptors **/

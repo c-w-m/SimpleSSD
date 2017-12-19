@@ -47,7 +47,7 @@ class DMAInterface {
 
  public:
   DMAInterface(ConfigData *);
-  virtual ~DMAInterface() = 0;
+  virtual ~DMAInterface();
 
   virtual uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t &) = 0;
   virtual uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t &) = 0;
@@ -73,6 +73,7 @@ class PRPList : public DMAInterface {
  public:
   PRPList(ConfigData *, uint64_t, uint64_t, uint64_t);
   PRPList(ConfigData *, uint64_t, uint64_t, bool);
+  ~PRPList();
 
   uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t &) override;
   uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t &) override;
@@ -110,6 +111,7 @@ class SGL : public DMAInterface {
 
  public:
   SGL(ConfigData *, uint64_t, uint64_t);
+  ~SGL();
 
   uint64_t read(uint64_t, uint64_t, uint8_t *, uint64_t &) override;
   uint64_t write(uint64_t, uint64_t, uint8_t *, uint64_t &) override;

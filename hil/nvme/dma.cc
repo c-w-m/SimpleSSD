@@ -28,6 +28,10 @@ namespace HIL {
 
 namespace NVMe {
 
+DMAInterface::DMAInterface(ConfigData *cfg) : pInterface(cfg->pInterface) {}
+
+DMAInterface::~DMAInterface() {}
+
 PRP::PRP() : addr(0), size(0) {}
 
 PRP::PRP(uint64_t address, uint64_t s) : addr(address), size(s) {}
@@ -85,6 +89,8 @@ PRPList::PRPList(ConfigData *cfg, uint64_t base, uint64_t size, bool cont)
     getPRPListFromPRP(base, size);
   }
 }
+
+PRPList::~PRPList() {}
 
 void PRPList::getPRPListFromPRP(uint64_t base, uint64_t size) {
   uint64_t currentSize = 0;
@@ -243,6 +249,8 @@ SGL::SGL(ConfigData *cfg, uint64_t prp1, uint64_t prp2)
     parseSGLSegment(desc.address, desc.length);
   }
 }
+
+SGL::~SGL() {}
 
 void SGL::parseSGLDescriptor(SGLDescriptor &desc) {
   switch (SGL_TYPE(desc.id)) {

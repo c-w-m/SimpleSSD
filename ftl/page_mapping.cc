@@ -420,8 +420,8 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
     doGarbageCollection(list, tick);
 
     Logger::debugprint(Logger::LOG_FTL_PAGE_MAPPING,
-                       "After GC: Free block: %" PRIu64
-                       ", Used block: %" PRIu64 ", Total block: %" PRIu64,
+                       "After GC: Free block: %" PRIu64 ", Used block: %" PRIu64
+                       ", Total block: %" PRIu64,
                        freeBlocks.size(), blocks.size(),
                        pFTLParam->totalPhysicalBlocks);
   }

@@ -58,7 +58,6 @@ Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
   if (conf.readBoolean(NVME_ENABLE_DEFAULT_NAMESPACE)) {
     Namespace::Information info;
     uint32_t lba = (uint32_t)conf.readUint(NVME_LBA_SIZE);
-    uint32_t lbaRatio = logicalPageSize / lba;
 
     for (info.lbaFormatIndex = 0; info.lbaFormatIndex < nLBAFormat;
          info.lbaFormatIndex++) {
@@ -74,7 +73,7 @@ Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
     }
 
     // Fill Namespace information
-    info.size = totalLogicalPages * lbaRatio;
+    info.size = totalLogicalPages * logicalPageSize / lba;
     info.capacity = info.size;
     info.dataProtectionSettings = 0x00;
     info.namespaceSharingCapabilities = 0x00;
@@ -991,6 +990,8 @@ bool Subsystem::formatNVM(SQEntryWrapper &req, CQEntryWrapper &resp,
     if (info) {
       info->lbaFormatIndex = lbaf;
       info->lbaSize = lbaSize[lbaf];
+      info->size = totalLogicalPages * logicalPageSize / info->lbaSize;
+      info->capacity = info->size;
 
       // Send format command to HIL
       pHIL->format(info->range, ses == 0x01, tick);

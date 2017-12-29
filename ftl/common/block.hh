@@ -39,8 +39,6 @@ class Block {
   uint64_t lastAccessed;
   uint32_t eraseCount;
 
-  void increasePageIndex(uint32_t &);
-
  public:
   Block(uint32_t);
   ~Block();

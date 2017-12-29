@@ -37,14 +37,6 @@ Block::Block(uint32_t count)
 
 Block::~Block() {}
 
-void Block::increasePageIndex(uint32_t &pageIndex) {
-  pageIndex++;
-
-  if (pageIndex == pageCount) {
-    pageIndex = 0;
-  }
-}
-
 uint64_t Block::getLastAccessedTime() {
   return lastAccessed;
 }
@@ -96,7 +88,7 @@ bool Block::write(uint32_t pageIndex, uint64_t lpn, uint64_t tick) {
     validBits.at(pageIndex) = true;
     lpns.at(pageIndex) = lpn;
 
-    increasePageIndex(nextWritePageIndex);
+    nextWritePageIndex++;
   }
   else {
     Logger::panic("Write to dirty page");

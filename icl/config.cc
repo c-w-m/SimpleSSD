@@ -33,6 +33,15 @@ const char NAME_EVICT_POLICY[] = "EvictPolicy";
 const char NAME_SET_SIZE[] = "CacheSetSize";
 const char NAME_WAY_SIZE[] = "CacheWaySize";
 
+// TODO: seperate This
+const char NAME_DRAM_CHANNEL = "DRAMChannel";
+const char NAME_DRAM_BUS_WIDTH = "DRAMBusWidth";
+const char NAME_DRAM_PAGE_SIZE = "DRAMPageSize";
+const char NAME_DRAM_TIMING_CK = "DRAMtCK";
+const char NAME_DRAM_TIMING_RCD = "DRAMtRCD";
+const char NAME_DRAM_TIMING_CL = "DRAMtCL";
+const char NAME_DRAM_TIMING_RP = "DRAMtRP";
+
 Config::Config() {
   readCaching = false;
   writeCaching = true;
@@ -121,6 +130,27 @@ bool Config::setConfig(const char *name, const char *value) {
   }
   else if (MATCH_NAME(NAME_WAY_SIZE)) {
     cacheWaySize = strtoul(value, nullptr, 10);
+  }
+  else if (MATCH_NAME(NAME_DRAM_CHANNEL)) {
+    dram.channel = strtoul(value, nullptr, 10);
+  }
+  else if (MATCH_NAME(NAME_DRAM_BUS_WIDTH)) {
+    dram.busWidth = strtoul(value, nullptr, 10);
+  }
+  else if (MATCH_NAME(NAME_DRAM_PAGE_SIZE)) {
+    dram.pageSize = strtoul(value, nullptr, 10);
+  }
+  else if (MATCH_NAME(NAME_DRAM_TIMING_CK)) {
+    dramTiming.tCK = strtoul(value, nullptr, 10);
+  }
+  else if (MATCH_NAME(NAME_DRAM_TIMING_RCD)) {
+    dramTiming.tRCD = strtoul(value, nullptr, 10);
+  }
+  else if (MATCH_NAME(NAME_DRAM_TIMING_CL)) {
+    dramTiming.tCL = strtoul(value, nullptr, 10);
+  }
+  else if (MATCH_NAME(NAME_DRAM_TIMING_RP)) {
+    dramTiming.tRP = strtoul(value, nullptr, 10);
   }
   else {
     ret = false;

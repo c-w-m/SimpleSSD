@@ -34,13 +34,13 @@ const char NAME_SET_SIZE[] = "CacheSetSize";
 const char NAME_WAY_SIZE[] = "CacheWaySize";
 
 // TODO: seperate This
-const char NAME_DRAM_CHANNEL = "DRAMChannel";
-const char NAME_DRAM_BUS_WIDTH = "DRAMBusWidth";
-const char NAME_DRAM_PAGE_SIZE = "DRAMPageSize";
-const char NAME_DRAM_TIMING_CK = "DRAMtCK";
-const char NAME_DRAM_TIMING_RCD = "DRAMtRCD";
-const char NAME_DRAM_TIMING_CL = "DRAMtCL";
-const char NAME_DRAM_TIMING_RP = "DRAMtRP";
+const char NAME_DRAM_CHANNEL[] = "DRAMChannel";
+const char NAME_DRAM_BUS_WIDTH[] = "DRAMBusWidth";
+const char NAME_DRAM_PAGE_SIZE[] = "DRAMPageSize";
+const char NAME_DRAM_TIMING_CK[] = "DRAMtCK";
+const char NAME_DRAM_TIMING_RCD[] = "DRAMtRCD";
+const char NAME_DRAM_TIMING_CL[] = "DRAMtCL";
+const char NAME_DRAM_TIMING_RP[] = "DRAMtRP";
 
 Config::Config() {
   readCaching = false;

@@ -36,7 +36,8 @@ Namespace::Namespace(Subsystem *p, ConfigData *c)
       conf(c->pConfigReader->nvmeConfig),
       nsid(NSID_NONE),
       attached(false),
-      allocated(false) {}
+      allocated(false),
+      formatFinishedAt(0) {}
 
 Namespace::~Namespace() {
   if (pDisk) {

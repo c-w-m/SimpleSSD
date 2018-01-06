@@ -116,7 +116,7 @@ void Config::update() {
   bool fail = false;
 
   for (auto iter : _pageAllocation) {
-    if (iter == 'C' | iter == 'c') {
+    if ((iter == 'C') | (iter == 'c')) {
       if (check & INDEX_CHANNEL) {
         fail = true;
       }
@@ -124,7 +124,7 @@ void Config::update() {
       PageAllocation[i++] = INDEX_CHANNEL;
       check |= INDEX_CHANNEL;
     }
-    else if (iter == 'W' | iter == 'w') {
+    else if ((iter == 'W') | (iter == 'w')) {
       if (check & INDEX_PACKAGE) {
         fail = true;
       }
@@ -132,7 +132,7 @@ void Config::update() {
       PageAllocation[i++] = INDEX_PACKAGE;
       check |= INDEX_PACKAGE;
     }
-    else if (iter == 'D' | iter == 'd') {
+    else if ((iter == 'D') | (iter == 'd')) {
       if (check & INDEX_DIE) {
         fail = true;
       }
@@ -140,7 +140,7 @@ void Config::update() {
       PageAllocation[i++] = INDEX_DIE;
       check |= INDEX_DIE;
     }
-    else if (iter == 'P' | iter == 'p') {
+    else if ((iter == 'P') | (iter == 'p')) {
       if (check & INDEX_PLANE) {
         fail = true;
       }
@@ -181,16 +181,16 @@ void Config::update() {
   superblock = 0x00;
 
   for (auto iter : _pageAllocation) {
-    if (iter == 'C' | iter == 'c') {
+    if ((iter == 'C') | (iter == 'c')) {
       superblock |= INDEX_CHANNEL;
     }
-    else if (iter == 'W' | iter == 'w') {
+    else if ((iter == 'W') | (iter == 'w')) {
       superblock |= INDEX_PACKAGE;
     }
-    else if (iter == 'D' | iter == 'd') {
+    else if ((iter == 'D') | (iter == 'd')) {
       superblock |= INDEX_DIE;
     }
-    else if (iter == 'P' | iter == 'p') {
+    else if ((iter == 'P') | (iter == 'p')) {
       superblock |= INDEX_PLANE;
     }
   }

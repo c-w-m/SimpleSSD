@@ -49,6 +49,13 @@ typedef enum {
   NAND_TLC,
 } NAND_TYPE;
 
+typedef enum : uint8_t {
+  INDEX_CHANNEL = 0x01,
+  INDEX_PACKAGE = 0x02,
+  INDEX_DIE = 0x04,
+  INDEX_PLANE = 0x08,
+} ADDR_INDEX;
+
 class Config : public BaseConfig {
  private:
   uint32_t channel;  //!< Default: 8
@@ -63,18 +70,22 @@ class Config : public BaseConfig {
   uint32_t dmaSpeed;            //!< Default: 400
   uint32_t dmaWidth;            //!< Default: 8
   NAND_TYPE nandType;           //!< Default: NAND_MLC
+  uint8_t superblock[4];        //!< Default: 0x00, 0x00, 0x00, 0x00
+
+  // Raw variable
+  std::string _superblock;
 
  public:
   Config();
 
-  bool setConfig(const char *, const char *);
-  void update();
+  bool setConfig(const char *, const char *) override;
+  void update() override;
 
-  int64_t readInt(uint32_t);
-  uint64_t readUint(uint32_t);
-  float readFloat(uint32_t);
-  std::string readString(uint32_t);
-  bool readBoolean(uint32_t);
+  int64_t readInt(uint32_t) override;
+  uint64_t readUint(uint32_t) override;
+  bool readBoolean(uint32_t) override;
+
+  uint32_t getSuperblockConfig();
 };
 
 }  // namespace PAL

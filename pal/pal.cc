@@ -29,7 +29,7 @@ namespace PAL {
 PAL::PAL(ConfigReader *c) : pConf(c) {
   static const char name[4][16] = { "Channel", "Way", "Die", "Plane" };
   uint32_t value[4];
-  uint8_t superblock = 0x00;
+  uint8_t superblock = pConf->palConfig.getSuperblockConfig();
 
   param.channel = pConf->palConfig.readUint(PAL_CHANNEL);
   param.package = pConf->palConfig.readUint(PAL_PACKAGE);
@@ -39,13 +39,6 @@ PAL::PAL(ConfigReader *c) : pConf(c) {
   param.block = pConf->palConfig.readUint(NAND_BLOCK);
   param.page = pConf->palConfig.readUint(NAND_PAGE);
   param.pageSize = pConf->palConfig.readUint(NAND_PAGE_SIZE);
-  param.superBlockOption = pConf->palConfig.getSuperblockConfig();
-
-  superblock |= (param.superBlockOption) & 0xFF;
-  superblock |= (param.superBlockOption >> 8) & 0xFF;
-  superblock |= (param.superBlockOption >> 16) & 0xFF;
-  superblock |= (param.superBlockOption >> 24) & 0xFF;
-
   param.superBlock = param.block;
   param.superPageSize = param.pageSize;
 

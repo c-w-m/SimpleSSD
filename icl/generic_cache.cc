@@ -30,9 +30,15 @@ namespace ICL {
 
 GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
     : Cache(c, f), gen(rd()) {
-  setSize = c->iclConfig.readUint(ICL_SET_SIZE);
+  uint64_t cacheSize = c->iclConfig.readUint(ICL_CACHE_SIZE);
   waySize = c->iclConfig.readUint(ICL_WAY_SIZE);
   lineSize = f->getInfo()->pageSize;
+
+  setSize = MIN(cacheSize / lineSize / waySize, 1);
+
+  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                     "CREATE  | Set size %u | Way size %u | Capacity %" PRIu64,
+                     setSize, waySize, (uint64_t)setSize * waySize * lineSize);
 
   dist = std::uniform_int_distribution<>(0, waySize - 1);
 
@@ -62,7 +68,7 @@ GenericCache::~GenericCache() {
 }
 
 uint32_t GenericCache::calcSet(uint64_t lpn) {
-  return lpn & (setSize - 1);
+  return lpn % setSize;
 }
 
 uint32_t GenericCache::flushVictim(FTL::Request req, uint64_t &tick,

@@ -30,7 +30,7 @@ const char NAME_USE_READ_CACHE[] = "EnableReadCache";
 const char NAME_USE_WRITE_CACHE[] = "EnableWriteCache";
 const char NAME_USE_READ_PREFETCH[] = "EnableReadPrefetch";
 const char NAME_EVICT_POLICY[] = "EvictPolicy";
-const char NAME_SET_SIZE[] = "CacheSetSize";
+const char NAME_CACHE_SIZE[] = "CacheSize";
 const char NAME_WAY_SIZE[] = "CacheWaySize";
 
 // TODO: seperate This
@@ -47,7 +47,7 @@ Config::Config() {
   writeCaching = true;
   readPrefetch = false;
   evictPolicy = POLICY_LEAST_RECENTLY_USED;
-  cacheSetSize = 8192;
+  cacheSize = 33554432;
   cacheWaySize = 1;
 
   /* LPDDR3-1600 4Gbit 1x32 */
@@ -125,8 +125,8 @@ bool Config::setConfig(const char *name, const char *value) {
   else if (MATCH_NAME(NAME_EVICT_POLICY)) {
     evictPolicy = (EVICT_POLICY)strtoul(value, nullptr, 10);
   }
-  else if (MATCH_NAME(NAME_SET_SIZE)) {
-    cacheSetSize = strtoul(value, nullptr, 10);
+  else if (MATCH_NAME(NAME_CACHE_SIZE)) {
+    cacheSize = strtoul(value, nullptr, 10);
   }
   else if (MATCH_NAME(NAME_WAY_SIZE)) {
     cacheWaySize = strtoul(value, nullptr, 10);
@@ -159,14 +159,7 @@ bool Config::setConfig(const char *name, const char *value) {
   return ret;
 }
 
-void Config::update() {
-  if (popcount(cacheSetSize) != 1) {
-    Logger::panic("cache set size should be power of 2");
-  }
-  if (popcount(cacheWaySize) != 1) {
-    Logger::panic("cache entry size should be power of 2");
-  }
-}
+void Config::update() {}
 
 int64_t Config::readInt(uint32_t idx) {
   int64_t ret = 0;
@@ -184,8 +177,8 @@ uint64_t Config::readUint(uint32_t idx) {
   uint64_t ret = 0;
 
   switch (idx) {
-    case ICL_SET_SIZE:
-      ret = cacheSetSize;
+    case ICL_CACHE_SIZE:
+      ret = cacheSize;
       break;
     case ICL_WAY_SIZE:
       ret = cacheWaySize;

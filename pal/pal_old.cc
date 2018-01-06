@@ -115,31 +115,31 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
   addr.Page = req.pageIndex;
 
   if (conf.readBoolean(NAND_USE_MULTI_PLANE_OP)) {
-    // addr.Channel = tmp % param.channel; tmp /= param.channel;
-    // addr.Package = tmp % param.package; tmp /= param.package;
+    addr.Channel = tmp % param.channel; tmp /= param.channel;
+    addr.Package = tmp % param.package; tmp /= param.package;
     addr.Die = tmp % param.die; tmp /= param.die;
     addr.Plane = 0;
     addr.Block = tmp;
   }
   else {
-    // addr.Channel = tmp % param.channel; tmp /= param.channel;
-    // addr.Package = tmp % param.package; tmp /= param.package;
+    addr.Channel = tmp % param.channel; tmp /= param.channel;
+    addr.Package = tmp % param.package; tmp /= param.package;
     addr.Die = tmp % param.die; tmp /= param.die;
     addr.Plane = tmp % param.plane; tmp /= param.plane;
     addr.Block = tmp;
   }
 
-  for (uint32_t c = 0; c < param.channel; c++) {
-    for (uint32_t p = 0; p < param.package; p++) {
+  //for (uint32_t c = 0; c < param.channel; c++) {
+  //  for (uint32_t p = 0; p < param.package; p++) {
   //    for (uint32_t d = 0; d < param.die; d++) {
-        addr.Channel = c;
-        addr.Package = p;
+  //      addr.Channel = c;
+  //      addr.Package = p;
   //      addr.Die = d;
 
         list.push_back(addr);
   //    }
-    }
-  }
+  //  }
+  //}
 }
 
 }  // namespace PAL

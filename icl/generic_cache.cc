@@ -34,7 +34,7 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
   waySize = c->iclConfig.readUint(ICL_WAY_SIZE);
   lineSize = f->getInfo()->pageSize;
 
-  setSize = MIN(cacheSize / lineSize / waySize, 1);
+  setSize = MAX(cacheSize / lineSize / waySize, 1);
 
   Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                      "CREATE  | Set size %u | Way size %u | Capacity %" PRIu64,

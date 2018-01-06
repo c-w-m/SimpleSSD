@@ -117,13 +117,15 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
 
   list.clear();
 
+  addr.Plane = 0;
+
   for (int i = 0; i < 4; i++) {
     uint8_t idx = (pageAllocation >> (i * 8)) & 0xFF;
 
     switch (idx) {
       case INDEX_CHANNEL:
         if (superblock & INDEX_CHANNEL) {
-          value[count++] = param.channel;
+          value[count] = param.channel;
           ptr[count++] = &addr.Channel;
         }
         else {
@@ -134,7 +136,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
         break;
       case INDEX_PACKAGE:
         if (superblock & INDEX_PACKAGE) {
-          value[count++] = param.package;
+          value[count] = param.package;
           ptr[count++] = &addr.Package;
         }
         else {
@@ -142,12 +144,10 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
           tmp /= param.package;
         }
 
-        value[idx++] = param.package;
-
         break;
       case INDEX_DIE:
         if (superblock & INDEX_DIE) {
-          value[count++] = param.die;
+          value[count] = param.die;
           ptr[count++] = &addr.Die;
         }
         else {
@@ -155,22 +155,18 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
           tmp /= param.die;
         }
 
-        value[idx++] = param.die;
-
         break;
       case INDEX_PLANE:
-        if (superblock & INDEX_PLANE) {
-          if (!useMultiplaneOP) {
-            value[count++] = param.plane;
+        if (!useMultiplaneOP) {
+          if (superblock & INDEX_PLANE) {
+            value[count] = param.plane;
             ptr[count++] = &addr.Plane;
           }
+          else {
+            addr.Plane = tmp % param.plane;
+            tmp /= param.plane;
+          }
         }
-        else {
-          addr.Plane = tmp % param.plane;
-          tmp /= param.plane;
-        }
-
-        value[idx++] = param.plane;
 
         break;
       default:
@@ -180,7 +176,6 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
 
   addr.Block = tmp;
   addr.Page = req.pageIndex;
-  addr.Plane = 0;
 
   if (count == 4) {
     for (uint32_t i = 0; i < value[3]; i++) {

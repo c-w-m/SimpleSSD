@@ -80,20 +80,20 @@ PAL::PAL(ConfigReader *c) : pConf(c) {
   }
 
   // Print super block information
-  Logger::debugprint(Logger::LOG_PAL, "PAL     | Information");
-  Logger::debugprint(Logger::LOG_PAL, "PAL     | Channel |   Way   |   Die   |  Plane  |  Block  |   Page  ");
-  Logger::debugprint(Logger::LOG_PAL, "PAL     | %-7u | %-7u | %-7u | %-7u | %-7u | %-7u", param.channel, param.package, param.die, param.plane, param.block, param.page);
-  Logger::debugprint(Logger::LOG_PAL, "PAL     | Multi-plane mode %s", pConf->palConfig.readBoolean(NAND_USE_MULTI_PLANE_OP) ? "enabled" : "disabled");
-  Logger::debugprint(Logger::LOG_PAL, "PAL     | Superblock multiplier");
+  Logger::debugprint(Logger::LOG_PAL, "Information");
+  Logger::debugprint(Logger::LOG_PAL, "Channel |   Way   |   Die   |  Plane  |  Block  |   Page  ");
+  Logger::debugprint(Logger::LOG_PAL, "%-7u | %-7u | %-7u | %-7u | %-7u | %-7u", param.channel, param.package, param.die, param.plane, param.block, param.page);
+  Logger::debugprint(Logger::LOG_PAL, "Multi-plane mode %s", pConf->palConfig.readBoolean(NAND_USE_MULTI_PLANE_OP) ? "enabled" : "disabled");
+  Logger::debugprint(Logger::LOG_PAL, "Superblock multiplier");
 
   for (int i = 0; i < 4; i++) {
     if (superblock & (1 << i)) {
-      Logger::debugprint(Logger::LOG_PAL, "PAL     | x%u (%s)", value[i], name[i]);
+      Logger::debugprint(Logger::LOG_PAL, "x%u (%s)", value[i], name[i]);
     }
   }
 
-  Logger::debugprint(Logger::LOG_PAL, "PAL     | Page size %u -> %u", param.pageSize, param.superPageSize);
-  Logger::debugprint(Logger::LOG_PAL, "PAL     | Total block count %u -> %u", param.channel * param.package * param.die * param.plane * param.block, param.superBlock);
+  Logger::debugprint(Logger::LOG_PAL, "Page size %u -> %u", param.pageSize, param.superPageSize);
+  Logger::debugprint(Logger::LOG_PAL, "Total block count %u -> %u", param.channel * param.package * param.die * param.plane * param.block, param.superBlock);
 
   pPAL = new PALOLD(param, c->palConfig);
 }

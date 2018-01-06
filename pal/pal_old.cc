@@ -106,40 +106,131 @@ void PALOLD::erase(Request &req, uint64_t &tick) {
 }
 
 void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
-  // TODO: add setting for block index disassemble order
   ::CPDPBP addr;
+  static uint32_t pageAllocation = conf.getPageAllocationConfig();
+  static uint8_t superblock = conf.getSuperblockConfig();
+  static bool useMultiplaneOP = conf.readBoolean(NAND_USE_MULTI_PLANE_OP);
+  uint32_t value[4];
+  uint32_t *ptr[4];
   uint64_t tmp = req.blockIndex;
+  int count = 0;
 
   list.clear();
 
+  for (int i = 0; i < 4; i++) {
+    uint8_t idx = (pageAllocation >> (i * 8)) & 0xFF;
+
+    switch (idx) {
+      case INDEX_CHANNEL:
+        if (superblock & INDEX_CHANNEL) {
+          value[count++] = param.channel;
+          ptr[count++] = &addr.Channel;
+        }
+        else {
+          addr.Channel = tmp % param.channel;
+          tmp /= param.channel;
+        }
+
+        break;
+      case INDEX_PACKAGE:
+        if (superblock & INDEX_PACKAGE) {
+          value[count++] = param.package;
+          ptr[count++] = &addr.Package;
+        }
+        else {
+          addr.Package = tmp % param.package;
+          tmp /= param.package;
+        }
+
+        value[idx++] = param.package;
+
+        break;
+      case INDEX_DIE:
+        if (superblock & INDEX_DIE) {
+          value[count++] = param.die;
+          ptr[count++] = &addr.Die;
+        }
+        else {
+          addr.Die = tmp % param.die;
+          tmp /= param.die;
+        }
+
+        value[idx++] = param.die;
+
+        break;
+      case INDEX_PLANE:
+        if (superblock & INDEX_PLANE) {
+          if (!useMultiplaneOP) {
+            value[count++] = param.plane;
+            ptr[count++] = &addr.Plane;
+          }
+        }
+        else {
+          addr.Plane = tmp % param.plane;
+          tmp /= param.plane;
+        }
+
+        value[idx++] = param.plane;
+
+        break;
+      default:
+        break;
+    }
+  }
+
+  addr.Block = tmp;
   addr.Page = req.pageIndex;
+  addr.Plane = 0;
 
-  if (conf.readBoolean(NAND_USE_MULTI_PLANE_OP)) {
-    addr.Channel = tmp % param.channel; tmp /= param.channel;
-    addr.Package = tmp % param.package; tmp /= param.package;
-    addr.Die = tmp % param.die; tmp /= param.die;
-    addr.Plane = 0;
-    addr.Block = tmp;
-  }
-  else {
-    addr.Channel = tmp % param.channel; tmp /= param.channel;
-    addr.Package = tmp % param.package; tmp /= param.package;
-    addr.Die = tmp % param.die; tmp /= param.die;
-    addr.Plane = tmp % param.plane; tmp /= param.plane;
-    addr.Block = tmp;
-  }
+  if (count == 4) {
+    for (uint32_t i = 0; i < value[3]; i++) {
+      for (uint32_t j = 0; j < value[2]; j++) {
+        for (uint32_t k = 0; k < value[1]; k++) {
+          for (uint32_t l = 0; l < value[0]; l++) {
+            *ptr[0] = l;
+            *ptr[1] = k;
+            *ptr[2] = j;
+            *ptr[3] = i;
 
-  //for (uint32_t c = 0; c < param.channel; c++) {
-  //  for (uint32_t p = 0; p < param.package; p++) {
-  //    for (uint32_t d = 0; d < param.die; d++) {
-  //      addr.Channel = c;
-  //      addr.Package = p;
-  //      addr.Die = d;
+            list.push_back(addr);
+          }
+        }
+      }
+    }
+  }
+  else if (count == 3) {
+    for (uint32_t j = 0; j < value[2]; j++) {
+      for (uint32_t k = 0; k < value[1]; k++) {
+        for (uint32_t l = 0; l < value[0]; l++) {
+          *ptr[0] = l;
+          *ptr[1] = k;
+          *ptr[2] = j;
+
+          list.push_back(addr);
+        }
+      }
+    }
+  }
+  else if (count == 2) {
+    for (uint32_t k = 0; k < value[1]; k++) {
+      for (uint32_t l = 0; l < value[0]; l++) {
+        *ptr[0] = l;
+        *ptr[1] = k;
 
         list.push_back(addr);
-  //    }
-  //  }
-  //}
+      }
+    }
+  }
+  else if (count == 1) {
+    for (uint32_t l = 0; l < value[0]; l++) {
+      *ptr[0] = l;
+
+      list.push_back(addr);
+    }
+  }
+  else {
+    list.push_back(addr);
+  }
 }
 
 }  // namespace PAL

@@ -39,6 +39,7 @@ typedef struct {
   uint64_t superBlock;     //!< Total super blocks
   uint32_t pageSize;       //!< Size of page in bytes
   uint32_t superPageSize;  //!< Size of super page in bytes
+  uint32_t superBlockOption;
 } Parameter;
 
 class PAL {

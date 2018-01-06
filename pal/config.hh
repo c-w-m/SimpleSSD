@@ -70,10 +70,12 @@ class Config : public BaseConfig {
   uint32_t dmaSpeed;            //!< Default: 400
   uint32_t dmaWidth;            //!< Default: 8
   NAND_TYPE nandType;           //!< Default: NAND_MLC
-  uint8_t superblock[4];        //!< Default: 0x00, 0x00, 0x00, 0x00
+  uint8_t superblock;           //!< Default: All (0x0F)
+  uint8_t PageAllocation[4];    //!< Default: CWDP (0x01, 0x02, 0x04, 0x08)
 
   // Raw variable
   std::string _superblock;
+  std::string _pageAllocation;
 
  public:
   Config();
@@ -85,7 +87,8 @@ class Config : public BaseConfig {
   uint64_t readUint(uint32_t) override;
   bool readBoolean(uint32_t) override;
 
-  uint32_t getSuperblockConfig();
+  uint8_t getSuperblockConfig();
+  uint32_t getPageAllocationConfig();
 };
 
 }  // namespace PAL

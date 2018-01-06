@@ -36,7 +36,8 @@ const char NAME_USE_MULTI_PLANE_OP[] = "EnableMultiPlaneOperation";
 const char NAME_DMA_SPEED[] = "DMASpeed";
 const char NAME_DMA_WIDTH[] = "DMAWidth";
 const char NAME_FLASH_TYPE[] = "NANDType";
-const char NAME_SUPER_BLOCK[] = "Superblock";
+const char NAME_PAGE_ALLOCATION[] = "PageAllocation";
+const char NAME_SUPER_BLOCK[] = "SuperblockSize";
 
 Config::Config() {
   channel = 8;
@@ -51,7 +52,8 @@ Config::Config() {
   dmaWidth = 8;
   nandType = NAND_MLC;
 
-  memset(superblock, 0, 4);
+  superblock = INDEX_CHANNEL | INDEX_PACKAGE | INDEX_DIE | INDEX_PLANE;
+  memset(PageAllocation, 0, 4);
 }
 
 bool Config::setConfig(const char *name, const char *value) {
@@ -93,6 +95,9 @@ bool Config::setConfig(const char *name, const char *value) {
   else if (MATCH_NAME(NAME_SUPER_BLOCK)) {
     _superblock = value;
   }
+  else if (MATCH_NAME(NAME_PAGE_ALLOCATION)) {
+    _pageAllocation = value;
+  }
   else {
     ret = false;
   }
@@ -105,18 +110,18 @@ void Config::update() {
     Logger::panic("dmaWidth should be multiple of 8.");
   }
 
-  // Parse super block setting
+  // Parse page allocation setting
   int i = 0;
   uint8_t check = 0;
   bool fail = false;
 
-  for (auto iter : _superblock) {
+  for (auto iter : _pageAllocation) {
     if (iter == 'C' | iter == 'c') {
       if (check & INDEX_CHANNEL) {
         fail = true;
       }
 
-      superblock[i++] = INDEX_CHANNEL;
+      PageAllocation[i++] = INDEX_CHANNEL;
       check |= INDEX_CHANNEL;
     }
     else if (iter == 'W' | iter == 'w') {
@@ -124,7 +129,7 @@ void Config::update() {
         fail = true;
       }
 
-      superblock[i++] = INDEX_PACKAGE;
+      PageAllocation[i++] = INDEX_PACKAGE;
       check |= INDEX_PACKAGE;
     }
     else if (iter == 'D' | iter == 'd') {
@@ -132,7 +137,7 @@ void Config::update() {
         fail = true;
       }
 
-      superblock[i++] = INDEX_DIE;
+      PageAllocation[i++] = INDEX_DIE;
       check |= INDEX_DIE;
     }
     else if (iter == 'P' | iter == 'p') {
@@ -140,7 +145,7 @@ void Config::update() {
         fail = true;
       }
 
-      superblock[i++] = INDEX_PLANE;
+      PageAllocation[i++] = INDEX_PLANE;
       check |= INDEX_PLANE;
     }
 
@@ -149,13 +154,19 @@ void Config::update() {
     }
   }
 
+  if (check != (INDEX_CHANNEL | INDEX_PACKAGE | INDEX_DIE | INDEX_PLANE)) {
+    fail = true;
+  }
+
   if (useMultiPlaneOperation) {
-    // Remove P
+    // Move P to front
     for (i = 0; i < 4; i++) {
-      if (superblock[i] == INDEX_PLANE) {
-        for (int j = i; j < 3; j++) {
-          superblock[j] = superblock[j + 1];
+      if (PageAllocation[i] == INDEX_PLANE) {
+        for (int j = i; j > 0; j--) {
+          PageAllocation[j] = PageAllocation[j - 1];
         }
+
+        PageAllocation[0] = INDEX_PLANE;
 
         break;
       }
@@ -163,7 +174,29 @@ void Config::update() {
   }
 
   if (fail) {
-    Logger::panic("Invalid superblock string");
+    Logger::panic("Invalid page allocation string");
+  }
+
+  // Parse super block size setting
+  superblock = 0x00;
+
+  for (auto iter : _pageAllocation) {
+    if (iter == 'C' | iter == 'c') {
+      superblock |= INDEX_CHANNEL;
+    }
+    else if (iter == 'W' | iter == 'w') {
+      superblock |= INDEX_PACKAGE;
+    }
+    else if (iter == 'D' | iter == 'd') {
+      superblock |= INDEX_DIE;
+    }
+    else if (iter == 'P' | iter == 'p') {
+      superblock |= INDEX_PLANE;
+    }
+  }
+
+  if (useMultiPlaneOperation) {
+    superblock |= INDEX_PLANE;
   }
 }
 
@@ -227,9 +260,14 @@ bool Config::readBoolean(uint32_t idx) {
   return ret;
 }
 
-uint32_t Config::getSuperblockConfig() {
-  return (uint32_t)superblock[0] | ((uint32_t)superblock[1] << 8) |
-         ((uint32_t)superblock[2] << 16) | ((uint32_t)superblock[3] << 24);
+uint8_t Config::getSuperblockConfig() {
+  return superblock;
+}
+
+uint32_t Config::getPageAllocationConfig() {
+  return (uint32_t)PageAllocation[0] | ((uint32_t)PageAllocation[1] << 8) |
+         ((uint32_t)PageAllocation[2] << 16) |
+         ((uint32_t)PageAllocation[3] << 24);
 }
 
 }  // namespace PAL

@@ -27,6 +27,10 @@ namespace SimpleSSD {
 namespace PAL {
 
 PAL::PAL(ConfigReader *c) : pConf(c) {
+  static const char name[4][16] = { "Channel", "Way", "Die", "Plane" };
+  uint32_t value[4];
+  uint8_t superblock = 0x00;
+
   param.channel = pConf->palConfig.readUint(PAL_CHANNEL);
   param.package = pConf->palConfig.readUint(PAL_PACKAGE);
 
@@ -35,17 +39,68 @@ PAL::PAL(ConfigReader *c) : pConf(c) {
   param.block = pConf->palConfig.readUint(NAND_BLOCK);
   param.page = pConf->palConfig.readUint(NAND_PAGE);
   param.pageSize = pConf->palConfig.readUint(NAND_PAGE_SIZE);
+  param.superBlockOption = pConf->palConfig.getSuperblockConfig();
 
-  // TODO Make options to setting size and address parse order of super block
-  param.superBlock = param.block * param.channel * param.package * param.die;
+  superblock |= (param.superBlockOption) & 0xFF;
+  superblock |= (param.superBlockOption >> 8) & 0xFF;
+  superblock |= (param.superBlockOption >> 16) & 0xFF;
+  superblock |= (param.superBlockOption >> 24) & 0xFF;
+
+  param.superBlock = param.block;
   param.superPageSize = param.pageSize;
 
-  if (pConf->palConfig.readBoolean(NAND_USE_MULTI_PLANE_OP)) {
+  // Super block includes channel
+  if (superblock & INDEX_CHANNEL) {
+    param.superPageSize *= param.channel;
+    value[0] = param.channel;
+  }
+  else {
+    param.superBlock *= param.channel;
+  }
+
+  // Super block includes way (package)
+  if (superblock & INDEX_PACKAGE) {
+    param.superPageSize *= param.package;
+    value[1] = param.package;
+  }
+  else {
+    param.superBlock *= param.package;
+  }
+
+  // Super block includes die
+  if (superblock & INDEX_DIE) {
+    param.superPageSize *= param.die;
+    value[2] = param.die;
+  }
+  else {
+    param.superBlock *= param.die;
+  }
+
+  // Super block includes plane
+  if (pConf->palConfig.readBoolean(NAND_USE_MULTI_PLANE_OP) |
+      (superblock & INDEX_PLANE)) {
     param.superPageSize *= param.plane;
+    value[3] = param.plane;
   }
   else {
     param.superBlock *= param.plane;
   }
+
+  // Print super block information
+  Logger::debugprint(Logger::LOG_PAL, "PAL     | Information");
+  Logger::debugprint(Logger::LOG_PAL, "PAL     | Channel |   Way   |   Die   |  Plane  |  Block  |   Page  ");
+  Logger::debugprint(Logger::LOG_PAL, "PAL     | %-7u | %-7u | %-7u | %-7u | %-7u | %-7u", param.channel, param.package, param.die, param.plane, param.block, param.page);
+  Logger::debugprint(Logger::LOG_PAL, "PAL     | Multi-plane mode %s", pConf->palConfig.readBoolean(NAND_USE_MULTI_PLANE_OP) ? "enabled" : "disabled");
+  Logger::debugprint(Logger::LOG_PAL, "PAL     | Superblock multiplier");
+
+  for (int i = 0; i < 4; i++) {
+    if (superblock & (1 << i)) {
+      Logger::debugprint(Logger::LOG_PAL, "PAL     | x%u (%s)", value[i], name[i]);
+    }
+  }
+
+  Logger::debugprint(Logger::LOG_PAL, "PAL     | Page size %u -> %u", param.pageSize, param.superPageSize);
+  Logger::debugprint(Logger::LOG_PAL, "PAL     | Total block count %u -> %u", param.channel * param.package * param.die * param.plane * param.block, param.superBlock);
 
   pPAL = new PALOLD(param, c->palConfig);
 }

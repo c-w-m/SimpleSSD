@@ -37,8 +37,8 @@ PAL::PAL(ConfigReader *c) : pConf(c) {
   param.pageSize = pConf->palConfig.readUint(NAND_PAGE_SIZE);
 
   // TODO Make options to setting size and address parse order of super block
-  param.superBlock = param.block * param.package * param.die;
-  param.superPageSize = param.pageSize * param.channel;
+  param.superBlock = param.block * param.die;
+  param.superPageSize = param.pageSize * param.channel * param.package;
 
   if (pConf->palConfig.readBoolean(NAND_USE_MULTI_PLANE_OP)) {
     param.superPageSize *= param.plane;

@@ -82,7 +82,7 @@ int ConfigReader::parserHandler(void *context, const char *section,
   }
 
   if (!handled) {
-    Logger::warn("Config [%s] %s = %s not handled\n", section, name, value);
+    Logger::warn("Config [%s] %s = %s not handled", section, name, value);
   }
 
   return 1;

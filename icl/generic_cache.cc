@@ -28,6 +28,24 @@ namespace SimpleSSD {
 
 namespace ICL {
 
+void printBits(std::vector<bool> &bits) {
+  uint32_t size = bits.size();
+
+  for (uint32_t i = 0; i < size; i += 16) {
+    std::string str;
+
+    str.reserve(64);
+
+    for (uint32_t j = 0; j < 16; j++) {
+      if (i + j < size) {
+        str += (bits.at(i + j) ? "1 " : "0 ");
+      }
+    }
+
+    Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, str.c_str());
+  }
+}
+
 GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
     : AbstractCache(c, f), gen(rd()) {
   uint64_t cacheSize = c->iclConfig.readUint(ICL_CACHE_SIZE);
@@ -272,6 +290,9 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 
   convertIOFlag(reqInternal.ioFlag, req.offset, req.length);
 
+  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "I/O map");
+  printBits(reqInternal.ioFlag);
+
   Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                      "READ  | LPN %" PRIu64 " | SIZE %" PRIu64, req.range.slpn,
                      req.length);
@@ -290,9 +311,12 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
     for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
       Line &line = ppCache[setIdx][wayIdx];
 
+      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "Line %u map", wayIdx);
+      printBits(line.validBits);
+
       calcAND(tmp, line.validBits, reqInternal.ioFlag);
 
-      if (merge(tmp) && line.tag == req.range.slpn) {
+      if (tmp == reqInternal.ioFlag && line.tag == req.range.slpn) {
         line.lastAccessed = tick;
         ret = true;
 
@@ -360,12 +384,9 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
     uint64_t lat = calculateDelay(req.length);
-    std::vector<bool> tmp;
 
     for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
       Line &line = ppCache[setIdx][wayIdx];
-
-      calcAND(tmp, line.validBits, reqInternal.ioFlag);
 
       if (merge(line.validBits) && line.tag == req.range.slpn) {
         line.lastAccessed = tick;
@@ -447,14 +468,10 @@ bool GenericCache::flush(Request &req, uint64_t &tick) {
     }
 
     if (ret) {
-      calcAND(tmp, ppCache[setIdx][i].dirtyBits, reqInternal.ioFlag);
+      calcAND(reqInternal.ioFlag, ppCache[setIdx][i].dirtyBits, tmp);
 
       if (merge(tmp)) {
         // we have to flush this
-        if (usePartialIO) {
-          reqInternal.ioFlag = tmp;
-        }
-
         pFTL->write(reqInternal, tick);
       }
 

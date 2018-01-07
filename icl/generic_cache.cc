@@ -311,6 +311,7 @@ bool GenericCache::same(std::vector<bool> &lhs, std::vector<bool> &rhs) {
 // True when hit
 bool GenericCache::read(Request &req, uint64_t &tick) {
   bool ret = false;
+  bool partialhit = false;
   FTL::Request reqInternal(req);
 
   convertIOFlag(reqInternal.ioFlag, req.offset, req.length);
@@ -340,6 +341,8 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       printBits(line.validBits);
 
       if (merge(line.validBits) && line.tag == req.range.slpn) {
+        partialhit = true;
+
         calcAND(tmp, line.validBits, reqInternal.ioFlag);
 
         if (same(tmp, reqInternal.ioFlag)) {
@@ -360,21 +363,27 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       tick += lat;
     }
     else {
-      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                         "READ  | Cache miss at %u", setIdx);
-
-      bool cold;
-      uint32_t flushedWay;
-      flushedWay = flushVictim(req, tick, &cold);
-
-      if (cold) {
+      if (partialhit) {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "READ  | Cache cold-miss, no need to flush");
+                           "READ  | Cache partial hit at (%u, %u)", setIdx, wayIdx);
       }
       else {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "READ  | Flush (%u, %u), LPN %" PRIu64, setIdx,
-                           flushedWay, ppCache[setIdx][flushedWay].tag);
+                           "READ  | Cache miss at %u", setIdx);
+
+        bool cold;
+        wayIdx = flushVictim(req, tick, &cold);
+
+        if (cold) {
+          Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                             "READ  | Cache cold-miss, no need to flush",
+                             setIdx);
+        }
+        else {
+          Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                             "READ  | Flush (%u, %u), LPN %" PRIu64, setIdx,
+                             wayIdx, ppCache[setIdx][wayIdx].tag);
+        }
       }
 
       ppCache[setIdx][wayIdx].tag = req.range.slpn;
@@ -446,19 +455,18 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
 
       bool cold;
       uint64_t insertAt = tick;
-      uint32_t flushedWay;
-      flushedWay = flushVictim(req, tick, &cold);
+      wayIdx = flushVictim(req, tick, &cold);
 
       if (cold) {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "WRITE | Cache cold-miss, no need to flush");
+                           "WRITE | Cache cold-miss, no need to flush", setIdx);
 
         tick += lat;
       }
       else {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                            "WRITE | Flush (%u, %u), LPN %" PRIu64, setIdx,
-                           flushedWay, ppCache[setIdx][flushedWay].tag);
+                           wayIdx, ppCache[setIdx][wayIdx].tag);
       }
 
       ppCache[setIdx][wayIdx].tag = req.range.slpn;

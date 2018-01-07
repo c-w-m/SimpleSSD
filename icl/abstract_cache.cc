@@ -23,14 +23,17 @@ namespace SimpleSSD {
 
 namespace ICL {
 
-Line::_Line() : tag(0), lastAccessed(0), insertedAt(0), valid(false) {
+Line::_Line() : tag(0), lastAccessed(0), insertedAt(0) {
   dirtyBits.resize(1);
+  validBits.resize(1);
 }
 
 Line::_Line(uint64_t t, bool d)
-    : tag(t), lastAccessed(0), insertedAt(0), valid(true) {
+    : tag(t), lastAccessed(0), insertedAt(0) {
   dirtyBits.resize(1);
+  validBits.resize(1);
   dirtyBits.at(0) = d;
+  validBits.at(0) = true;
 }
 
 AbstractCache::AbstractCache(ConfigReader *c, FTL::FTL *f) : conf(c), pFTL(f) {}

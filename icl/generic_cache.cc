@@ -383,8 +383,10 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       setIfTrue(ppCache[setIdx][wayIdx].validBits, reqInternal.ioFlag, true);
       setIfTrue(ppCache[setIdx][wayIdx].dirtyBits, reqInternal.ioFlag, false);
 
-      // Resize I/O size
-      setIfTrue(reqInternal.ioFlag, tmp, false);
+      // Resize I/O size if some part of data is valid
+      if (tmp.size() == partialIOUnitCount) {
+        setIfTrue(reqInternal.ioFlag, tmp, false);
+      }
 
       // Request read and flush at same time
       pFTL->read(reqInternal, tick);

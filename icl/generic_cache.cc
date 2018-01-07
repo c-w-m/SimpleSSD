@@ -63,8 +63,8 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
     ppCache[i] = new Line[waySize]();
 
     for (uint32_t j = 0; j < waySize; j++) {
-      ppCache[i][i].validBits.resize(partialIOUnitCount);
-      ppCache[i][i].dirtyBits.resize(partialIOUnitCount);
+      ppCache[i][j].validBits.resize(partialIOUnitCount);
+      ppCache[i][j].dirtyBits.resize(partialIOUnitCount);
     }
   }
 

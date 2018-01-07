@@ -164,7 +164,11 @@ bool Config::setConfig(const char *name, const char *value) {
   return ret;
 }
 
-void Config::update() {}
+void Config::update() {
+  if (prefetchCount == 0) {
+    Logger::panic("Invalid ReadPrefetchCount");
+  }
+}
 
 int64_t Config::readInt(uint32_t idx) {
   int64_t ret = 0;

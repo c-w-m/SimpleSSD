@@ -273,17 +273,26 @@ void PALOLD::printCPDPBP(::CPDPBP &addr, const char *prefix) {
 }
 
 void PALOLD::printPPN(Request &req, const char *prefix) {
-  std::stringstream ss;
+  std::string str;
+
+  str.reserve(64);
 
   Logger::debugprint(Logger::LOG_PAL_OLD, "%-5s | Block %u | Page %u", prefix,
                      req.blockIndex, req.pageIndex);
 
-  for (auto iter : req.ioFlag) {
-    ss << (iter ? "1 " : "0 ");
-  }
-
   Logger::debugprint(Logger::LOG_PAL_OLD, "%-5s | Partial I/O map", prefix);
-  Logger::debugprint(Logger::LOG_PAL_OLD, ss.str().c_str());
+
+  for (uint32_t i = 0; i < param.pageInSuperPage; i += 16) {
+    for (uint32_t j = 0; j < 16; j++) {
+      if (i + j < param.pageInSuperPage) {
+        str += (req.ioFlag.at(i + j) ? "1 " : "0 ");
+      }
+    }
+
+    Logger::debugprint(Logger::LOG_PAL_OLD, str.c_str());
+
+    str.at(0) = 0;
+  }
 }
 
 }  // namespace PAL

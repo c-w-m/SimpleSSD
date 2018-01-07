@@ -44,7 +44,7 @@ class PALOLD : public AbstractPAL {
 
  public:
   PALOLD(Parameter &, Config &);
-  ~PALOLD() override;
+  ~PALOLD();
 
   void read(Request &, uint64_t &) override;
   void write(Request &, uint64_t &) override;

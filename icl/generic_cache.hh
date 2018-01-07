@@ -55,7 +55,7 @@ class GenericCache : public Cache {
 
  public:
   GenericCache(ConfigReader *, FTL::FTL *);
-  ~GenericCache() override;
+  ~GenericCache();
 
   bool read(FTL::Request &, uint64_t &) override;
   bool write(FTL::Request &, uint64_t &) override;

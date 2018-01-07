@@ -59,7 +59,7 @@ class PageMapping : public AbstractFTL {
 
  public:
   PageMapping(Parameter *, PAL::PAL *, ConfigReader *);
-  ~PageMapping() override;
+  ~PageMapping();
 
   bool initialize() override;
 

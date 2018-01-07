@@ -39,14 +39,14 @@ typedef struct _Line {
   _Line(uint64_t, bool);
 } Line;
 
-class Cache {
+class AbstractCache {
  protected:
   ConfigReader *conf;
   FTL::FTL *pFTL;
 
  public:
-  Cache(ConfigReader *, FTL::FTL *);
-  virtual ~Cache();
+  AbstractCache(ConfigReader *, FTL::FTL *);
+  virtual ~AbstractCache();
 
   virtual bool read(Request &, uint64_t &) = 0;
   virtual bool write(Request &, uint64_t &) = 0;

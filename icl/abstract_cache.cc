@@ -17,7 +17,7 @@
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "icl/cache.hh"
+#include "icl/abstract_cache.hh"
 
 namespace SimpleSSD {
 
@@ -29,9 +29,9 @@ Line::_Line()
 Line::_Line(uint64_t t, bool d)
     : tag(t), lastAccessed(0), insertedAt(0), dirty(d), valid(true) {}
 
-Cache::Cache(ConfigReader *c, FTL::FTL *f) : conf(c), pFTL(f) {}
+AbstractCache::AbstractCache(ConfigReader *c, FTL::FTL *f) : conf(c), pFTL(f) {}
 
-Cache::~Cache() {}
+AbstractCache::~AbstractCache() {}
 
 }  // namespace ICL
 

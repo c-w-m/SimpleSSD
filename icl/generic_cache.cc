@@ -220,6 +220,8 @@ void GenericCache::checkPrefetch(Request &req) {
 
   if (lastRequest.reqID == req.reqID) {
     lastRequest.range = req.range;
+    lastRequest.offset = req.offset;
+    lastRequest.length = req.length;
 
     return;
   }
@@ -337,11 +339,13 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "Line %u map", wayIdx);
       printBits(line.validBits);
 
-      calcAND(tmp, line.validBits, reqInternal.ioFlag);
+      if (merge(line.validBits) && line.tag == req.range.slpn) {
+        calcAND(tmp, line.validBits, reqInternal.ioFlag);
 
-      if (same(tmp, reqInternal.ioFlag) && line.tag == req.range.slpn) {
-        line.lastAccessed = tick;
-        ret = true;
+        if (same(tmp, reqInternal.ioFlag)) {
+          line.lastAccessed = tick;
+          ret = true;
+        }
 
         break;
       }

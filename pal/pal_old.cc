@@ -19,6 +19,7 @@
 
 #include "pal/pal_old.hh"
 
+#include "log/trace.hh"
 #include "pal/old/Latency.h"
 #include "pal/old/LatencyMLC.h"
 #include "pal/old/LatencySLC.h"
@@ -110,10 +111,15 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
   static uint32_t pageAllocation = conf.getPageAllocationConfig();
   static uint8_t superblock = conf.getSuperblockConfig();
   static bool useMultiplaneOP = conf.readBoolean(NAND_USE_MULTI_PLANE_OP);
+  static uint32_t pageInSuperPage = param.pageInSuperPage;
   uint32_t value[4];
   uint32_t *ptr[4];
   uint64_t tmp = req.blockIndex;
   int count = 0;
+
+  if (req.ioFlag.size() != pageInSuperPage) {
+    Logger::panic("Invalid size of I/O flag");
+  }
 
   list.clear();
 
@@ -177,17 +183,22 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
   addr.Block = tmp;
   addr.Page = req.pageIndex;
 
+  // Index of ioFlag
+  tmp = 0;
+
   if (count == 4) {
     for (uint32_t i = 0; i < value[3]; i++) {
       for (uint32_t j = 0; j < value[2]; j++) {
         for (uint32_t k = 0; k < value[1]; k++) {
           for (uint32_t l = 0; l < value[0]; l++) {
-            *ptr[0] = l;
-            *ptr[1] = k;
-            *ptr[2] = j;
-            *ptr[3] = i;
+            if (req.ioFlag.at(tmp++)) {
+              *ptr[0] = l;
+              *ptr[1] = k;
+              *ptr[2] = j;
+              *ptr[3] = i;
 
-            list.push_back(addr);
+              list.push_back(addr);
+            }
           }
         }
       }
@@ -197,11 +208,13 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
     for (uint32_t j = 0; j < value[2]; j++) {
       for (uint32_t k = 0; k < value[1]; k++) {
         for (uint32_t l = 0; l < value[0]; l++) {
-          *ptr[0] = l;
-          *ptr[1] = k;
-          *ptr[2] = j;
+          if (req.ioFlag.at(tmp++)) {
+            *ptr[0] = l;
+            *ptr[1] = k;
+            *ptr[2] = j;
 
-          list.push_back(addr);
+            list.push_back(addr);
+          }
         }
       }
     }
@@ -209,22 +222,32 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
   else if (count == 2) {
     for (uint32_t k = 0; k < value[1]; k++) {
       for (uint32_t l = 0; l < value[0]; l++) {
-        *ptr[0] = l;
-        *ptr[1] = k;
+        if (req.ioFlag.at(tmp++)) {
+          *ptr[0] = l;
+          *ptr[1] = k;
 
-        list.push_back(addr);
+          list.push_back(addr);
+        }
       }
     }
   }
   else if (count == 1) {
     for (uint32_t l = 0; l < value[0]; l++) {
-      *ptr[0] = l;
+      if (req.ioFlag.at(tmp++)) {
+        *ptr[0] = l;
 
-      list.push_back(addr);
+        list.push_back(addr);
+      }
     }
   }
   else {
-    list.push_back(addr);
+    if (req.ioFlag.at(tmp++)) {
+      list.push_back(addr);
+    }
+  }
+
+  if (tmp != pageInSuperPage) {
+    Logger::panic("I/O flag size != # pages in super page");
   }
 }
 

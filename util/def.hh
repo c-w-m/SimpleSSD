@@ -21,7 +21,7 @@
 #define __UTIL_DEF__
 
 #include <cinttypes>
-#include <list>
+#include <vector>
 
 namespace SimpleSSD {
 
@@ -37,6 +37,7 @@ namespace ICL {
 
 typedef struct _Request {
   uint64_t reqID;
+  uint64_t reqSubID;
   uint64_t offset;
   uint64_t length;
   LPNRange range;
@@ -52,10 +53,10 @@ typedef struct _Request {
   uint64_t reqID;  // ID of ICL::Request
   uint64_t reqSubID;
   uint64_t lpn;
-  uint32_t offset;
-  uint32_t length;
+  std::vector<bool> ioFlag;
 
   _Request();
+  _Request(ICL::Request &);
 } Request;
 
 }  // namespace FTL
@@ -67,8 +68,7 @@ typedef struct _Request {
   uint64_t reqSubID;
   uint32_t blockIndex;
   uint32_t pageIndex;
-  uint32_t offset;
-  uint32_t length;
+  std::vector<bool> ioFlag;
 
   _Request();
   _Request(FTL::Request &);

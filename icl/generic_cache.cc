@@ -45,8 +45,12 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
   useReadCaching = c->iclConfig.readBoolean(ICL_USE_READ_CACHE);
   useWriteCaching = c->iclConfig.readBoolean(ICL_USE_WRITE_CACHE);
   useReadPrefetch = c->iclConfig.readBoolean(ICL_USE_READ_PREFETCH);
+  usePartialIO = c->tweakConfig.readBoolean(TWEAK_PARTIAL_IO);
 
   policy = (EVICT_POLICY)c->iclConfig.readInt(ICL_EVICT_POLICY);
+
+  partialIOUnitCount = f->getInfo()->ioUnitInPage;
+  partialIOUnitSize = lineSize / partialIOUnitCount;
 
   // TODO: replace this with DRAM model
   pTiming = c->iclConfig.getDRAMTiming();
@@ -71,11 +75,11 @@ uint32_t GenericCache::calcSet(uint64_t lpn) {
   return lpn % setSize;
 }
 
-uint32_t GenericCache::flushVictim(FTL::Request req, uint64_t &tick,
-                                   bool *isCold) {
-  uint32_t setIdx = calcSet(req.lpn);
+uint32_t GenericCache::flushVictim(Request req, uint64_t &tick, bool *isCold) {
+  uint32_t setIdx = calcSet(req.range.slpn);
   uint32_t entryIdx = waySize;
   uint64_t min = std::numeric_limits<uint64_t>::max();
+  FTL::Request reqInternal;
 
   if (isCold) {
     *isCold = false;
@@ -123,11 +127,10 @@ uint32_t GenericCache::flushVictim(FTL::Request req, uint64_t &tick,
 
     // Let's flush 'em if dirty
     if (ppCache[setIdx][entryIdx].dirty) {
-      req.lpn = ppCache[setIdx][entryIdx].tag;
-      req.offset = 0;
-      req.length = lineSize;
+      reqInternal.lpn = ppCache[setIdx][entryIdx].tag;
+      reqInternal.ioFlag = std::vector<bool>(partialIOUnitCount, true);
 
-      pFTL->write(req, tick);
+      pFTL->write(reqInternal, tick);
     }
     else {
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
@@ -152,23 +155,47 @@ uint64_t GenericCache::calculateDelay(uint64_t bytesize) {
   return (uint64_t)(pageFetch + pageCount * pStructure->pageSize / bandwidth);
 }
 
+void GenericCache::convertIOFlag(std::vector<bool> &flags, uint64_t offset,
+                                 uint64_t length) {
+  if (usePartialIO) {
+    flags.resize(partialIOUnitCount);
+    setBits(flags, offset / partialIOUnitSize,
+            (offset + length) / partialIOUnitSize + 1, true);
+  }
+  else {
+    flags = std::vector<bool>(partialIOUnitCount, true);
+  }
+}
+
+void GenericCache::setBits(std::vector<bool> &bits, uint64_t begin,
+                           uint64_t end, bool value) {
+  end = MIN(end, bits.size());
+
+  for (uint64_t i = begin; i < end; i++) {
+    bits.at(i) = value;
+  }
+}
+
 // True when hit
-bool GenericCache::read(FTL::Request &req, uint64_t &tick) {
+bool GenericCache::read(Request &req, uint64_t &tick) {
   bool ret = false;
+  FTL::Request reqInternal(req);
+
+  convertIOFlag(reqInternal.ioFlag, req.offset, req.length);
 
   Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                     "READ  | LPN %" PRIu64 " | SIZE %" PRIu64, req.lpn,
+                     "READ  | LPN %" PRIu64 " | SIZE %" PRIu64, req.range.slpn,
                      req.length);
 
   if (useReadCaching) {
-    uint32_t setIdx = calcSet(req.lpn);
+    uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t entryIdx;
     uint64_t lat = calculateDelay(req.length);
 
     for (entryIdx = 0; entryIdx < waySize; entryIdx++) {
       Line &line = ppCache[setIdx][entryIdx];
 
-      if (line.valid && line.tag == req.lpn) {
+      if (line.valid && line.tag == req.range.slpn) {
         line.lastAccessed = tick;
         ret = true;
 
@@ -203,40 +230,43 @@ bool GenericCache::read(FTL::Request &req, uint64_t &tick) {
 
       ppCache[setIdx][entryIdx].valid = true;
       ppCache[setIdx][entryIdx].dirty = false;
-      ppCache[setIdx][entryIdx].tag = req.lpn;
+      ppCache[setIdx][entryIdx].tag = req.range.slpn;
       ppCache[setIdx][entryIdx].lastAccessed = tick;
       ppCache[setIdx][entryIdx].insertedAt = tick;
 
       // Request read and flush at same time
-      pFTL->read(req, tick);
+      pFTL->read(reqInternal, tick);
 
       // DRAM delay should be hidden by NAND I/O
     }
   }
   else {
-    pFTL->read(req, tick);
+    pFTL->read(reqInternal, tick);
   }
 
   return ret;
 }
 
 // True when cold-miss/hit
-bool GenericCache::write(FTL::Request &req, uint64_t &tick) {
+bool GenericCache::write(Request &req, uint64_t &tick) {
   bool ret = false;
+  FTL::Request reqInternal(req);
+
+  convertIOFlag(reqInternal.ioFlag, req.offset, req.length);
 
   Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                     "WRITE | LPN %" PRIu64 " | SIZE %" PRIu64, req.lpn,
+                     "WRITE | LPN %" PRIu64 " | SIZE %" PRIu64, req.range.slpn,
                      req.length);
 
   if (useWriteCaching) {
-    uint32_t setIdx = calcSet(req.lpn);
+    uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t entryIdx;
     uint64_t lat = calculateDelay(req.length);
 
     for (entryIdx = 0; entryIdx < waySize; entryIdx++) {
       Line &line = ppCache[setIdx][entryIdx];
 
-      if (line.valid && line.tag == req.lpn) {
+      if (line.valid && line.tag == req.range.slpn) {
         line.lastAccessed = tick;
         line.dirty = true;
         ret = true;
@@ -275,7 +305,7 @@ bool GenericCache::write(FTL::Request &req, uint64_t &tick) {
 
       ppCache[setIdx][entryIdx].valid = true;
       ppCache[setIdx][entryIdx].dirty = true;
-      ppCache[setIdx][entryIdx].tag = req.lpn;
+      ppCache[setIdx][entryIdx].tag = req.range.slpn;
       ppCache[setIdx][entryIdx].lastAccessed = insertAt;
       ppCache[setIdx][entryIdx].insertedAt = insertAt;
 
@@ -283,24 +313,27 @@ bool GenericCache::write(FTL::Request &req, uint64_t &tick) {
     }
   }
   else {
-    pFTL->write(req, tick);
+    pFTL->write(reqInternal, tick);
   }
 
   return ret;
 }
 
 // True when hit
-bool GenericCache::flush(FTL::Request &req, uint64_t &tick) {
+bool GenericCache::flush(Request &req, uint64_t &tick) {
   bool ret = false;
+  FTL::Request reqInternal(req);
+
+  convertIOFlag(reqInternal.ioFlag, req.offset, req.length);
 
   if (useReadCaching || useWriteCaching) {
-    uint32_t setIdx = calcSet(req.lpn);
+    uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t i;
 
     for (i = 0; i < waySize; i++) {
       Line &line = ppCache[setIdx][i];
 
-      if (line.valid && line.tag == req.lpn) {
+      if (line.valid && line.tag == req.range.slpn) {
         ret = true;
 
         break;
@@ -310,7 +343,7 @@ bool GenericCache::flush(FTL::Request &req, uint64_t &tick) {
     if (ret) {
       if (ppCache[setIdx][i].dirty) {
         // we have to flush this
-        pFTL->write(req, tick);
+        pFTL->write(reqInternal, tick);
       }
 
       // invalidate
@@ -322,20 +355,23 @@ bool GenericCache::flush(FTL::Request &req, uint64_t &tick) {
 }
 
 // True when hit
-bool GenericCache::trim(FTL::Request &req, uint64_t &tick) {
+bool GenericCache::trim(Request &req, uint64_t &tick) {
   bool ret = false;
+  FTL::Request reqInternal(req);
+
+  convertIOFlag(reqInternal.ioFlag, req.offset, req.length);
 
   Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "TRIM  | LPN %" PRIu64,
-                     req.lpn);
+                     req.range.slpn);
 
   if (useReadCaching || useWriteCaching) {
-    uint32_t setIdx = calcSet(req.lpn);
+    uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t i;
 
     for (i = 0; i < waySize; i++) {
       Line &line = ppCache[setIdx][i];
 
-      if (line.valid && line.tag == req.lpn) {
+      if (line.valid && line.tag == req.range.slpn) {
         ret = true;
 
         break;
@@ -348,10 +384,10 @@ bool GenericCache::trim(FTL::Request &req, uint64_t &tick) {
     }
 
     // we have to trim this
-    pFTL->trim(req, tick);
+    pFTL->trim(reqInternal, tick);
   }
   else {
-    pFTL->trim(req, tick);
+    pFTL->trim(reqInternal, tick);
   }
 
   return ret;

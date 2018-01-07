@@ -48,10 +48,10 @@ class Cache {
   Cache(ConfigReader *, FTL::FTL *);
   virtual ~Cache();
 
-  virtual bool read(FTL::Request &, uint64_t &) = 0;
-  virtual bool write(FTL::Request &, uint64_t &) = 0;
-  virtual bool flush(FTL::Request &, uint64_t &) = 0;
-  virtual bool trim(FTL::Request &, uint64_t &) = 0;
+  virtual bool read(Request &, uint64_t &) = 0;
+  virtual bool write(Request &, uint64_t &) = 0;
+  virtual bool flush(Request &, uint64_t &) = 0;
+  virtual bool trim(Request &, uint64_t &) = 0;
 
   virtual void format(LPNRange &, uint64_t &) = 0;
 };

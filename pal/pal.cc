@@ -79,6 +79,14 @@ PAL::PAL(ConfigReader *c) : pConf(c) {
     param.superBlock *= param.plane;
   }
 
+  // Partial I/O tweak
+  param.pageInSuperPage = param.superPageSize / param.pageSize;
+
+  // TODO: If PAL revised, this code may not needed
+  if (pConf->palConfig.readBoolean(NAND_USE_MULTI_PLANE_OP)) {
+    param.pageInSuperPage /= param.plane;
+  }
+
   // Print super block information
   Logger::debugprint(
       Logger::LOG_PAL,

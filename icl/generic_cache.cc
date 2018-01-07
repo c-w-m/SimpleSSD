@@ -160,7 +160,7 @@ void GenericCache::convertIOFlag(std::vector<bool> &flags, uint64_t offset,
   if (usePartialIO) {
     flags.resize(partialIOUnitCount);
     setBits(flags, offset / partialIOUnitSize,
-            (offset + length) / partialIOUnitSize + 1, true);
+            (offset + length - 1) / partialIOUnitSize + 1, true);
   }
   else {
     flags = std::vector<bool>(partialIOUnitCount, true);

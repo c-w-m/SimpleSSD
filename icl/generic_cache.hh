@@ -37,10 +37,16 @@ class GenericCache : public Cache {
   uint32_t partialIOUnitCount;
   uint32_t partialIOUnitSize;
 
+  uint32_t prefetchIOCount;
+
   bool useReadCaching;
   bool useWriteCaching;
   bool useReadPrefetch;
   bool usePartialIO;
+
+  Request lastRequest;
+  bool prefetchEnabled;
+  uint32_t hitCounter;
 
   EVICT_POLICY policy;
   std::random_device rd;
@@ -58,6 +64,7 @@ class GenericCache : public Cache {
   uint64_t calculateDelay(uint64_t);
   void convertIOFlag(std::vector<bool> &, uint64_t, uint64_t);
   static void setBits(std::vector<bool> &, uint64_t, uint64_t, bool);
+  void checkPrefetch(Request &);
 
  public:
   GenericCache(ConfigReader *, FTL::FTL *);

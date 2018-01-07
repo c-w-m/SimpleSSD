@@ -45,6 +45,7 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
   useReadCaching = c->iclConfig.readBoolean(ICL_USE_READ_CACHE);
   useWriteCaching = c->iclConfig.readBoolean(ICL_USE_WRITE_CACHE);
   useReadPrefetch = c->iclConfig.readBoolean(ICL_USE_READ_PREFETCH);
+  prefetchIOCount = c->iclConfig.readUint(ICL_PREFETCH_COUNT);
   usePartialIO = c->tweakConfig.readBoolean(TWEAK_PARTIAL_IO);
 
   policy = (EVICT_POLICY)c->iclConfig.readInt(ICL_EVICT_POLICY);
@@ -61,6 +62,10 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
   for (uint32_t i = 0; i < setSize; i++) {
     ppCache[i] = new Line[waySize]();
   }
+
+  lastRequest.reqID = 1;
+  prefetchEnabled = false;
+  hitCounter = 0;
 }
 
 GenericCache::~GenericCache() {
@@ -157,7 +162,7 @@ uint64_t GenericCache::calculateDelay(uint64_t bytesize) {
 
 void GenericCache::convertIOFlag(std::vector<bool> &flags, uint64_t offset,
                                  uint64_t length) {
-  if (usePartialIO) {
+  if (usePartialIO && !prefetchEnabled) {
     flags.resize(partialIOUnitCount);
     setBits(flags, offset / partialIOUnitSize,
             (offset + length - 1) / partialIOUnitSize + 1, true);
@@ -176,6 +181,30 @@ void GenericCache::setBits(std::vector<bool> &bits, uint64_t begin,
   }
 }
 
+void GenericCache::checkPrefetch(Request &req) {
+  if (lastRequest.reqID == req.reqID) {
+    lastRequest.range = req.range;
+
+    return;
+  }
+
+  if (lastRequest.range.slpn + lastRequest.range.nlp == req.range.slpn) {
+    if (!prefetchEnabled) {
+      hitCounter++;
+
+      if (hitCounter >= prefetchIOCount) {
+        prefetchEnabled = true;
+      }
+    }
+  }
+  else {
+    hitCounter = 0;
+    prefetchEnabled = false;
+  }
+
+  lastRequest = req;
+}
+
 // True when hit
 bool GenericCache::read(Request &req, uint64_t &tick) {
   bool ret = false;
@@ -191,6 +220,11 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t entryIdx;
     uint64_t lat = calculateDelay(req.length);
+
+    // Check prefetch status
+    if (useReadPrefetch) {
+      checkPrefetch(req);
+    }
 
     for (entryIdx = 0; entryIdx < waySize; entryIdx++) {
       Line &line = ppCache[setIdx][entryIdx];

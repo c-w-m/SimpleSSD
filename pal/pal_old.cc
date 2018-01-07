@@ -19,6 +19,8 @@
 
 #include "pal/pal_old.hh"
 
+#include <sstream>
+
 #include "log/trace.hh"
 #include "pal/old/Latency.h"
 #include "pal/old/LatencyMLC.h"
@@ -63,6 +65,8 @@ void PALOLD::read(Request &req, uint64_t &tick) {
   ::Command cmd(tick, 0, OPER_READ, param.superPageSize);
   std::vector<::CPDPBP> list;
 
+  printPPN(req, "READ");
+
   convertCPDPBP(req, list);
 
   for (auto &iter : list) {
@@ -81,6 +85,8 @@ void PALOLD::write(Request &req, uint64_t &tick) {
   ::Command cmd(tick, 0, OPER_WRITE, param.superPageSize);
   std::vector<::CPDPBP> list;
 
+  printPPN(req, "WRITE");
+
   convertCPDPBP(req, list);
 
   for (auto &iter : list) {
@@ -98,6 +104,8 @@ void PALOLD::erase(Request &req, uint64_t &tick) {
   uint64_t finishedAt = tick;
   ::Command cmd(tick, 0, OPER_ERASE, param.superPageSize);
   std::vector<::CPDPBP> list;
+
+  printPPN(req, "ERASE");
 
   convertCPDPBP(req, list);
 
@@ -259,9 +267,22 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
 
 void PALOLD::printCPDPBP(::CPDPBP &addr, const char *prefix) {
   Logger::debugprint(Logger::LOG_PAL_OLD,
-                     "%-7s | C %5u | W %5u | D %5u | P %5u | B %5u | P %5u",
+                     "%-5s | C %5u | W %5u | D %5u | P %5u | B %5u | P %5u",
                      prefix, addr.Channel, addr.Package, addr.Die, addr.Plane,
                      addr.Block, addr.Page);
+}
+
+void PALOLD::printPPN(Request &req, const char *prefix) {
+  std::stringstream ss;
+
+  Logger::debugprint(Logger::LOG_PAL_OLD, "%-5s | Block %u | Page %u", prefix, req.blockIndex, req.pageIndex);
+
+  for (auto iter : req.ioFlag) {
+    ss << (iter ? "1 " : "0 ");
+  }
+
+  Logger::debugprint(Logger::LOG_PAL_OLD, "%-5s | Partial I/O map");
+  Logger::debugprint(Logger::LOG_PAL_OLD, ss.str().c_str());
 }
 
 }  // namespace PAL

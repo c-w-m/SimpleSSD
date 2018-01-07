@@ -42,6 +42,7 @@ class PALOLD : public AbstractPAL {
 
   void convertCPDPBP(Request &, std::vector<::CPDPBP> &);
   void printCPDPBP(::CPDPBP &, const char *);
+  void printPPN(Request &, const char *);
 
  public:
   PALOLD(Parameter &, Config &);

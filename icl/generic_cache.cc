@@ -364,16 +364,17 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
                          "READ  | Cache miss at %u", setIdx);
 
       bool cold;
-      wayIdx = flushVictim(req, tick, &cold);
+      uint32_t flushedWay;
+      flushedWay = flushVictim(req, tick, &cold);
 
       if (cold) {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "READ  | Cache cold-miss, no need to flush", setIdx);
+                           "READ  | Cache cold-miss, no need to flush");
       }
       else {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                            "READ  | Flush (%u, %u), LPN %" PRIu64, setIdx,
-                           wayIdx, ppCache[setIdx][wayIdx].tag);
+                           flushedWay, ppCache[setIdx][flushedWay].tag);
       }
 
       ppCache[setIdx][wayIdx].tag = req.range.slpn;
@@ -445,25 +446,26 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
 
       bool cold;
       uint64_t insertAt = tick;
-      wayIdx = flushVictim(req, tick, &cold);
+      uint32_t flushedWay;
+      flushedWay = flushVictim(req, tick, &cold);
 
       if (cold) {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "WRITE | Cache cold-miss, no need to flush", setIdx);
+                           "WRITE | Cache cold-miss, no need to flush");
 
         tick += lat;
       }
       else {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                            "WRITE | Flush (%u, %u), LPN %" PRIu64, setIdx,
-                           wayIdx, ppCache[setIdx][wayIdx].tag);
+                           flushedWay, ppCache[setIdx][flushedWay].tag);
       }
 
       ppCache[setIdx][wayIdx].tag = req.range.slpn;
       ppCache[setIdx][wayIdx].lastAccessed = insertAt;
       ppCache[setIdx][wayIdx].insertedAt = insertAt;
       setIfTrue(ppCache[setIdx][wayIdx].validBits, reqInternal.ioFlag, true);
-      setIfTrue(ppCache[setIdx][wayIdx].dirtyBits, reqInternal.ioFlag, false);
+      setIfTrue(ppCache[setIdx][wayIdx].dirtyBits, reqInternal.ioFlag, true);
 
       // DRAM delay should be hidden by NAND I/O
     }

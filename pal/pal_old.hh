@@ -41,6 +41,7 @@ class PALOLD : public AbstractPAL {
   ::Latency *lat;
 
   void convertCPDPBP(Request &, std::vector<::CPDPBP> &);
+  void printCPDPBP(::CPDPBP &, const char *);
 
  public:
   PALOLD(Parameter &, Config &);

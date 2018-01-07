@@ -66,6 +66,8 @@ void PALOLD::read(Request &req, uint64_t &tick) {
   convertCPDPBP(req, list);
 
   for (auto &iter : list) {
+    printCPDPBP(iter, "READ");
+
     pal->submit(cmd, iter);
 
     finishedAt = MAX(finishedAt, cmd.finished);
@@ -82,6 +84,8 @@ void PALOLD::write(Request &req, uint64_t &tick) {
   convertCPDPBP(req, list);
 
   for (auto &iter : list) {
+    printCPDPBP(iter, "WRITE");
+
     pal->submit(cmd, iter);
 
     finishedAt = MAX(finishedAt, cmd.finished);
@@ -98,6 +102,8 @@ void PALOLD::erase(Request &req, uint64_t &tick) {
   convertCPDPBP(req, list);
 
   for (auto &iter : list) {
+    printCPDPBP(iter, "ERASE");
+
     pal->submit(cmd, iter);
 
     finishedAt = MAX(finishedAt, cmd.finished);
@@ -249,6 +255,13 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
   if (tmp != pageInSuperPage) {
     Logger::panic("I/O flag size != # pages in super page");
   }
+}
+
+void PALOLD::printCPDPBP(::CPDPBP &addr, const char *prefix) {
+  Logger::debugprint(Logger::LOG_PAL_OLD,
+                     "%-7s | C %5u | W %5u | D %5u | P %5u | B %5u | P %5u",
+                     prefix, addr.Channel, addr.Package, addr.Die, addr.Plane,
+                     addr.Block, addr.Page);
 }
 
 }  // namespace PAL

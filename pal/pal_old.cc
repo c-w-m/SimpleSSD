@@ -273,16 +273,16 @@ void PALOLD::printCPDPBP(::CPDPBP &addr, const char *prefix) {
 }
 
 void PALOLD::printPPN(Request &req, const char *prefix) {
-  std::string str;
-
-  str.reserve(64);
-
   Logger::debugprint(Logger::LOG_PAL_OLD, "%-5s | Block %u | Page %u", prefix,
                      req.blockIndex, req.pageIndex);
 
   Logger::debugprint(Logger::LOG_PAL_OLD, "%-5s | Partial I/O map", prefix);
 
   for (uint32_t i = 0; i < param.pageInSuperPage; i += 16) {
+    std::string str;
+
+    str.reserve(64);
+
     for (uint32_t j = 0; j < 16; j++) {
       if (i + j < param.pageInSuperPage) {
         str += (req.ioFlag.at(i + j) ? "1 " : "0 ");
@@ -290,8 +290,6 @@ void PALOLD::printPPN(Request &req, const char *prefix) {
     }
 
     Logger::debugprint(Logger::LOG_PAL_OLD, str.c_str());
-
-    str.at(0) = 0;
   }
 }
 

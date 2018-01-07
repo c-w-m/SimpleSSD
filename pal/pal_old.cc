@@ -275,13 +275,14 @@ void PALOLD::printCPDPBP(::CPDPBP &addr, const char *prefix) {
 void PALOLD::printPPN(Request &req, const char *prefix) {
   std::stringstream ss;
 
-  Logger::debugprint(Logger::LOG_PAL_OLD, "%-5s | Block %u | Page %u", prefix, req.blockIndex, req.pageIndex);
+  Logger::debugprint(Logger::LOG_PAL_OLD, "%-5s | Block %u | Page %u", prefix,
+                     req.blockIndex, req.pageIndex);
 
   for (auto iter : req.ioFlag) {
     ss << (iter ? "1 " : "0 ");
   }
 
-  Logger::debugprint(Logger::LOG_PAL_OLD, "%-5s | Partial I/O map");
+  Logger::debugprint(Logger::LOG_PAL_OLD, "%-5s | Partial I/O map", prefix);
   Logger::debugprint(Logger::LOG_PAL_OLD, ss.str().c_str());
 }
 

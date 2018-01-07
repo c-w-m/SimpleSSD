@@ -61,7 +61,11 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
 
   for (uint32_t i = 0; i < setSize; i++) {
     ppCache[i] = new Line[waySize]();
-    ppCache[i]->dirtyBits.resize(partialIOUnitCount);
+
+    for (uint32_t j = 0; j < waySize; j++) {
+      ppCache[i][i].validBits.resize(partialIOUnitCount);
+      ppCache[i][i].dirtyBits.resize(partialIOUnitCount);
+    }
   }
 
   lastRequest.reqID = 1;
@@ -184,10 +188,13 @@ void GenericCache::setBits(std::vector<bool> &bits, uint64_t begin,
 }
 
 void GenericCache::checkPrefetch(Request &req) {
-  printf("Last I/O: reqID %" PRIu64 ", Range %" PRIu64 " + %" PRIu64 "\n",
-         lastRequest.reqID, lastRequest.range.slpn, lastRequest.range.nlp);
-  printf("This I/O: reqID %" PRIu64 ", Range %" PRIu64 " + %" PRIu64 "\n",
-         req.reqID, req.range.slpn, req.range.nlp);
+  printf("Last I/O: reqID %" PRIu64 ", LPN %" PRIu64 ", Byte %" PRIu64
+         " + %" PRIu64 "\n",
+         lastRequest.reqID, lastRequest.range.slpn, lastRequest.offset,
+         lastRequest.length);
+  printf("This I/O: reqID %" PRIu64 ", LPN %" PRIu64 ", Byte %" PRIu64
+         " + %" PRIu64 "\n",
+         req.reqID, req.range.slpn, req.offset, req.length);
 
   if (lastRequest.reqID == req.reqID) {
     lastRequest.range = req.range;
@@ -195,7 +202,9 @@ void GenericCache::checkPrefetch(Request &req) {
     return;
   }
 
-  if (lastRequest.range.slpn + lastRequest.range.nlp == req.range.slpn) {
+  if (lastRequest.range.slpn * lineSize + lastRequest.offset +
+          lastRequest.length ==
+      req.range.slpn * lineSize + req.offset) {
     if (!prefetchEnabled) {
       hitCounter++;
 
@@ -483,7 +492,8 @@ bool GenericCache::trim(Request &req, uint64_t &tick) {
 
     if (ret) {
       // invalidate
-      ppCache[setIdx][i].validBits = std::vector<bool>(partialIOUnitCount, false);
+      ppCache[setIdx][i].validBits =
+          std::vector<bool>(partialIOUnitCount, false);
     }
 
     // we have to trim this
@@ -520,7 +530,8 @@ void GenericCache::format(LPNRange &range, uint64_t &tick) {
 
       if (ret) {
         // invalidate
-        ppCache[setIdx][way].validBits = std::vector<bool>(partialIOUnitCount, false);
+        ppCache[setIdx][way].validBits =
+            std::vector<bool>(partialIOUnitCount, false);
       }
     }
 

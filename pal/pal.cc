@@ -91,7 +91,7 @@ PAL::PAL(ConfigReader *c) : pConf(c) {
   Logger::debugprint(
       Logger::LOG_PAL,
       "Channel |   Way   |   Die   |  Plane  |  Block  |   Page  ");
-  Logger::debugprint(Logger::LOG_PAL, "%-7u | %-7u | %-7u | %-7u | %-7u | %-7u",
+  Logger::debugprint(Logger::LOG_PAL, "%7u | %7u | %7u | %7u | %7u | %7u",
                      param.channel, param.package, param.die, param.plane,
                      param.block, param.page);
   Logger::debugprint(Logger::LOG_PAL, "Multi-plane mode %s",

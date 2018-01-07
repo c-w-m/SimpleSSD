@@ -68,6 +68,7 @@ class GenericCache : public AbstractCache {
 
   // TODO: create dynamic bitset replacing std::vector<bool>
   static bool merge(std::vector<bool> &);
+  static bool same(std::vector<bool> &, std::vector<bool> &);
   static void setIfTrue(std::vector<bool> &, std::vector<bool> &, bool);
   static void calcAND(std::vector<bool> &, std::vector<bool> &, std::vector<bool> &);
 

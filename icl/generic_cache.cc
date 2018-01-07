@@ -200,6 +200,10 @@ void GenericCache::setBits(std::vector<bool> &bits, uint64_t begin,
                            uint64_t end, bool value) {
   end = MIN(end, bits.size());
 
+  if (end < begin) {
+    Logger::panic("Invalid parameter");
+  }
+
   for (uint64_t i = begin; i < end; i++) {
     bits.at(i) = value;
   }
@@ -283,6 +287,25 @@ void GenericCache::calcAND(std::vector<bool> &out, std::vector<bool> &lhs,
   }
 }
 
+bool GenericCache::same(std::vector<bool> &lhs, std::vector<bool> &rhs) {
+  bool ret = true;
+  uint32_t size = lhs.size();
+
+  if (size != rhs.size()) {
+    Logger::panic("Input size does not match");
+  }
+
+  for (uint32_t i = 0; i < size; i++) {
+    if (lhs.at(i) != rhs.at(i)) {
+      ret = false;
+
+      break;
+    }
+  }
+
+  return ret;
+}
+
 // True when hit
 bool GenericCache::read(Request &req, uint64_t &tick) {
   bool ret = false;
@@ -316,7 +339,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 
       calcAND(tmp, line.validBits, reqInternal.ioFlag);
 
-      if (tmp == reqInternal.ioFlag && line.tag == req.range.slpn) {
+      if (same(tmp, reqInternal.ioFlag) && line.tag == req.range.slpn) {
         line.lastAccessed = tick;
         ret = true;
 
@@ -355,6 +378,9 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 
       setIfTrue(ppCache[setIdx][wayIdx].validBits, reqInternal.ioFlag, true);
       setIfTrue(ppCache[setIdx][wayIdx].dirtyBits, reqInternal.ioFlag, false);
+
+      // Resize I/O size
+      setIfTrue(reqInternal.ioFlag, tmp, false);
 
       // Request read and flush at same time
       pFTL->read(reqInternal, tick);

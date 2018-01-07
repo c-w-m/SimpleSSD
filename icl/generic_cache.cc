@@ -29,7 +29,7 @@ namespace SimpleSSD {
 namespace ICL {
 
 GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
-    : Cache(c, f), gen(rd()) {
+    : AbstractCache(c, f), gen(rd()) {
   uint64_t cacheSize = c->iclConfig.readUint(ICL_CACHE_SIZE);
   waySize = c->iclConfig.readUint(ICL_WAY_SIZE);
   lineSize = f->getInfo()->pageSize;

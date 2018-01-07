@@ -22,13 +22,13 @@
 
 #include <random>
 
-#include "icl/cache.hh"
+#include "icl/abstract_cache.hh"
 
 namespace SimpleSSD {
 
 namespace ICL {
 
-class GenericCache : public Cache {
+class GenericCache : public AbstractCache {
  private:
   uint32_t setSize;
   uint32_t waySize;

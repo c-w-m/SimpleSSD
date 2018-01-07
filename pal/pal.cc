@@ -27,7 +27,7 @@ namespace SimpleSSD {
 namespace PAL {
 
 PAL::PAL(ConfigReader *c) : pConf(c) {
-  static const char name[4][16] = { "Channel", "Way", "Die", "Plane" };
+  static const char name[4][16] = {"Channel", "Way", "Die", "Plane"};
   uint32_t value[4];
   uint8_t superblock = pConf->palConfig.getSuperblockConfig();
 
@@ -80,10 +80,16 @@ PAL::PAL(ConfigReader *c) : pConf(c) {
   }
 
   // Print super block information
-  Logger::debugprint(Logger::LOG_PAL, "Information");
-  Logger::debugprint(Logger::LOG_PAL, "Channel |   Way   |   Die   |  Plane  |  Block  |   Page  ");
-  Logger::debugprint(Logger::LOG_PAL, "%-7u | %-7u | %-7u | %-7u | %-7u | %-7u", param.channel, param.package, param.die, param.plane, param.block, param.page);
-  Logger::debugprint(Logger::LOG_PAL, "Multi-plane mode %s", pConf->palConfig.readBoolean(NAND_USE_MULTI_PLANE_OP) ? "enabled" : "disabled");
+  Logger::debugprint(
+      Logger::LOG_PAL,
+      "Channel |   Way   |   Die   |  Plane  |  Block  |   Page  ");
+  Logger::debugprint(Logger::LOG_PAL, "%-7u | %-7u | %-7u | %-7u | %-7u | %-7u",
+                     param.channel, param.package, param.die, param.plane,
+                     param.block, param.page);
+  Logger::debugprint(Logger::LOG_PAL, "Multi-plane mode %s",
+                     pConf->palConfig.readBoolean(NAND_USE_MULTI_PLANE_OP)
+                         ? "enabled"
+                         : "disabled");
   Logger::debugprint(Logger::LOG_PAL, "Superblock multiplier");
 
   for (int i = 0; i < 4; i++) {
@@ -92,8 +98,12 @@ PAL::PAL(ConfigReader *c) : pConf(c) {
     }
   }
 
-  Logger::debugprint(Logger::LOG_PAL, "Page size %u -> %u", param.pageSize, param.superPageSize);
-  Logger::debugprint(Logger::LOG_PAL, "Total block count %u -> %u", param.channel * param.package * param.die * param.plane * param.block, param.superBlock);
+  Logger::debugprint(Logger::LOG_PAL, "Page size %u -> %u", param.pageSize,
+                     param.superPageSize);
+  Logger::debugprint(
+      Logger::LOG_PAL, "Total block count %u -> %u",
+      param.channel * param.package * param.die * param.plane * param.block,
+      param.superBlock);
 
   pPAL = new PALOLD(param, c->palConfig);
 }

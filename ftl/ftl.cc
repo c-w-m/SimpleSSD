@@ -55,6 +55,12 @@ FTL::FTL(ConfigReader *c) : pConf(c) {
     Logger::panic("FTL Over-Provision Ratio is too small");
   }
 
+  // Print mapping Information
+  Logger::debugprint(Logger::LOG_FTL, "Total physical blocks %u",
+                     param.totalPhysicalBlocks);
+  Logger::debugprint(Logger::LOG_FTL, "Total logical blocks %u",
+                     param.totalLogicalBlocks);
+
   // Initialize pFTL
   pFTL->initialize();
 }

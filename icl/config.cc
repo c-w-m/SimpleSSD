@@ -32,6 +32,7 @@ const char NAME_USE_READ_PREFETCH[] = "EnableReadPrefetch";
 const char NAME_EVICT_POLICY[] = "EvictPolicy";
 const char NAME_CACHE_SIZE[] = "CacheSize";
 const char NAME_WAY_SIZE[] = "CacheWaySize";
+const char NAME_PREFETCH_COUNT[] = "ReadPrefetchCount";
 
 // TODO: seperate This
 const char NAME_DRAM_CHANNEL[] = "DRAMChannel";
@@ -49,6 +50,7 @@ Config::Config() {
   evictPolicy = POLICY_LEAST_RECENTLY_USED;
   cacheSize = 33554432;
   cacheWaySize = 1;
+  prefetchCount = 1;
 
   /* LPDDR3-1600 4Gbit 1x32 */
   dram.channel = 1;
@@ -122,6 +124,9 @@ bool Config::setConfig(const char *name, const char *value) {
   else if (MATCH_NAME(NAME_USE_READ_PREFETCH)) {
     readPrefetch = convertBool(value);
   }
+  else if (MATCH_NAME(NAME_PREFETCH_COUNT)) {
+    prefetchCount = strtoul(value, nullptr, 10);
+  }
   else if (MATCH_NAME(NAME_EVICT_POLICY)) {
     evictPolicy = (EVICT_POLICY)strtoul(value, nullptr, 10);
   }
@@ -182,6 +187,9 @@ uint64_t Config::readUint(uint32_t idx) {
       break;
     case ICL_WAY_SIZE:
       ret = cacheWaySize;
+      break;
+    case ICL_PREFETCH_COUNT:
+      ret = prefetchCount;
       break;
     case DRAM_CHANNEL:
       ret = dram.channel;

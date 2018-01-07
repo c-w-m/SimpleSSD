@@ -60,6 +60,8 @@ FTL::FTL(ConfigReader *c) : pConf(c) {
                      param.totalPhysicalBlocks);
   Logger::debugprint(Logger::LOG_FTL, "Total logical blocks %u",
                      param.totalLogicalBlocks);
+  Logger::debugprint(Logger::LOG_FTL, "Logical page size %u",
+                     param.pageSize);
 
   // Initialize pFTL
   pFTL->initialize();

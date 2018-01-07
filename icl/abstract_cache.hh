@@ -32,8 +32,8 @@ typedef struct _Line {
   uint64_t tag;
   uint64_t lastAccessed;
   uint64_t insertedAt;
-  bool dirty;
-  bool valid;
+  std::vector<bool> dirtyBits;
+  std::vector<bool> validBits;
 
   _Line();
   _Line(uint64_t, bool);

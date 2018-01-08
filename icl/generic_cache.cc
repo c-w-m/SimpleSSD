@@ -337,6 +337,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       if (line.validBits.any() && line.tag == req.range.slpn) {
         line.lastAccessed = tick;
 
+        line.validBits |= reqInternal.ioFlag;
         line.dirtyBits |= reqInternal.ioFlag;
 
         ret = true;

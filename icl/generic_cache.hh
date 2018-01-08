@@ -21,6 +21,7 @@
 #define __ICL_GENERIC_CACHE__
 
 #include <random>
+#include <vector>
 
 #include "icl/abstract_cache.hh"
 
@@ -57,20 +58,14 @@ class GenericCache : public AbstractCache {
   Config::DRAMTiming *pTiming;
   Config::DRAMStructure *pStructure;
 
-  Line **ppCache;
+  std::vector<std::vector<Line>> ppCache;
 
   uint32_t calcSet(uint64_t);
   uint32_t flushVictim(Request, uint64_t &, bool * = nullptr);
   uint64_t calculateDelay(uint64_t);
-  void convertIOFlag(std::vector<bool> &, uint64_t, uint64_t);
-  static void setBits(std::vector<bool> &, uint64_t, uint64_t, bool);
+  void convertIOFlag(DynamicBitset &, uint64_t, uint64_t);
+  static void setBits(DynamicBitset &, uint64_t, uint64_t, bool);
   void checkPrefetch(Request &);
-
-  // TODO: create dynamic bitset replacing std::vector<bool>
-  static bool merge(std::vector<bool> &);
-  static bool same(std::vector<bool> &, std::vector<bool> &);
-  static void setIfTrue(std::vector<bool> &, std::vector<bool> &, bool);
-  static void calcAND(std::vector<bool> &, std::vector<bool> &, std::vector<bool> &);
 
  public:
   GenericCache(ConfigReader *, FTL::FTL *);

@@ -28,24 +28,6 @@ namespace SimpleSSD {
 
 namespace ICL {
 
-void printBits(std::vector<bool> &bits) {
-  uint32_t size = bits.size();
-
-  for (uint32_t i = 0; i < size; i += 16) {
-    std::string str;
-
-    str.reserve(64);
-
-    for (uint32_t j = 0; j < 16; j++) {
-      if (i + j < size) {
-        str += (bits.at(i + j) ? "1 " : "0 ");
-      }
-    }
-
-    Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, str.c_str());
-  }
-}
-
 GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
     : AbstractCache(c, f), gen(rd()) {
   uint64_t cacheSize = c->iclConfig.readUint(ICL_CACHE_SIZE);
@@ -75,15 +57,10 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
   pTiming = c->iclConfig.getDRAMTiming();
   pStructure = c->iclConfig.getDRAMStructure();
 
-  ppCache = (Line **)calloc(setSize, sizeof(Line *));
+  ppCache.resize(setSize);
 
   for (uint32_t i = 0; i < setSize; i++) {
-    ppCache[i] = new Line[waySize]();
-
-    for (uint32_t j = 0; j < waySize; j++) {
-      ppCache[i][j].validBits.resize(partialIOUnitCount);
-      ppCache[i][j].dirtyBits.resize(partialIOUnitCount);
-    }
+    ppCache[i] = std::vector<Line>(waySize, Line(partialIOUnitCount));
   }
 
   lastRequest.reqID = 1;
@@ -91,13 +68,7 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
   hitCounter = 0;
 }
 
-GenericCache::~GenericCache() {
-  for (uint32_t i = 0; i < setSize; i++) {
-    delete[] ppCache[i];
-  }
-
-  free(ppCache);
-}
+GenericCache::~GenericCache() {}
 
 uint32_t GenericCache::calcSet(uint64_t lpn) {
   return lpn % setSize;
@@ -107,7 +78,7 @@ uint32_t GenericCache::flushVictim(Request req, uint64_t &tick, bool *isCold) {
   uint32_t setIdx = calcSet(req.range.slpn);
   uint32_t wayIdx = waySize;
   uint64_t min = std::numeric_limits<uint64_t>::max();
-  FTL::Request reqInternal;
+  FTL::Request reqInternal(partialIOUnitCount);
 
   if (isCold) {
     *isCold = false;
@@ -115,7 +86,7 @@ uint32_t GenericCache::flushVictim(Request req, uint64_t &tick, bool *isCold) {
 
   // Check set has empty entry
   for (uint32_t i = 0; i < waySize; i++) {
-    if (!merge(ppCache[setIdx][i].validBits)) {
+    if (ppCache[setIdx][i].validBits.none()) {
       wayIdx = i;
 
       if (isCold) {
@@ -154,7 +125,7 @@ uint32_t GenericCache::flushVictim(Request req, uint64_t &tick, bool *isCold) {
     }
 
     // Let's flush 'em if dirty
-    if (merge(ppCache[setIdx][wayIdx].dirtyBits)) {
+    if (ppCache[setIdx][wayIdx].dirtyBits.any()) {
       reqInternal.lpn = ppCache[setIdx][wayIdx].tag;
       reqInternal.ioFlag = ppCache[setIdx][wayIdx].dirtyBits;
 
@@ -167,8 +138,7 @@ uint32_t GenericCache::flushVictim(Request req, uint64_t &tick, bool *isCold) {
     }
 
     // Invalidate
-    ppCache[setIdx][wayIdx].validBits =
-        std::vector<bool>(partialIOUnitCount, false);
+    ppCache[setIdx][wayIdx].validBits.reset();
   }
 
   return wayIdx;
@@ -184,20 +154,19 @@ uint64_t GenericCache::calculateDelay(uint64_t bytesize) {
   return (uint64_t)(pageFetch + pageCount * pStructure->pageSize / bandwidth);
 }
 
-void GenericCache::convertIOFlag(std::vector<bool> &flags, uint64_t offset,
+void GenericCache::convertIOFlag(DynamicBitset &flags, uint64_t offset,
                                  uint64_t length) {
   if (usePartialIO && !prefetchEnabled) {
-    flags.resize(partialIOUnitCount);
     setBits(flags, offset / partialIOUnitSize,
             (offset + length - 1) / partialIOUnitSize + 1, true);
   }
   else {
-    flags = std::vector<bool>(partialIOUnitCount, true);
+    flags.set();
   }
 }
 
-void GenericCache::setBits(std::vector<bool> &bits, uint64_t begin,
-                           uint64_t end, bool value) {
+void GenericCache::setBits(DynamicBitset &bits, uint64_t begin, uint64_t end,
+                           bool value) {
   end = MIN(end, bits.size());
 
   if (end < begin) {
@@ -205,7 +174,7 @@ void GenericCache::setBits(std::vector<bool> &bits, uint64_t begin,
   }
 
   for (uint64_t i = begin; i < end; i++) {
-    bits.at(i) = value;
+    bits.set(i, value);
   }
 }
 
@@ -237,74 +206,11 @@ void GenericCache::checkPrefetch(Request &req) {
   lastRequest = req;
 }
 
-bool GenericCache::merge(std::vector<bool> &bits) {
-  bool ret = false;
-
-  for (auto iter : bits) {
-    if (iter) {
-      ret = true;
-
-      break;
-    }
-  }
-
-  return ret;
-}
-
-void GenericCache::setIfTrue(std::vector<bool> &out, std::vector<bool> &cond,
-                             bool value) {
-  uint32_t size = out.size();
-
-  if (size != cond.size()) {
-    Logger::panic("Input size does not match");
-  }
-
-  for (uint32_t i = 0; i < size; i++) {
-    if (cond.at(i)) {
-      out.at(i) = value;
-    }
-  }
-}
-
-void GenericCache::calcAND(std::vector<bool> &out, std::vector<bool> &lhs,
-                           std::vector<bool> &rhs) {
-  uint32_t size = lhs.size();
-
-  if (size != rhs.size()) {
-    Logger::panic("Input size does not match");
-  }
-
-  out.resize(size);
-
-  for (uint32_t i = 0; i < size; i++) {
-    out.at(i) = lhs.at(i) & rhs.at(i);
-  }
-}
-
-bool GenericCache::same(std::vector<bool> &lhs, std::vector<bool> &rhs) {
-  bool ret = true;
-  uint32_t size = lhs.size();
-
-  if (size != rhs.size()) {
-    Logger::panic("Input size does not match");
-  }
-
-  for (uint32_t i = 0; i < size; i++) {
-    if (lhs.at(i) != rhs.at(i)) {
-      ret = false;
-
-      break;
-    }
-  }
-
-  return ret;
-}
-
 // True when hit
 bool GenericCache::read(Request &req, uint64_t &tick) {
   bool ret = false;
   bool partialhit = false;
-  FTL::Request reqInternal(req);
+  FTL::Request reqInternal(partialIOUnitCount, req);
 
   // Check prefetch status
   if (useReadPrefetch) {
@@ -314,7 +220,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
   convertIOFlag(reqInternal.ioFlag, req.offset, req.length);
 
   Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "I/O map");
-  printBits(reqInternal.ioFlag);
+  reqInternal.ioFlag.print();
 
   Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                      "READ  | LPN %" PRIu64 " | SIZE %" PRIu64, req.range.slpn,
@@ -324,20 +230,20 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
     uint64_t lat = calculateDelay(req.length);
-    std::vector<bool> tmp;
+    DynamicBitset tmp(partialIOUnitCount);
 
     for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
       Line &line = ppCache[setIdx][wayIdx];
 
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "Line %u map", wayIdx);
-      printBits(line.validBits);
+      line.validBits.print();
 
-      if (merge(line.validBits) && line.tag == req.range.slpn) {
+      if (line.validBits.any() && line.tag == req.range.slpn) {
         partialhit = true;
 
-        calcAND(tmp, line.validBits, reqInternal.ioFlag);
+        tmp = line.validBits & reqInternal.ioFlag;
 
-        if (same(tmp, reqInternal.ioFlag)) {
+        if (tmp == reqInternal.ioFlag) {
           line.lastAccessed = tick;
           ret = true;
         }
@@ -357,7 +263,8 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
     else {
       if (partialhit) {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "READ  | Cache partial hit at (%u, %u)", setIdx, wayIdx);
+                           "READ  | Cache partial hit at (%u, %u)", setIdx,
+                           wayIdx);
       }
       else {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
@@ -378,16 +285,15 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         }
       }
 
+      ppCache[setIdx][wayIdx].validBits |= reqInternal.ioFlag;
+      ppCache[setIdx][wayIdx].dirtyBits &= ~reqInternal.ioFlag;
       ppCache[setIdx][wayIdx].tag = req.range.slpn;
       ppCache[setIdx][wayIdx].lastAccessed = tick;
       ppCache[setIdx][wayIdx].insertedAt = tick;
 
-      setIfTrue(ppCache[setIdx][wayIdx].validBits, reqInternal.ioFlag, true);
-      setIfTrue(ppCache[setIdx][wayIdx].dirtyBits, reqInternal.ioFlag, false);
-
       // Resize I/O size if some part of data is valid
       if (tmp.size() == partialIOUnitCount) {
-        setIfTrue(reqInternal.ioFlag, tmp, false);
+        reqInternal.ioFlag &= ~tmp;
       }
 
       // Request read and flush at same time
@@ -406,12 +312,12 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 // True when cold-miss/hit
 bool GenericCache::write(Request &req, uint64_t &tick) {
   bool ret = false;
-  FTL::Request reqInternal(req);
+  FTL::Request reqInternal(partialIOUnitCount, req);
 
   convertIOFlag(reqInternal.ioFlag, req.offset, req.length);
 
   Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "I/O map");
-  printBits(reqInternal.ioFlag);
+  reqInternal.ioFlag.print();
 
   Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                      "WRITE | LPN %" PRIu64 " | SIZE %" PRIu64, req.range.slpn,
@@ -426,12 +332,12 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       Line &line = ppCache[setIdx][wayIdx];
 
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "Line %u map", wayIdx);
-      printBits(line.validBits);
+      line.validBits.print();
 
-      if (merge(line.validBits) && line.tag == req.range.slpn) {
+      if (line.validBits.any() && line.tag == req.range.slpn) {
         line.lastAccessed = tick;
 
-        setIfTrue(line.dirtyBits, reqInternal.ioFlag, true);
+        line.dirtyBits |= reqInternal.ioFlag;
 
         ret = true;
 
@@ -467,11 +373,11 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
                            wayIdx, ppCache[setIdx][wayIdx].tag);
       }
 
+      ppCache[setIdx][wayIdx].validBits |= reqInternal.ioFlag;
+      ppCache[setIdx][wayIdx].dirtyBits |= reqInternal.ioFlag;
       ppCache[setIdx][wayIdx].tag = req.range.slpn;
       ppCache[setIdx][wayIdx].lastAccessed = insertAt;
       ppCache[setIdx][wayIdx].insertedAt = insertAt;
-      setIfTrue(ppCache[setIdx][wayIdx].validBits, reqInternal.ioFlag, true);
-      setIfTrue(ppCache[setIdx][wayIdx].dirtyBits, reqInternal.ioFlag, true);
 
       // DRAM delay should be hidden by NAND I/O
     }
@@ -486,21 +392,21 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
 // True when hit
 bool GenericCache::flush(Request &req, uint64_t &tick) {
   bool ret = false;
-  FTL::Request reqInternal(req);
+  FTL::Request reqInternal(partialIOUnitCount, req);
 
   convertIOFlag(reqInternal.ioFlag, req.offset, req.length);
 
   if (useReadCaching || useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t i;
-    std::vector<bool> tmp;
+    DynamicBitset tmp(partialIOUnitCount);
 
     for (i = 0; i < waySize; i++) {
       Line &line = ppCache[setIdx][i];
 
-      calcAND(tmp, line.validBits, reqInternal.ioFlag);
+      tmp = line.validBits & reqInternal.ioFlag;
 
-      if (merge(tmp) && line.tag == req.range.slpn) {
+      if (tmp.any() && line.tag == req.range.slpn) {
         ret = true;
 
         break;
@@ -508,15 +414,15 @@ bool GenericCache::flush(Request &req, uint64_t &tick) {
     }
 
     if (ret) {
-      calcAND(reqInternal.ioFlag, ppCache[setIdx][i].dirtyBits, tmp);
+      reqInternal.ioFlag = ppCache[setIdx][i].dirtyBits & tmp;
 
-      if (merge(tmp)) {
+      if (tmp.any()) {
         // we have to flush this
         pFTL->write(reqInternal, tick);
       }
 
       // invalidate
-      setIfTrue(ppCache[setIdx][i].validBits, tmp, false);
+      ppCache[setIdx][i].validBits &= ~tmp;
     }
   }
 
@@ -526,7 +432,7 @@ bool GenericCache::flush(Request &req, uint64_t &tick) {
 // True when hit
 bool GenericCache::trim(Request &req, uint64_t &tick) {
   bool ret = false;
-  FTL::Request reqInternal(req);
+  FTL::Request reqInternal(partialIOUnitCount, req);
 
   convertIOFlag(reqInternal.ioFlag, req.offset, req.length);
 
@@ -540,7 +446,7 @@ bool GenericCache::trim(Request &req, uint64_t &tick) {
     for (i = 0; i < waySize; i++) {
       Line &line = ppCache[setIdx][i];
 
-      if (merge(line.validBits) && line.tag == req.range.slpn) {
+      if (line.validBits.any() && line.tag == req.range.slpn) {
         ret = true;
 
         break;
@@ -549,8 +455,7 @@ bool GenericCache::trim(Request &req, uint64_t &tick) {
 
     if (ret) {
       // invalidate
-      ppCache[setIdx][i].validBits =
-          std::vector<bool>(partialIOUnitCount, false);
+      ppCache[setIdx][i].validBits.reset();
     }
 
     // we have to trim this
@@ -578,7 +483,7 @@ void GenericCache::format(LPNRange &range, uint64_t &tick) {
       for (way = 0; way < waySize; way++) {
         Line &line = ppCache[setIdx][way];
 
-        if (merge(line.validBits) && line.tag == lpn) {
+        if (line.validBits.any() && line.tag == lpn) {
           ret = true;
 
           break;
@@ -587,8 +492,7 @@ void GenericCache::format(LPNRange &range, uint64_t &tick) {
 
       if (ret) {
         // invalidate
-        ppCache[setIdx][way].validBits =
-            std::vector<bool>(partialIOUnitCount, false);
+        ppCache[setIdx][way].validBits.reset();
       }
     }
 

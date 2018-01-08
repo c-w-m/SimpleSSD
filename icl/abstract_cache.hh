@@ -32,11 +32,11 @@ typedef struct _Line {
   uint64_t tag;
   uint64_t lastAccessed;
   uint64_t insertedAt;
-  std::vector<bool> dirtyBits;
-  std::vector<bool> validBits;
+  DynamicBitset dirtyBits;
+  DynamicBitset validBits;
 
-  _Line();
-  _Line(uint64_t, bool);
+  _Line(uint32_t);
+  _Line(uint32_t, uint64_t, bool);
 } Line;
 
 class AbstractCache {

@@ -30,14 +30,14 @@ namespace FTL {
 Block::Block(uint32_t count, uint32_t ioUnit)
     : pageCount(count),
       ioUnitInPage(ioUnit),
-      nextWritePageIndex(0),
+      nextWritePageIndex(std::vector<uint32_t>(ioUnitInPage, 0)),
       validBits(
           std::vector<DynamicBitset>(pageCount, DynamicBitset(ioUnitInPage))),
+      erasedBits(
+          std::vector<DynamicBitset>(pageCount, DynamicBitset(ioUnitInPage))),
+      lpns(std::vector<uint64_t>(pageCount, 0)),
       lastAccessed(0),
       eraseCount(0) {
-  lpns.resize(pageCount);
-  nextWritePageIndex.resize(ioUnitInPage);
-
   erase();
   eraseCount = 0;
 }
@@ -55,7 +55,7 @@ uint32_t Block::getEraseCount() {
 uint32_t Block::getValidPageCount() {
   uint32_t ret = 0;
 
-  for (auto iter : validBits) {
+  for (auto &iter : validBits) {
     if (iter.any()) {
       ret++;
     }
@@ -144,10 +144,10 @@ bool Block::write(uint32_t pageIndex, uint64_t lpn, DynamicBitset &iomap,
 }
 
 void Block::erase() {
-  for (auto iter : validBits) {
+  for (auto &iter : validBits) {
     iter.reset();
   }
-  for (auto iter : erasedBits) {
+  for (auto &iter : erasedBits) {
     iter.set();
   }
   for (auto &iter : nextWritePageIndex) {

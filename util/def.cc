@@ -21,7 +21,6 @@
 
 #include <cstdlib>
 
-#include "log/trace.hh"
 #include "util/algorithm.hh"
 
 namespace SimpleSSD {

@@ -23,6 +23,8 @@
 #include <cinttypes>
 #include <vector>
 
+#include "log/trace.hh"
+
 namespace SimpleSSD {
 
 typedef struct _LPNRange {
@@ -33,6 +35,7 @@ typedef struct _LPNRange {
   _LPNRange(uint64_t, uint64_t);
 } LPNRange;
 
+// TODO: use SIMD operation if possible
 class DynamicBitset {
  private:
   uint8_t *pData;
@@ -75,6 +78,28 @@ class DynamicBitset {
 
   friend DynamicBitset operator^(DynamicBitset lhs, const DynamicBitset &rhs) {
     return lhs ^= rhs;
+  }
+
+  friend bool operator==(const DynamicBitset &lhs, const DynamicBitset &rhs) {
+    bool ret = true;
+
+    if (lhs.dataSize != rhs.dataSize) {
+      Logger::panic("Size does not match");
+    }
+
+    for (uint32_t i = 0; i < lhs.allocSize; i++) {
+      if (lhs.pData[i] != rhs.pData[i]) {
+        ret = false;
+
+        break;
+      }
+    }
+
+    return ret;
+  }
+
+  friend bool operator!=(const DynamicBitset &lhs, const DynamicBitset &rhs) {
+    return !operator==(lhs, rhs);
   }
 };
 

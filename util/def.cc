@@ -219,16 +219,21 @@ Request::_Request() : reqID(0), reqSubID(0), offset(0), length(0) {}
 
 namespace FTL {
 
-Request::_Request() : reqID(0), reqSubID(0), lpn(0) {}
+Request::_Request(uint32_t iocount)
+    : reqID(0), reqSubID(0), lpn(0), ioFlag(iocount) {}
 
-Request::_Request(ICL::Request &r)
-    : reqID(r.reqID), reqSubID(r.reqSubID), lpn(r.range.slpn) {}
+Request::_Request(uint32_t iocount, ICL::Request &r)
+    : reqID(r.reqID),
+      reqSubID(r.reqSubID),
+      lpn(r.range.slpn),
+      ioFlag(iocount) {}
 
 }  // namespace FTL
 
 namespace PAL {
 
-Request::_Request() : reqID(0), reqSubID(0), blockIndex(0), pageIndex(0) {}
+Request::_Request(uint32_t iocount)
+    : reqID(0), reqSubID(0), blockIndex(0), pageIndex(0), ioFlag(iocount) {}
 
 Request::_Request(FTL::Request &r)
     : reqID(r.reqID),

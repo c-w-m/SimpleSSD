@@ -123,10 +123,10 @@ typedef struct _Request {
   uint64_t reqID;  // ID of ICL::Request
   uint64_t reqSubID;
   uint64_t lpn;
-  std::vector<bool> ioFlag;
+  DynamicBitset ioFlag;
 
-  _Request();
-  _Request(ICL::Request &);
+  _Request(uint32_t);
+  _Request(uint32_t, ICL::Request &);
 } Request;
 
 }  // namespace FTL
@@ -138,9 +138,9 @@ typedef struct _Request {
   uint64_t reqSubID;
   uint32_t blockIndex;
   uint32_t pageIndex;
-  std::vector<bool> ioFlag;
+  DynamicBitset ioFlag;
 
-  _Request();
+  _Request(uint32_t);
   _Request(FTL::Request &);
 } Request;
 

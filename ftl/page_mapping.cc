@@ -37,10 +37,9 @@ PageMapping::PageMapping(Parameter *p, PAL::PAL *l, ConfigReader *c)
       conf(c->ftlConfig),
       pFTLParam(p),
       bReclaimMore(false) {
-  Block temp(pFTLParam->pagesInBlock, pFTLParam->ioUnitInPage);
-
   for (uint32_t i = 0; i < pFTLParam->totalPhysicalBlocks; i++) {
-    freeBlocks.insert({i, temp});
+    freeBlocks.insert(
+        {i, Block(pFTLParam->pagesInBlock, pFTLParam->ioUnitInPage)});
   }
 
   lastFreeBlock = getFreeBlock();

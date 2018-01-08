@@ -38,7 +38,7 @@ typedef struct _LPNRange {
 // TODO: use SIMD operation if possible
 class DynamicBitset {
  private:
-  uint8_t *pData;
+  std::vector<uint8_t> data;
   uint32_t dataSize;
   uint32_t allocSize;
 
@@ -46,8 +46,6 @@ class DynamicBitset {
 
  public:
   DynamicBitset(uint32_t);
-  DynamicBitset(const DynamicBitset &) noexcept;
-  ~DynamicBitset();
 
   bool test(uint32_t);
   bool all();
@@ -67,7 +65,6 @@ class DynamicBitset {
   DynamicBitset &operator&=(const DynamicBitset &);
   DynamicBitset &operator|=(const DynamicBitset &);
   DynamicBitset &operator^=(const DynamicBitset &);
-  DynamicBitset &operator=(const DynamicBitset &);
   DynamicBitset operator~() const;
 
   friend DynamicBitset operator&(DynamicBitset lhs, const DynamicBitset &rhs) {
@@ -90,7 +87,7 @@ class DynamicBitset {
     }
 
     for (uint32_t i = 0; i < lhs.allocSize; i++) {
-      if (lhs.pData[i] != rhs.pData[i]) {
+      if (lhs.data[i] != rhs.data[i]) {
         ret = false;
 
         break;

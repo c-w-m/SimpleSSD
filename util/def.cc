@@ -36,30 +36,7 @@ DynamicBitset::DynamicBitset(uint32_t size) : dataSize(size) {
   }
 
   allocSize = (dataSize - 1) / 8 + 1;
-  pData = (uint8_t *)calloc(allocSize, 1);
-
-  if (pData == nullptr) {
-    Logger::panic("No memory");
-  }
-}
-
-DynamicBitset::DynamicBitset(const DynamicBitset &copy) noexcept
-    : pData(nullptr), dataSize(copy.dataSize), allocSize(copy.allocSize) {
-  if (allocSize > 0) {
-    pData = (uint8_t *)calloc(copy.allocSize, 1);
-
-    if (pData == nullptr) {
-      Logger::panic("No memory");
-    }
-  }
-
-  if (pData) {
-    std::copy(copy.pData, copy.pData + allocSize, pData);
-  }
-}
-
-DynamicBitset::~DynamicBitset() {
-  free(pData);
+  data.resize(allocSize);
 }
 
 void DynamicBitset::boundCheck(uint32_t idx) {
@@ -71,7 +48,7 @@ void DynamicBitset::boundCheck(uint32_t idx) {
 bool DynamicBitset::test(uint32_t idx) {
   boundCheck(idx);
 
-  return pData[idx / 8] & (0x01 << (idx % 8));
+  return data[idx / 8] & (0x01 << (idx % 8));
 }
 
 bool DynamicBitset::all() {
@@ -79,10 +56,10 @@ bool DynamicBitset::all() {
   uint8_t mask = 0xFF << (dataSize + 8 - allocSize * 8);
 
   for (uint32_t i = 0; i < allocSize - 1; i++) {
-    ret &= pData[i];
+    ret &= data[i];
   }
 
-  ret &= pData[allocSize - 1] | mask;
+  ret &= data[allocSize - 1] | mask;
 
   return ret == 0xFF;
 }
@@ -95,7 +72,7 @@ bool DynamicBitset::none() {
   uint8_t ret = 0x00;
 
   for (uint32_t i = 0; i < allocSize; i++) {
-    ret |= pData[i];
+    ret |= data[i];
   }
 
   return ret == 0x00;
@@ -105,7 +82,7 @@ uint32_t DynamicBitset::count() {
   uint32_t count = 0;
 
   for (uint32_t i = 0; i < allocSize; i++) {
-    count += popcount(pData[i]);
+    count += popcount(data[i]);
   }
 
   return count;
@@ -119,49 +96,49 @@ void DynamicBitset::set() {
   uint8_t mask = 0xFF >> (allocSize * 8 - dataSize + 8);
 
   for (uint32_t i = 0; i < allocSize - 1; i++) {
-    pData[i] = 0xFF;
+    data[i] = 0xFF;
   }
 
-  pData[allocSize - 1] = mask;
+  data[allocSize - 1] = mask;
 }
 
 void DynamicBitset::set(uint32_t idx, bool value) {
   boundCheck(idx);
 
-  pData[idx / 8] &= ~(0x01 << (idx % 8));
+  data[idx / 8] &= ~(0x01 << (idx % 8));
 
   if (value) {
-    pData[idx / 8] = pData[idx / 8] | (0x01 << (idx % 8));
+    data[idx / 8] = data[idx / 8] | (0x01 << (idx % 8));
   }
 }
 
 void DynamicBitset::reset() {
   for (uint32_t i = 0; i < allocSize; i++) {
-    pData[i] = 0x00;
+    data[i] = 0x00;
   }
 }
 
 void DynamicBitset::reset(uint32_t idx) {
   boundCheck(idx);
 
-  pData[idx / 8] &= ~(0x01 << (idx % 8));
+  data[idx / 8] &= ~(0x01 << (idx % 8));
 }
 
 void DynamicBitset::flip() {
   uint8_t mask = 0xFF >> (allocSize * 8 - dataSize + 8);
 
   for (uint32_t i = 0; i < allocSize; i++) {
-    pData[i] = ~pData[i];
+    data[i] = ~data[i];
   }
 
-  pData[allocSize - 1] &= mask;
+  data[allocSize - 1] &= mask;
 }
 
 void DynamicBitset::flip(uint32_t idx) {
   boundCheck(idx);
 
-  pData[idx / 8] = (~pData[idx / 8] & (0x01 << (idx % 8))) |
-                   (pData[idx / 8] & ~(0x01 << (idx % 8)));
+  data[idx / 8] = (~data[idx / 8] & (0x01 << (idx % 8))) |
+                   (data[idx / 8] & ~(0x01 << (idx % 8)));
 }
 
 bool DynamicBitset::operator[](uint32_t idx) {
@@ -182,7 +159,7 @@ DynamicBitset &DynamicBitset::operator&=(const DynamicBitset &rhs) {
   }
 
   for (uint32_t i = 0; i < allocSize; i++) {
-    pData[i] &= rhs.pData[i];
+    data[i] &= rhs.data[i];
   }
 
   return *this;
@@ -194,7 +171,7 @@ DynamicBitset &DynamicBitset::operator|=(const DynamicBitset &rhs) {
   }
 
   for (uint32_t i = 0; i < allocSize; i++) {
-    pData[i] |= rhs.pData[i];
+    data[i] |= rhs.data[i];
   }
 
   return *this;
@@ -206,23 +183,7 @@ DynamicBitset &DynamicBitset::operator^=(const DynamicBitset &rhs) {
   }
 
   for (uint32_t i = 0; i < allocSize; i++) {
-    pData[i] ^= rhs.pData[i];
-  }
-
-  return *this;
-}
-
-DynamicBitset &DynamicBitset::operator=(const DynamicBitset &rhs) {
-  if (this != &rhs) {
-    if (allocSize != rhs.allocSize) {
-      free(pData);
-      pData = (uint8_t *)calloc(rhs.allocSize, 1);
-      allocSize = rhs.allocSize;
-    }
-
-    dataSize = rhs.dataSize;
-
-    std::copy(rhs.pData, rhs.pData + rhs.allocSize, pData);
+    data[i] ^= rhs.data[i];
   }
 
   return *this;

@@ -205,7 +205,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
       for (uint32_t j = 0; j < value[2]; j++) {
         for (uint32_t k = 0; k < value[1]; k++) {
           for (uint32_t l = 0; l < value[0]; l++) {
-            if (req.ioFlag.at(tmp++)) {
+            if (req.ioFlag.test(tmp++)) {
               *ptr[0] = l;
               *ptr[1] = k;
               *ptr[2] = j;
@@ -222,7 +222,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
     for (uint32_t j = 0; j < value[2]; j++) {
       for (uint32_t k = 0; k < value[1]; k++) {
         for (uint32_t l = 0; l < value[0]; l++) {
-          if (req.ioFlag.at(tmp++)) {
+          if (req.ioFlag.test(tmp++)) {
             *ptr[0] = l;
             *ptr[1] = k;
             *ptr[2] = j;
@@ -236,7 +236,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
   else if (count == 2) {
     for (uint32_t k = 0; k < value[1]; k++) {
       for (uint32_t l = 0; l < value[0]; l++) {
-        if (req.ioFlag.at(tmp++)) {
+        if (req.ioFlag.test(tmp++)) {
           *ptr[0] = l;
           *ptr[1] = k;
 
@@ -247,7 +247,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
   }
   else if (count == 1) {
     for (uint32_t l = 0; l < value[0]; l++) {
-      if (req.ioFlag.at(tmp++)) {
+      if (req.ioFlag.test(tmp++)) {
         *ptr[0] = l;
 
         list.push_back(addr);
@@ -255,7 +255,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
     }
   }
   else {
-    if (req.ioFlag.at(tmp++)) {
+    if (req.ioFlag.test(tmp++)) {
       list.push_back(addr);
     }
   }
@@ -277,20 +277,7 @@ void PALOLD::printPPN(Request &req, const char *prefix) {
                      req.blockIndex, req.pageIndex);
 
   Logger::debugprint(Logger::LOG_PAL_OLD, "%-5s | Partial I/O map", prefix);
-
-  for (uint32_t i = 0; i < param.pageInSuperPage; i += 16) {
-    std::string str;
-
-    str.reserve(64);
-
-    for (uint32_t j = 0; j < 16; j++) {
-      if (i + j < param.pageInSuperPage) {
-        str += (req.ioFlag.at(i + j) ? "1 " : "0 ");
-      }
-    }
-
-    Logger::debugprint(Logger::LOG_PAL_OLD, str.c_str());
-  }
+  req.ioFlag.print();
 }
 
 }  // namespace PAL

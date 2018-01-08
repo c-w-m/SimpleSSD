@@ -19,6 +19,8 @@
 
 #include "ftl/common/block.hh"
 
+#include <algorithm>
+
 #include "log/trace.hh"
 
 namespace SimpleSSD {
@@ -79,22 +81,39 @@ uint32_t Block::getValidPageCount() {
   return ret;
 }
 
-void Block::getNextWritePageIndex(std::vector<uint32_t> &out) {
-  out = nextWritePageIndex;
+uint32_t Block::getNextWritePageIndex() {
+  return *std::max_element(nextWritePageIndex.begin(),
+                           nextWritePageIndex.end());
 }
 
-bool Block::read(uint32_t pageIndex, uint64_t *pLPN, DynamicBitset &iomap,
-                 uint64_t tick) {
+uint32_t Block::getNextWritePageIndex(DynamicBitset &map) {
+  uint32_t max = 0;
+
+  for (uint32_t i = 0; i < ioUnitInPage; i++) {
+    if (map[i]) {
+      if (max < nextWritePageIndex[i]) {
+        max = nextWritePageIndex[i];
+      }
+    }
+  }
+
+  return max;
+}
+
+bool Block::getPageInfo(uint32_t pageIndex, uint64_t &lpn, DynamicBitset &map) {
+  map = *validBits.at(pageIndex);
+  lpn = lpns.at(pageIndex);
+
+  return map.any();
+}
+
+bool Block::read(uint32_t pageIndex, DynamicBitset &iomap, uint64_t tick) {
   auto valid = validBits.at(pageIndex);
   auto tmp = *valid & iomap;
   bool read = tmp == iomap;
 
   if (read) {
     lastAccessed = tick;
-
-    if (pLPN) {
-      *pLPN = lpns.at(pageIndex);
-    }
   }
 
   return read;
@@ -109,7 +128,7 @@ bool Block::write(uint32_t pageIndex, uint64_t lpn, DynamicBitset &iomap,
   if (write) {
     bool fail = false;
 
-    for (uint32_t i = 0 ;i < ioUnitInPage; i++) {
+    for (uint32_t i = 0; i < ioUnitInPage; i++) {
       if (iomap[i]) {
         if (pageIndex < nextWritePageIndex[i]) {
           fail = true;
@@ -128,7 +147,7 @@ bool Block::write(uint32_t pageIndex, uint64_t lpn, DynamicBitset &iomap,
     *validBits.at(pageIndex) |= iomap;
     lpns.at(pageIndex) = lpn;
 
-    for (uint32_t i = 0 ;i < ioUnitInPage; i++) {
+    for (uint32_t i = 0; i < ioUnitInPage; i++) {
       if (iomap[i]) {
         nextWritePageIndex[i] = pageIndex + 1;
       }

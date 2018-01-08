@@ -49,8 +49,10 @@ class Block {
   uint64_t getLastAccessedTime();
   uint32_t getEraseCount();
   uint32_t getValidPageCount();
-  void getNextWritePageIndex(std::vector<uint32_t> &);
-  bool read(uint32_t, uint64_t *, DynamicBitset &, uint64_t);
+  uint32_t getNextWritePageIndex();
+  uint32_t getNextWritePageIndex(DynamicBitset &);
+  bool getPageInfo(uint32_t, uint64_t &, DynamicBitset &);
+  bool read(uint32_t, DynamicBitset &, uint64_t);
   bool write(uint32_t, uint64_t, DynamicBitset &, uint64_t);
   void erase();
   void invalidate(uint32_t);

@@ -37,7 +37,7 @@ PageMapping::PageMapping(Parameter *p, PAL::PAL *l, ConfigReader *c)
       conf(c->ftlConfig),
       pFTLParam(p),
       bReclaimMore(false) {
-  Block temp(pFTLParam->pagesInBlock);
+  Block temp(pFTLParam->pagesInBlock, pFTLParam->ioUnitInPage);
 
   for (uint32_t i = 0; i < pFTLParam->totalPhysicalBlocks; i++) {
     freeBlocks.insert({i, temp});
@@ -52,11 +52,12 @@ bool PageMapping::initialize() {
   uint64_t nPagesToWarmup;
   uint64_t nTotalPages;
   uint64_t tick = 0;
-  Request req;
+  Request req(pFTLParam->ioUnitInPage);
 
   nTotalPages = pFTLParam->totalLogicalBlocks * pFTLParam->pagesInBlock;
   nPagesToWarmup = nTotalPages * conf.readFloat(FTL_WARM_UP_RATIO);
   nPagesToWarmup = MIN(nPagesToWarmup, nTotalPages);
+  req.ioFlag.set();
 
   for (uint64_t lpn = 0; lpn < pFTLParam->totalLogicalBlocks;
        lpn += nTotalPages) {
@@ -104,8 +105,10 @@ void PageMapping::trim(Request &req, uint64_t &tick) {
 }
 
 void PageMapping::format(LPNRange &range, uint64_t &tick) {
-  PAL::Request req;
+  PAL::Request req(pFTLParam->ioUnitInPage);
   std::vector<uint32_t> list;
+
+  req.ioFlag.set();
 
   for (auto iter = table.begin(); iter != table.end();) {
     if (iter->first >= range.slpn && iter->first < range.slpn + range.nlp) {
@@ -270,7 +273,7 @@ void PageMapping::selectVictimBlock(std::vector<uint32_t> &list,
 
 uint64_t PageMapping::doGarbageCollection(
     std::vector<uint32_t> &blocksToReclaim, uint64_t tick) {
-  PAL::Request req;
+  PAL::Request req(pFTLParam->ioUnitInPage);
   uint64_t beginAt;
   uint64_t finishedAt = tick;
 
@@ -293,7 +296,7 @@ uint64_t PageMapping::doGarbageCollection(
     for (uint32_t pageIndex = 0; pageIndex < pFTLParam->pagesInBlock;
          pageIndex++) {
       // Valid?
-      if (block->second.read(pageIndex, &lpn, tick)) {
+      if (block->second.getPageInfo(pageIndex, lpn, req.ioFlag)) {
         // Retrive free block
         auto freeBlock = blocks.find(getLastFreeBlock());
 
@@ -317,7 +320,8 @@ uint64_t PageMapping::doGarbageCollection(
         mapping->second.first = freeBlock->first;
         mapping->second.second = freeBlock->second.getNextWritePageIndex();
 
-        freeBlock->second.write(mapping->second.second, lpn, beginAt);
+        freeBlock->second.write(mapping->second.second, lpn, req.ioFlag,
+                                beginAt);
 
         // Issue Write
         req.blockIndex = mapping->second.first;
@@ -355,7 +359,7 @@ void PageMapping::readInternal(Request &req, uint64_t &tick) {
       Logger::panic("Block is not in use");
     }
 
-    block->second.read(palRequest.pageIndex, nullptr, tick);
+    block->second.read(palRequest.pageIndex, palRequest.ioFlag, tick);
 
     pPAL->read(palRequest, tick);
   }
@@ -366,14 +370,42 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   auto mapping = table.find(req.lpn);
 
   if (mapping != table.end()) {
-    // Invalidate current page
+    // Check I/O map
+    uint32_t max;
+
     auto block = blocks.find(mapping->second.first);
 
     if (block == blocks.end()) {
       Logger::panic("No such block");
     }
 
-    block->second.invalidate(mapping->second.second);
+    max = block->second.getNextWritePageIndex(palRequest.ioFlag);
+
+    if (max <= mapping->second.second) {
+      // We can write data to same page
+      block->second.write(mapping->second.second, req.lpn, req.ioFlag, tick);
+
+      if (sendToPAL) {
+        palRequest.blockIndex = mapping->second.first;
+        palRequest.pageIndex = mapping->second.second;
+
+        pPAL->write(palRequest, tick);
+      }
+
+      // GC if needed
+      if (freeBlockRatio() < conf.readFloat(FTL_GC_THRESHOLD_RATIO)) {
+        std::vector<uint32_t> list;
+
+        selectVictimBlock(list, tick);
+        doGarbageCollection(list, tick);
+      }
+
+      return;
+    }
+    else {
+      // Invalidate current page
+      block->second.invalidate(mapping->second.second);
+    }
   }
   else {
     // Create empty mapping
@@ -391,7 +423,7 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
 
   uint32_t pageIndex = block->second.getNextWritePageIndex();
 
-  block->second.write(pageIndex, req.lpn, tick);
+  block->second.write(pageIndex, req.lpn, req.ioFlag, tick);
 
   // update mapping to table
   mapping->second.first = block->first;

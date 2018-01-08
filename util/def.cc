@@ -20,6 +20,7 @@
 #include "util/def.hh"
 
 #include <cstdlib>
+#include <iostream>
 
 #include "util/algorithm.hh"
 
@@ -165,6 +166,14 @@ void DynamicBitset::flip(uint32_t idx) {
 
 bool DynamicBitset::operator[](uint32_t idx) {
   return test(idx);
+}
+
+void DynamicBitset::print() {
+  for (uint32_t i = 0; i < dataSize; i++) {
+    printf("%d ", test(i) ? 1 : 0);
+  }
+
+  printf("\n");
 }
 
 DynamicBitset &DynamicBitset::operator&=(const DynamicBitset &rhs) {

@@ -61,6 +61,7 @@ class DynamicBitset {
   void reset(uint32_t);
   void flip();
   void flip(uint32_t);
+  void print();
 
   bool operator[](uint32_t);
   DynamicBitset &operator&=(const DynamicBitset &);

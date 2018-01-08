@@ -33,6 +33,51 @@ typedef struct _LPNRange {
   _LPNRange(uint64_t, uint64_t);
 } LPNRange;
 
+class DynamicBitset {
+ private:
+  uint8_t *pData;
+  uint32_t dataSize;
+  uint32_t allocSize;
+
+  void boundCheck(uint32_t);
+
+ public:
+  DynamicBitset(uint32_t);
+  DynamicBitset(const DynamicBitset &) noexcept;
+  ~DynamicBitset();
+
+  bool test(uint32_t);
+  bool all();
+  bool any();
+  bool none();
+  uint32_t count();
+  uint32_t size();
+  void set();
+  void set(uint32_t, bool = true);
+  void reset();
+  void reset(uint32_t);
+  void flip();
+  void flip(uint32_t);
+
+  bool operator[](uint32_t);
+  DynamicBitset &operator&=(const DynamicBitset &);
+  DynamicBitset &operator|=(const DynamicBitset &);
+  DynamicBitset &operator^=(const DynamicBitset &);
+  DynamicBitset operator~() const;
+
+  friend DynamicBitset operator&(DynamicBitset lhs, const DynamicBitset &rhs) {
+    return lhs &= rhs;
+  }
+
+  friend DynamicBitset operator|(DynamicBitset lhs, const DynamicBitset &rhs) {
+    return lhs |= rhs;
+  }
+
+  friend DynamicBitset operator^(DynamicBitset lhs, const DynamicBitset &rhs) {
+    return lhs ^= rhs;
+  }
+};
+
 namespace ICL {
 
 typedef struct _Request {

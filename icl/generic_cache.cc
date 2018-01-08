@@ -410,6 +410,9 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
 
   convertIOFlag(reqInternal.ioFlag, req.offset, req.length);
 
+  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "I/O map");
+  printBits(reqInternal.ioFlag);
+
   Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                      "WRITE | LPN %" PRIu64 " | SIZE %" PRIu64, req.range.slpn,
                      req.length);
@@ -421,6 +424,9 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
 
     for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
       Line &line = ppCache[setIdx][wayIdx];
+
+      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "Line %u map", wayIdx);
+      printBits(line.validBits);
 
       if (merge(line.validBits) && line.tag == req.range.slpn) {
         line.lastAccessed = tick;

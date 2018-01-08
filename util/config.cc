@@ -57,6 +57,12 @@ bool ConfigReader::init(std::string file) {
   palConfig.update();
   tweakConfig.update();
 
+  // Check
+  if (tweakConfig.readBoolean(TWEAK_PARTIAL_IO) &&
+      ftlConfig.readUint(FTL::FTL_MAPPING_MODE) == FTL::NK_MAPPING) {
+    Logger::panic("Current N+K FTL does not support partial I/O tweak");
+  }
+
   return true;
 }
 

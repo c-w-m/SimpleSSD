@@ -210,14 +210,6 @@ void GenericCache::setBits(std::vector<bool> &bits, uint64_t begin,
 }
 
 void GenericCache::checkPrefetch(Request &req) {
-  printf("Last I/O: reqID %" PRIu64 ", LPN %" PRIu64 ", Byte %" PRIu64
-         " + %" PRIu64 "\n",
-         lastRequest.reqID, lastRequest.range.slpn, lastRequest.offset,
-         lastRequest.length);
-  printf("This I/O: reqID %" PRIu64 ", LPN %" PRIu64 ", Byte %" PRIu64
-         " + %" PRIu64 "\n",
-         req.reqID, req.range.slpn, req.offset, req.length);
-
   if (lastRequest.reqID == req.reqID) {
     lastRequest.range = req.range;
     lastRequest.offset = req.offset;

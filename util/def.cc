@@ -93,7 +93,7 @@ uint32_t DynamicBitset::size() {
 }
 
 void DynamicBitset::set() {
-  uint8_t mask = 0xFF >> (allocSize * 8 - dataSize + 8);
+  uint8_t mask = 0xFF >> (allocSize * 8 - dataSize);
 
   for (uint32_t i = 0; i < allocSize - 1; i++) {
     data[i] = 0xFF;
@@ -125,7 +125,7 @@ void DynamicBitset::reset(uint32_t idx) {
 }
 
 void DynamicBitset::flip() {
-  uint8_t mask = 0xFF >> (allocSize * 8 - dataSize + 8);
+  uint8_t mask = 0xFF >> (allocSize * 8 - dataSize);
 
   for (uint32_t i = 0; i < allocSize; i++) {
     data[i] = ~data[i];

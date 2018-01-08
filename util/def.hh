@@ -66,6 +66,7 @@ class DynamicBitset {
   DynamicBitset &operator&=(const DynamicBitset &);
   DynamicBitset &operator|=(const DynamicBitset &);
   DynamicBitset &operator^=(const DynamicBitset &);
+  DynamicBitset &operator=(const DynamicBitset &);
   DynamicBitset operator~() const;
 
   friend DynamicBitset operator&(DynamicBitset lhs, const DynamicBitset &rhs) {

@@ -203,6 +203,22 @@ DynamicBitset &DynamicBitset::operator^=(const DynamicBitset &rhs) {
   return *this;
 }
 
+DynamicBitset &DynamicBitset::operator=(const DynamicBitset &rhs) {
+  if (this != &rhs) {
+    if (allocSize != rhs.allocSize) {
+      free(pData);
+      pData = (uint8_t *)calloc(rhs.allocSize, 1);
+      allocSize = rhs.allocSize;
+    }
+
+    dataSize = rhs.dataSize;
+
+    std::copy(rhs.pData, rhs.pData + rhs.allocSize, pData);
+  }
+
+  return *this;
+}
+
 DynamicBitset DynamicBitset::operator~() const {
   DynamicBitset ret(*this);
 

@@ -25,17 +25,39 @@ namespace SimpleSSD {
 
 namespace FTL {
 
-Block::Block(uint32_t count)
-    : pageCount(count), nextWritePageIndex(0), lastAccessed(0), eraseCount(0) {
+Block::Block(uint32_t count, uint32_t ioUnit)
+    : pageCount(count),
+      ioUnitInPage(ioUnit),
+      nextWritePageIndex(0),
+      lastAccessed(0),
+      eraseCount(0) {
   validBits.resize(pageCount);
   erasedBits.resize(pageCount);
+
+  for (auto &iter : validBits) {
+    iter = new DynamicBitset(ioUnitInPage);
+  }
+
+  for (auto &iter : erasedBits) {
+    iter = new DynamicBitset(ioUnitInPage);
+  }
+
   lpns.resize(pageCount);
+  nextWritePageIndex.resize(ioUnitInPage);
 
   erase();
   eraseCount = 0;
 }
 
-Block::~Block() {}
+Block::~Block() {
+  for (auto &iter : validBits) {
+    delete iter;
+  }
+
+  for (auto &iter : erasedBits) {
+    delete iter;
+  }
+}
 
 uint64_t Block::getLastAccessedTime() {
   return lastAccessed;
@@ -49,7 +71,7 @@ uint32_t Block::getValidPageCount() {
   uint32_t ret = 0;
 
   for (auto iter : validBits) {
-    if (iter) {
+    if (iter->any()) {
       ret++;
     }
   }
@@ -57,14 +79,17 @@ uint32_t Block::getValidPageCount() {
   return ret;
 }
 
-uint32_t Block::getNextWritePageIndex() {
-  return nextWritePageIndex;
+void Block::getNextWritePageIndex(std::vector<uint32_t> &out) {
+  out = nextWritePageIndex;
 }
 
-bool Block::read(uint32_t pageIndex, uint64_t *pLPN, uint64_t tick) {
-  bool valid = validBits.at(pageIndex);
+bool Block::read(uint32_t pageIndex, uint64_t *pLPN, DynamicBitset &iomap,
+                 uint64_t tick) {
+  auto valid = validBits.at(pageIndex);
+  auto tmp = *valid & iomap;
+  bool read = tmp == iomap;
 
-  if (valid) {
+  if (read) {
     lastAccessed = tick;
 
     if (pLPN) {
@@ -72,45 +97,66 @@ bool Block::read(uint32_t pageIndex, uint64_t *pLPN, uint64_t tick) {
     }
   }
 
-  return valid;
+  return read;
 }
 
-bool Block::write(uint32_t pageIndex, uint64_t lpn, uint64_t tick) {
-  bool valid = erasedBits.at(pageIndex);
+bool Block::write(uint32_t pageIndex, uint64_t lpn, DynamicBitset &iomap,
+                  uint64_t tick) {
+  auto valid = erasedBits.at(pageIndex);
+  auto tmp = *valid & iomap;
+  bool write = tmp == iomap;
 
-  if (valid) {
-    if (pageIndex != nextWritePageIndex) {
+  if (write) {
+    bool fail = false;
+
+    for (uint32_t i = 0 ;i < ioUnitInPage; i++) {
+      if (iomap[i]) {
+        if (pageIndex < nextWritePageIndex[i]) {
+          fail = true;
+
+          break;
+        }
+      }
+    }
+
+    if (fail) {
       Logger::panic("Write to block should sequential");
     }
 
     lastAccessed = tick;
-    erasedBits.at(pageIndex) = false;
-    validBits.at(pageIndex) = true;
+    *erasedBits.at(pageIndex) &= ~iomap;
+    *validBits.at(pageIndex) |= iomap;
     lpns.at(pageIndex) = lpn;
 
-    nextWritePageIndex++;
+    for (uint32_t i = 0 ;i < ioUnitInPage; i++) {
+      if (iomap[i]) {
+        nextWritePageIndex[i] = pageIndex + 1;
+      }
+    }
   }
   else {
-    Logger::panic("Write to dirty page");
+    Logger::panic("Write to non erased page");
   }
 
-  return valid;
+  return write;
 }
 
 void Block::erase() {
   for (auto iter : validBits) {
-    iter = false;
+    iter->reset();
   }
   for (auto iter : erasedBits) {
-    iter = true;
+    iter->set();
+  }
+  for (auto &iter : nextWritePageIndex) {
+    iter = 0;
   }
 
   eraseCount++;
-  nextWritePageIndex = 0;
 }
 
 void Block::invalidate(uint32_t pageIndex) {
-  validBits.at(pageIndex) = false;
+  validBits.at(pageIndex)->reset();
 }
 
 }  // namespace FTL

@@ -306,6 +306,11 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
   bool partialhit = false;
   FTL::Request reqInternal(req);
 
+  // Check prefetch status
+  if (useReadPrefetch) {
+    checkPrefetch(req);
+  }
+
   convertIOFlag(reqInternal.ioFlag, req.offset, req.length);
 
   Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "I/O map");
@@ -320,11 +325,6 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
     uint32_t wayIdx;
     uint64_t lat = calculateDelay(req.length);
     std::vector<bool> tmp;
-
-    // Check prefetch status
-    if (useReadPrefetch) {
-      checkPrefetch(req);
-    }
 
     for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
       Line &line = ppCache[setIdx][wayIdx];

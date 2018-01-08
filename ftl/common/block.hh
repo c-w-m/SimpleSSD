@@ -35,8 +35,8 @@ class Block {
   const uint32_t ioUnitInPage;
   std::vector<uint32_t> nextWritePageIndex;
 
-  std::vector<DynamicBitset *> validBits;
-  std::vector<DynamicBitset *> erasedBits;
+  std::vector<DynamicBitset> validBits;
+  std::vector<DynamicBitset> erasedBits;
   std::vector<uint64_t> lpns;
 
   uint64_t lastAccessed;

@@ -442,12 +442,12 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
 
     Logger::debugprint(Logger::LOG_FTL_PAGE_MAPPING, "GC   | On-demand");
 
-    selectVictimBlock(list, tick);
-    doGarbageCollection(list, tick);
+    selectVictimBlock(list, beginAt);
+    doGarbageCollection(list, beginAt);
 
     Logger::debugprint(Logger::LOG_FTL_PAGE_MAPPING,
                        "GC   | Done | %" PRIu64 " - %" PRIu64 " (%" PRIu64 ")",
-                       beginAt, tick, tick - beginAt);
+                       tick, beginAt, beginAt - tick);
   }
 }
 

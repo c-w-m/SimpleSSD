@@ -366,13 +366,15 @@ void PageMapping::readInternal(Request &req, uint64_t &tick) {
 
 void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   PAL::Request palRequest(req);
+  std::unordered_map<uint32_t, Block>::iterator block;
+  bool allocate = true;
   auto mapping = table.find(req.lpn);
 
   if (mapping != table.end()) {
     // Check I/O map
     uint32_t max;
 
-    auto block = blocks.find(mapping->second.first);
+    block = blocks.find(mapping->second.first);
 
     if (block == blocks.end()) {
       Logger::panic("No such block");
@@ -382,24 +384,7 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
 
     if (max <= mapping->second.second) {
       // We can write data to same page
-      block->second.write(mapping->second.second, req.lpn, req.ioFlag, tick);
-
-      if (sendToPAL) {
-        palRequest.blockIndex = mapping->second.first;
-        palRequest.pageIndex = mapping->second.second;
-
-        pPAL->write(palRequest, tick);
-      }
-
-      // GC if needed
-      if (freeBlockRatio() < conf.readFloat(FTL_GC_THRESHOLD_RATIO)) {
-        std::vector<uint32_t> list;
-
-        selectVictimBlock(list, tick);
-        doGarbageCollection(list, tick);
-      }
-
-      return;
+      allocate = false;
     }
     else {
       // Invalidate current page
@@ -414,25 +399,37 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   }
 
   // Write data to free block
-  auto block = blocks.find(getLastFreeBlock());
+  if (allocate) {
+    block = blocks.find(getLastFreeBlock());
 
-  if (block == blocks.end()) {
-    Logger::panic("No such block");
+    if (block == blocks.end()) {
+      Logger::panic("No such block");
+    }
+
+    uint32_t pageIndex = block->second.getNextWritePageIndex();
+
+    block->second.write(pageIndex, req.lpn, req.ioFlag, tick);
+
+    // update mapping to table
+    mapping->second.first = block->first;
+    mapping->second.second = pageIndex;
+
+    if (sendToPAL) {
+      palRequest.blockIndex = mapping->second.first;
+      palRequest.pageIndex = mapping->second.second;
+
+      pPAL->write(palRequest, tick);
+    }
   }
+  else {
+    block->second.write(mapping->second.second, req.lpn, req.ioFlag, tick);
 
-  uint32_t pageIndex = block->second.getNextWritePageIndex();
+    if (sendToPAL) {
+      palRequest.blockIndex = mapping->second.first;
+      palRequest.pageIndex = mapping->second.second;
 
-  block->second.write(pageIndex, req.lpn, req.ioFlag, tick);
-
-  // update mapping to table
-  mapping->second.first = block->first;
-  mapping->second.second = pageIndex;
-
-  if (sendToPAL) {
-    palRequest.blockIndex = mapping->second.first;
-    palRequest.pageIndex = mapping->second.second;
-
-    pPAL->write(palRequest, tick);
+      pPAL->write(palRequest, tick);
+    }
   }
 
   // GC if needed

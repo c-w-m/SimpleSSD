@@ -438,11 +438,16 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   // GC if needed
   if (freeBlockRatio() < conf.readFloat(FTL_GC_THRESHOLD_RATIO)) {
     std::vector<uint32_t> list;
+    uint64_t beginAt = tick;
 
-    Logger::debugprint(Logger::LOG_FTL_PAGE_MAPPING, "Begin GC");
+    Logger::debugprint(Logger::LOG_FTL_PAGE_MAPPING, "GC   | On-demand");
 
     selectVictimBlock(list, tick);
     doGarbageCollection(list, tick);
+
+    Logger::debugprint(Logger::LOG_FTL_PAGE_MAPPING,
+                       "GC   | Done | %" PRIu64 " - %" PRIu64 " (%" PRIu64 ")",
+                       beginAt, tick, tick - beginAt);
   }
 }
 

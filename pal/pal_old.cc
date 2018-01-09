@@ -275,9 +275,6 @@ void PALOLD::printCPDPBP(::CPDPBP &addr, const char *prefix) {
 void PALOLD::printPPN(Request &req, const char *prefix) {
   Logger::debugprint(Logger::LOG_PAL_OLD, "%-5s | Block %u | Page %u", prefix,
                      req.blockIndex, req.pageIndex);
-
-  Logger::debugprint(Logger::LOG_PAL_OLD, "%-5s | Partial I/O map", prefix);
-  req.ioFlag.print();
 }
 
 }  // namespace PAL

@@ -39,6 +39,7 @@ class GenericCache : public AbstractCache {
   uint32_t partialIOUnitSize;
 
   uint32_t prefetchIOCount;
+  float prefetchIORatio;
 
   bool useReadCaching;
   bool useWriteCaching;
@@ -48,6 +49,7 @@ class GenericCache : public AbstractCache {
   Request lastRequest;
   bool prefetchEnabled;
   uint32_t hitCounter;
+  uint32_t accessCounter;
 
   EVICT_POLICY policy;
   std::random_device rd;

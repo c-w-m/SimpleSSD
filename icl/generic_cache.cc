@@ -46,6 +46,7 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
   useWriteCaching = c->iclConfig.readBoolean(ICL_USE_WRITE_CACHE);
   useReadPrefetch = c->iclConfig.readBoolean(ICL_USE_READ_PREFETCH);
   prefetchIOCount = c->iclConfig.readUint(ICL_PREFETCH_COUNT);
+  prefetchIORatio = c->iclConfig.readFloat(ICL_PREFETCH_RATIO);
   usePartialIO = c->tweakConfig.readBoolean(TWEAK_PARTIAL_IO);
 
   policy = (EVICT_POLICY)c->iclConfig.readInt(ICL_EVICT_POLICY);
@@ -66,6 +67,7 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
   lastRequest.reqID = 1;
   prefetchEnabled = false;
   hitCounter = 0;
+  accessCounter = 0;
 }
 
 GenericCache::~GenericCache() {}
@@ -192,15 +194,18 @@ void GenericCache::checkPrefetch(Request &req) {
       req.range.slpn * lineSize + req.offset) {
     if (!prefetchEnabled) {
       hitCounter++;
+      accessCounter += req.length;
 
-      if (hitCounter >= prefetchIOCount) {
+      if (hitCounter >= prefetchIOCount &&
+          (float)accessCounter / lineSize > prefetchIORatio) {
         prefetchEnabled = true;
       }
     }
   }
   else {
-    hitCounter = 0;
     prefetchEnabled = false;
+    hitCounter = 0;
+    accessCounter = 0;
   }
 
   lastRequest = req;
@@ -313,6 +318,11 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 bool GenericCache::write(Request &req, uint64_t &tick) {
   bool ret = false;
   FTL::Request reqInternal(partialIOUnitCount, req);
+
+  // Reset prefetch status
+  prefetchEnabled = false;
+  hitCounter = 0;
+  accessCounter = 0;
 
   convertIOFlag(reqInternal.ioFlag, req.offset, req.length);
 

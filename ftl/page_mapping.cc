@@ -232,7 +232,8 @@ void PageMapping::selectVictimBlock(std::vector<uint32_t> &list,
   if (policy == POLICY_GREEDY) {
     for (auto &iter : blocks) {
       weight.at(i).first = iter.first;
-      weight.at(i).second = iter.second.getValidPageCount();
+      weight.at(i).second =
+          pFTLParam->pagesInBlock - iter.second.getDirtyPageCount();
 
       i++;
     }
@@ -241,7 +242,9 @@ void PageMapping::selectVictimBlock(std::vector<uint32_t> &list,
     float temp;
 
     for (auto &iter : blocks) {
-      temp = (float)iter.second.getValidPageCount() / pFTLParam->pagesInBlock;
+      temp =
+          (float)(pFTLParam->pagesInBlock - iter.second.getValidPageCount()) /
+          pFTLParam->pagesInBlock;
 
       weight.at(i).first = iter.first;
       weight.at(i).second =
@@ -435,6 +438,8 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   // GC if needed
   if (freeBlockRatio() < conf.readFloat(FTL_GC_THRESHOLD_RATIO)) {
     std::vector<uint32_t> list;
+
+    Logger::debugprint(Logger::LOG_FTL_PAGE_MAPPING, "Begin GC");
 
     selectVictimBlock(list, tick);
     doGarbageCollection(list, tick);

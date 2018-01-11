@@ -141,6 +141,7 @@ uint32_t GenericCache::flushVictim(Request req, uint64_t &tick, bool *isCold) {
 
     // Invalidate
     ppCache[setIdx][wayIdx].validBits.reset();
+    ppCache[setIdx][wayIdx].dirtyBits.reset();
   }
 
   return wayIdx;

@@ -196,7 +196,7 @@ uint32_t PageMapping::getLastFreeBlock() {
 }
 
 void PageMapping::selectVictimBlock(std::vector<uint32_t> &list,
-                                    uint64_t tick) {
+                                    uint64_t &tick) {
   static const GC_MODE mode = (GC_MODE)conf.readInt(FTL_GC_MODE);
   static const EVICT_POLICY policy =
       (EVICT_POLICY)conf.readInt(FTL_GC_EVICT_POLICY);
@@ -273,14 +273,14 @@ void PageMapping::selectVictimBlock(std::vector<uint32_t> &list,
   }
 }
 
-uint64_t PageMapping::doGarbageCollection(
-    std::vector<uint32_t> &blocksToReclaim, uint64_t tick) {
+void PageMapping::doGarbageCollection(
+    std::vector<uint32_t> &blocksToReclaim, uint64_t &tick) {
   PAL::Request req(pFTLParam->ioUnitInPage);
   uint64_t beginAt;
   uint64_t finishedAt = tick;
 
   if (blocksToReclaim.size() == 0) {
-    return tick;
+    return;
   }
 
   // For all blocks to reclaim
@@ -343,7 +343,7 @@ uint64_t PageMapping::doGarbageCollection(
     finishedAt = MAX(finishedAt, beginAt);
   }
 
-  return finishedAt;
+  tick = finishedAt;
 }
 
 void PageMapping::readInternal(Request &req, uint64_t &tick) {

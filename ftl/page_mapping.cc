@@ -200,7 +200,7 @@ void PageMapping::selectVictimBlock(std::vector<uint32_t> &list,
   static const GC_MODE mode = (GC_MODE)conf.readInt(FTL_GC_MODE);
   static const EVICT_POLICY policy =
       (EVICT_POLICY)conf.readInt(FTL_GC_EVICT_POLICY);
-  static uint64_t nBlocks = conf.readInt(FTL_GC_RECLAIM_BLOCK);
+  uint64_t nBlocks = conf.readInt(FTL_GC_RECLAIM_BLOCK);
   std::vector<std::pair<uint32_t, float>> weight;
   uint64_t i = 0;
 
@@ -336,6 +336,7 @@ void PageMapping::doGarbageCollection(std::vector<uint32_t> &blocksToReclaim,
     // Erase block
     req.blockIndex = block->first;
     req.pageIndex = 0;
+    req.ioFlag.set();
 
     eraseInternal(req, beginAt);
 

@@ -395,7 +395,7 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
         pPAL->read(read, tick);
       }
 
-      req.ioFlag |= read.ioFlag;
+      palRequest.ioFlag |= read.ioFlag;
     }
 
     // Invalidate current page

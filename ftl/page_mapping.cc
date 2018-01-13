@@ -22,8 +22,6 @@
 #include <algorithm>
 #include <limits>
 
-#include "ftl/old/ftl.hh"
-#include "ftl/old/ftl_defs.hh"
 #include "log/trace.hh"
 #include "util/algorithm.hh"
 
@@ -243,7 +241,7 @@ void PageMapping::selectVictimBlock(std::vector<uint32_t> &list,
 
     for (auto &iter : blocks) {
       temp =
-          (float)(pFTLParam->pagesInBlock - iter.second.getValidPageCount()) /
+          (float)(pFTLParam->pagesInBlock - iter.second.getDirtyPageCount()) /
           pFTLParam->pagesInBlock;
 
       weight.at(i).first = iter.first;

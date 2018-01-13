@@ -19,7 +19,6 @@
 
 #include "ftl/ftl.hh"
 
-#include "ftl/ftl_old.hh"
 #include "ftl/page_mapping.hh"
 #include "log/trace.hh"
 
@@ -44,9 +43,6 @@ FTL::FTL(ConfigReader *c) : pConf(c) {
   switch (pConf->ftlConfig.readInt(FTL_MAPPING_MODE)) {
     case PAGE_MAPPING:
       pFTL = new PageMapping(&param, pPAL, pConf);
-      break;
-    case NK_MAPPING:
-      pFTL = new FTLOLD(&param, pPAL, pConf);
       break;
   }
 

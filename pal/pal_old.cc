@@ -65,12 +65,12 @@ void PALOLD::read(Request &req, uint64_t &tick) {
   ::Command cmd(tick, 0, OPER_READ, param.superPageSize);
   std::vector<::CPDPBP> list;
 
-  printPPN(req, "READ");
+  // printPPN(req, "READ");
 
   convertCPDPBP(req, list);
 
   for (auto &iter : list) {
-    printCPDPBP(iter, "READ");
+    // printCPDPBP(iter, "READ");
 
     pal->submit(cmd, iter);
 
@@ -85,12 +85,12 @@ void PALOLD::write(Request &req, uint64_t &tick) {
   ::Command cmd(tick, 0, OPER_WRITE, param.superPageSize);
   std::vector<::CPDPBP> list;
 
-  printPPN(req, "WRITE");
+  // printPPN(req, "WRITE");
 
   convertCPDPBP(req, list);
 
   for (auto &iter : list) {
-    printCPDPBP(iter, "WRITE");
+    // printCPDPBP(iter, "WRITE");
 
     pal->submit(cmd, iter);
 
@@ -105,12 +105,12 @@ void PALOLD::erase(Request &req, uint64_t &tick) {
   ::Command cmd(tick, 0, OPER_ERASE, param.superPageSize);
   std::vector<::CPDPBP> list;
 
-  printPPN(req, "ERASE");
+  // printPPN(req, "ERASE");
 
   convertCPDPBP(req, list);
 
   for (auto &iter : list) {
-    printCPDPBP(iter, "ERASE");
+    // printCPDPBP(iter, "ERASE");
 
     pal->submit(cmd, iter);
 

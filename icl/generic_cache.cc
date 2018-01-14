@@ -47,7 +47,6 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
   lineCountInSuperPage = f->getInfo()->ioUnitInPage;
   lineSize = superPageSize / lineCountInSuperPage;
 
-  lbaInLine = lineSize / MIN_LBA_SIZE;
   setSize = MAX(cacheSize / lineSize / waySize, 1);
 
   // Set size should multiples of lineCountInSuperPage
@@ -78,7 +77,7 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
   ppCache.resize(setSize);
 
   for (uint32_t i = 0; i < setSize; i++) {
-    ppCache[i] = std::vector<Line>(waySize, Line(lbaInLine));
+    ppCache[i] = std::vector<Line>(waySize, Line());
   }
 
   lastRequest.reqID = 1;

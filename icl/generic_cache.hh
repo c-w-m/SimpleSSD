@@ -35,7 +35,6 @@ class GenericCache : public AbstractCache {
   uint32_t waySize;
   uint32_t lineSize;
 
-  uint32_t lbaInLine;
   uint32_t lineCountInSuperPage;
   uint32_t superPageSize;
 

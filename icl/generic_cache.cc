@@ -153,6 +153,7 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
 
       list.push_back({ppCache[setIdx][wayIdx].tag / lineCountInSuperPage,
                       &ppCache[setIdx][wayIdx]});
+
       found.set(flushedIdx);
     }
 
@@ -167,6 +168,10 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
             if (pLine->validBits.any() && pLine->dirtyBits.any()) {
               list.push_back({pLine->tag / lineCountInSuperPage, pLine});
               found.set(setIdx % lineCountInSuperPage);
+
+              Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                                 "----- | Flush (%u, %u) | LPN %" PRIu64,
+                                 setIdx, way, pLine->tag);
 
               break;
             }
@@ -343,7 +348,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         }
         else {
           Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                             "READ  | Flush (%u, %u), LPN %" PRIu64, setIdx,
+                             "READ  | Flush (%u, %u) | LPN %" PRIu64, setIdx,
                              wayIdx, ppCache[setIdx][wayIdx].tag);
         }
       }
@@ -497,7 +502,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       }
       else {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "WRITE | Flush (%u, %u), LPN %" PRIu64, setIdx,
+                           "WRITE | Flush (%u, %u) | LPN %" PRIu64, setIdx,
                            wayIdx, ppCache[setIdx][wayIdx].tag);
       }
 

@@ -104,7 +104,7 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
 
   // Check set has empty entry
   for (uint32_t i = 0; i < waySize; i++) {
-    if (ppCache[setIdx][i].validBits.none()) {
+    if (!ppCache[setIdx][i].valid) {
       wayIdx = i;
 
       if (isCold) {
@@ -146,7 +146,7 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
     DynamicBitset found(lineCountInSuperPage);
     std::vector<std::pair<uint64_t, Line *>> list;
 
-    if (ppCache[setIdx][wayIdx].dirtyBits.any()) {
+    if (ppCache[setIdx][wayIdx].dirty) {
       uint32_t flushedIdx;
 
       flushedIdx = ppCache[setIdx][wayIdx].tag % lineCountInSuperPage;
@@ -165,7 +165,7 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
           for (uint32_t way = 0; way < waySize; way++) {
             Line *pLine = &ppCache[setIdx][way];
 
-            if (pLine->validBits.any() && pLine->dirtyBits.any()) {
+            if (pLine->valid && pLine->dirty) {
               list.push_back({pLine->tag / lineCountInSuperPage, pLine});
               found.set(setIdx % lineCountInSuperPage);
 
@@ -199,8 +199,8 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
       pFTL->write(reqInternal, beginAt);
 
       // Invalidate
-      iter.second->dirtyBits.reset();
-      iter.second->validBits.reset();
+      iter.second->dirty = false;
+      iter.second->valid = false;
 
       finishedAt = MAX(finishedAt, beginAt);
 
@@ -220,25 +220,6 @@ uint64_t GenericCache::calculateDelay(uint64_t bytesize) {
       2.0 * pStructure->busWidth * pStructure->channel / 8.0 / pTiming->tCK;
 
   return (uint64_t)(pageFetch + pageCount * pStructure->pageSize / bandwidth);
-}
-
-void GenericCache::convertIOFlag(DynamicBitset &flags, uint64_t offset,
-                                 uint64_t length) {
-  setBits(flags, offset / MIN_LBA_SIZE,
-          (offset + length - 1) / MIN_LBA_SIZE + 1, true);
-}
-
-void GenericCache::setBits(DynamicBitset &bits, uint64_t begin, uint64_t end,
-                           bool value) {
-  end = MIN(end, bits.size());
-
-  if (end < begin) {
-    Logger::panic("Invalid parameter");
-  }
-
-  for (uint64_t i = begin; i < end; i++) {
-    bits.set(i, value);
-  }
 }
 
 void GenericCache::checkPrefetch(Request &req) {
@@ -284,31 +265,20 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
     uint64_t lat = calculateDelay(req.length);
-    DynamicBitset lbaMap(lbaInLine);
-    DynamicBitset hitMap(lbaInLine);
-    bool partialHit = false;
 
     // Check prefetch status
     if (useReadPrefetch) {
       checkPrefetch(req);
     }
 
-    // Convert byte offset+length to LBA offset+length
-    convertIOFlag(lbaMap, req.offset, req.length);
-
     // Check cache that we have data for corresponding LBA
     for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
       Line &line = ppCache[setIdx][wayIdx];
 
-      hitMap = line.validBits & lbaMap;
+      if (line.valid && line.tag == req.range.slpn) {
+        ret = true;
 
-      if (hitMap.any() && line.tag == req.range.slpn) {
-        partialHit = true;
         line.lastAccessed = tick;
-
-        if (hitMap == lbaMap) {
-          ret = true;
-        }
 
         break;
       }
@@ -328,32 +298,24 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       uint64_t finishedAt = tick;
       FTL::Request reqInternal(lineCountInSuperPage);
 
-      // We have some data on cache
-      if (partialHit) {
+      // We have to flush to store data to cache
+      bool cold;
+
+      wayIdx = flushVictim(setIdx, beginAt, &cold);
+      finishedAt = beginAt;
+
+      if (cold) {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "READ  | Cache partial hit at (%u, %u)", setIdx,
-                           wayIdx);
+                           "READ  | Cache cold-miss, no need to flush", setIdx);
       }
       else {
-        // We have to flush to store data to cache
-        bool cold;
-
-        wayIdx = flushVictim(setIdx, beginAt, &cold);
-        finishedAt = beginAt;
-
-        if (cold) {
-          Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                             "READ  | Cache cold-miss, no need to flush",
-                             setIdx);
-        }
-        else {
-          Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                             "READ  | Flush (%u, %u) | LPN %" PRIu64, setIdx,
-                             wayIdx, ppCache[setIdx][wayIdx].tag);
-        }
+        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                           "READ  | Flush (%u, %u) | LPN %" PRIu64, setIdx,
+                           wayIdx, ppCache[setIdx][wayIdx].tag);
       }
 
       // Read missing data to cache
+      bool hit;
       std::vector<std::pair<uint64_t, Line *>> list;
 
       reqInternal.reqID = req.reqID;
@@ -375,20 +337,19 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         for (uint32_t set = beginSet; set < endSet; set++) {
           if (set != setIdx) {
             Line *pLine = nullptr;
-            partialHit = false;  // This checks hit
+            hit = false;  // This checks hit
 
             for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
               pLine = &ppCache[set][wayIdx];
 
-              if (pLine->validBits.any() &&
-                  pLine->tag == beginLPN + set - beginSet) {
-                partialHit = true;
+              if (pLine->valid && pLine->tag == beginLPN + set - beginSet) {
+                hit = true;
 
                 break;
               }
             }
 
-            if (!partialHit) {
+            if (!hit) {
               beginAt = tick;
               wayIdx = flushVictim(beginSet, beginAt, nullptr, false);
               finishedAt = MAX(finishedAt, beginAt);
@@ -412,8 +373,8 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 
       // Set cache
       for (auto &iter : list) {
-        iter.second->dirtyBits &= iter.second->validBits;
-        iter.second->validBits.set();
+        iter.second->dirty = false;
+        iter.second->valid = true;
         iter.second->tag = iter.first;
         iter.second->lastAccessed = tick;
         iter.second->insertedAt = tick;
@@ -450,25 +411,21 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
     uint64_t lat = calculateDelay(req.length);
-    DynamicBitset lbaMap(lbaInLine);
 
     // Reset prefetch status
     prefetchEnabled = false;
     hitCounter = 0;
     accessCounter = 0;
 
-    // Convert byte offset+length to LBA offset+length
-    convertIOFlag(lbaMap, req.offset, req.length);
-
     // Check cache that we have data for corresponding LBA
     for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
       Line &line = ppCache[setIdx][wayIdx];
 
-      if (line.validBits.any() && line.tag == req.range.slpn) {
+      if (line.valid && line.tag == req.range.slpn) {
         line.lastAccessed = tick;
 
-        line.validBits |= lbaMap;
-        line.dirtyBits |= lbaMap;
+        line.valid = true;
+        line.dirty = true;
 
         ret = true;
 
@@ -506,8 +463,8 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
                            wayIdx, ppCache[setIdx][wayIdx].tag);
       }
 
-      ppCache[setIdx][wayIdx].validBits |= lbaMap;
-      ppCache[setIdx][wayIdx].dirtyBits |= lbaMap;
+      ppCache[setIdx][wayIdx].valid = true;
+      ppCache[setIdx][wayIdx].dirty = true;
       ppCache[setIdx][wayIdx].tag = req.range.slpn;
       ppCache[setIdx][wayIdx].lastAccessed = insertAt;
       ppCache[setIdx][wayIdx].insertedAt = insertAt;
@@ -540,19 +497,12 @@ bool GenericCache::flush(Request &req, uint64_t &tick) {
   if (useReadCaching || useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    DynamicBitset lbaMap(lbaInLine);
-    DynamicBitset hitMap(lbaInLine);
-
-    // Convert byte offset+length to LBA offset+length
-    convertIOFlag(lbaMap, req.offset, req.length);
 
     // Check cache that we have data for corresponding LBA
     for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
       Line &line = ppCache[setIdx][wayIdx];
 
-      hitMap = line.validBits & lbaMap;
-
-      if (hitMap.any() && line.tag == req.range.slpn) {
+      if (line.valid && line.tag == req.range.slpn) {
         ret = true;
 
         break;
@@ -568,16 +518,14 @@ bool GenericCache::flush(Request &req, uint64_t &tick) {
       reqInternal.lpn = req.range.slpn / lineCountInSuperPage;
       reqInternal.ioFlag.set(req.range.slpn % lineCountInSuperPage);
 
-      hitMap &= ppCache[setIdx][wayIdx].dirtyBits;
-
       // We have data which is dirty
-      if (hitMap.any()) {
+      if (ppCache[setIdx][wayIdx].dirty) {
         // we have to flush this
         pFTL->write(reqInternal, tick);
       }
 
       // invalidate
-      ppCache[setIdx][wayIdx].validBits.reset();
+      ppCache[setIdx][wayIdx].valid = false;
     }
   }
 
@@ -595,31 +543,17 @@ bool GenericCache::trim(Request &req, uint64_t &tick) {
   if (useReadCaching || useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    DynamicBitset lbaMap(lbaInLine);
-
-    // Convert byte offset+length to LBA offset+length
-    convertIOFlag(lbaMap, req.offset, req.length);
-
-    // All cache line should trim
-    if (!lbaMap.all()) {
-      return false;
-    }
 
     // Check cache that we have data for corresponding LBA
     for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
       Line &line = ppCache[setIdx][wayIdx];
 
-      if (line.validBits.any() && line.tag == req.range.slpn) {
-        ret = true;
+      if (line.valid && line.tag == req.range.slpn) {
+        // invalidate
+        ppCache[setIdx][wayIdx].valid = false;
 
         break;
       }
-    }
-
-    // We have data to trim
-    if (ret) {
-      // invalidate
-      ppCache[setIdx][wayIdx].validBits.reset();
     }
   }
 
@@ -635,8 +569,6 @@ bool GenericCache::trim(Request &req, uint64_t &tick) {
 }
 
 void GenericCache::format(LPNRange &range, uint64_t &tick) {
-  bool ret = false;
-
   if (useReadCaching || useWriteCaching) {
     uint64_t lpn;
     uint32_t setIdx;
@@ -649,16 +581,12 @@ void GenericCache::format(LPNRange &range, uint64_t &tick) {
       for (way = 0; way < waySize; way++) {
         Line &line = ppCache[setIdx][way];
 
-        if (line.validBits.any() && line.tag == lpn) {
-          ret = true;
+        if (line.valid && line.tag == lpn) {
+          // invalidate
+          ppCache[setIdx][way].valid = false;
 
           break;
         }
-      }
-
-      if (ret) {
-        // invalidate
-        ppCache[setIdx][way].validBits.reset();
       }
     }
   }

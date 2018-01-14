@@ -65,8 +65,6 @@ class GenericCache : public AbstractCache {
   uint32_t calcSet(uint64_t);
   uint32_t flushVictim(uint32_t, uint64_t &, bool * = nullptr, bool = true);
   uint64_t calculateDelay(uint64_t);
-  void convertIOFlag(DynamicBitset &, uint64_t, uint64_t);
-  static void setBits(DynamicBitset &, uint64_t, uint64_t, bool);
   void checkPrefetch(Request &);
 
  public:

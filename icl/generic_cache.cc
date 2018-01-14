@@ -214,28 +214,26 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
     FTL::Request reqInternal(lineCountInSuperPage);
 
     for (auto &iter : list) {
-      if (!iter.valid) {
-        continue;
+      if (iter.valid) {
+        beginAt = tick;
+
+        reqInternal.lpn = iter.tag / lineCountInSuperPage;
+        reqInternal.ioFlag = iter.bitset;
+
+        // Log
+        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                           "----- | Flush (%u, %u) | LCA %" PRIu64, iter.setIdx,
+                           iter.wayIdx, iter.tag);
+
+        // Flush
+        pFTL->write(reqInternal, beginAt);
+
+        finishedAt = MAX(finishedAt, beginAt);
       }
-
-      beginAt = tick;
-
-      reqInternal.lpn = iter.tag / lineCountInSuperPage;
-      reqInternal.ioFlag = iter.bitset;
-
-      // Log
-      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                         "----- | Flush (%u, %u) | LCA %" PRIu64, iter.setIdx,
-                         iter.wayIdx, iter.tag);
-
-      // Flush
-      pFTL->write(reqInternal, beginAt);
 
       // Invalidate
       ppCache[iter.setIdx][iter.wayIdx].dirty = false;
       ppCache[iter.setIdx][iter.wayIdx].valid = false;
-
-      finishedAt = MAX(finishedAt, beginAt);
 
       // Clear
       reqInternal.ioFlag.reset();

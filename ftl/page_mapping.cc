@@ -48,7 +48,7 @@ PageMapping::~PageMapping() {}
 bool PageMapping::initialize() {
   uint64_t nPagesToWarmup;
   uint64_t nTotalPages;
-  uint64_t tick = 0;
+  uint64_t tick;
   Request req(pFTLParam->ioUnitInPage);
 
   nTotalPages = pFTLParam->totalLogicalBlocks * pFTLParam->pagesInBlock;
@@ -56,13 +56,10 @@ bool PageMapping::initialize() {
   nPagesToWarmup = MIN(nPagesToWarmup, nTotalPages);
   req.ioFlag.set();
 
-  for (uint64_t lpn = 0; lpn < pFTLParam->totalLogicalBlocks;
-       lpn += nTotalPages) {
-    for (uint32_t page = 0; page < nPagesToWarmup; page++) {
-      req.lpn = lpn + page;
+  for (req.lpn = 0; req.lpn < nPagesToWarmup; req.lpn++) {
+    tick = 0;
 
-      writeInternal(req, tick, false);
-    }
+    writeInternal(req, tick, false);
   }
 
   return true;

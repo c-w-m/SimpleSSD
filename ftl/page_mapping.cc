@@ -403,9 +403,13 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   }
   else {
     // Create empty mapping
-    table.insert({req.lpn, std::pair<uint32_t, uint32_t>()});
+    auto ret = table.insert({req.lpn, std::pair<uint32_t, uint32_t>()});
 
-    mapping = table.find(req.lpn);
+    if (!ret.second) {
+      Logger::panic("Failed to insert new mapping");
+    }
+
+    mapping = ret.first;
   }
 
   // Write data to free block

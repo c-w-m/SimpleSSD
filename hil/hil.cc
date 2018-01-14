@@ -38,7 +38,7 @@ void HIL::read(ICL::Request &req, uint64_t &tick) {
   // TODO: stat
 
   Logger::debugprint(Logger::LOG_HIL,
-                     "READ  | LPN %" PRIu64 " + %" PRIu64 " | BYTE %" PRIu64
+                     "READ  | LCA %" PRIu64 " + %" PRIu64 " | BYTE %" PRIu64
                      " + %" PRIu64,
                      req.range.slpn, req.range.nlp, req.offset, req.length);
 
@@ -50,7 +50,7 @@ void HIL::write(ICL::Request &req, uint64_t &tick) {
   // TODO: stat
 
   Logger::debugprint(Logger::LOG_HIL,
-                     "WRITE | LPN %" PRIu64 " + %" PRIu64 " | BYTE %" PRIu64
+                     "WRITE | LCA %" PRIu64 " + %" PRIu64 " | BYTE %" PRIu64
                      " + %" PRIu64,
                      req.range.slpn, req.range.nlp, req.offset, req.length);
 
@@ -62,7 +62,7 @@ void HIL::flush(ICL::Request &req, uint64_t &tick) {
   // TODO: stat
 
   Logger::debugprint(Logger::LOG_HIL,
-                     "FLUSH | LPN %" PRIu64 " + %" PRIu64 " | BYTE %" PRIu64
+                     "FLUSH | LCA %" PRIu64 " + %" PRIu64 " | BYTE %" PRIu64
                      " + %" PRIu64,
                      req.range.slpn, req.range.nlp, req.offset, req.length);
 
@@ -74,7 +74,7 @@ void HIL::trim(ICL::Request &req, uint64_t &tick) {
   // TODO: stat
 
   Logger::debugprint(Logger::LOG_HIL,
-                     "TRIM  | LPN %" PRIu64 " + %" PRIu64 " | BYTE %" PRIu64
+                     "TRIM  | LCA %" PRIu64 " + %" PRIu64 " | BYTE %" PRIu64
                      " + %" PRIu64,
                      req.range.slpn, req.range.nlp, req.offset, req.length);
 
@@ -83,7 +83,7 @@ void HIL::trim(ICL::Request &req, uint64_t &tick) {
 }
 
 void HIL::format(LPNRange &range, bool erase, uint64_t &tick) {
-  Logger::debugprint(Logger::LOG_HIL, "FORMAT| LPN %" PRIu64 " + %" PRIu64,
+  Logger::debugprint(Logger::LOG_HIL, "FORMAT| LCA %" PRIu64 " + %" PRIu64,
                      range.slpn, range.nlp);
 
   if (erase) {

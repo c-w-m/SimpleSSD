@@ -28,6 +28,9 @@ namespace SimpleSSD {
 
 namespace ICL {
 
+FlushData::FlushData(uint32_t size)
+    : setIdx(0), wayIdx(0), tag(0), valid(true), bitset(size) {}
+
 GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
     : AbstractCache(c, f), gen(rd()) {
   uint64_t cacheSize = c->iclConfig.readUint(ICL_CACHE_SIZE);
@@ -143,17 +146,20 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
 
     // Let's flush 'em if dirty
     DynamicBitset found(lineCountInSuperPage);
-    std::vector<std::pair<uint64_t, Line *>> list;
+    std::vector<FlushData> list;
 
     if (ppCache[setIdx][wayIdx].dirty) {
       uint32_t flushedIdx;
+      FlushData data(lineCountInSuperPage);
 
       flushedIdx = ppCache[setIdx][wayIdx].tag % lineCountInSuperPage;
-
-      list.push_back({ppCache[setIdx][wayIdx].tag / lineCountInSuperPage,
-                      &ppCache[setIdx][wayIdx]});
+      data.setIdx = setIdx;
+      data.wayIdx = wayIdx;
+      data.tag = ppCache[setIdx][wayIdx].tag;
+      data.bitset.set(flushedIdx);
 
       found.set(flushedIdx);
+      list.push_back(data);
     }
 
     if (flushSuperPage) {
@@ -162,15 +168,18 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
         if (!found.test(setIdx % lineCountInSuperPage)) {
           // Find cacheline to flush
           for (uint32_t way = 0; way < waySize; way++) {
-            Line *pLine = &ppCache[setIdx][way];
+            Line &line = ppCache[setIdx][way];
 
-            if (pLine->valid && pLine->dirty) {
-              list.push_back({pLine->tag / lineCountInSuperPage, pLine});
+            if (line.valid && line.dirty) {
+              FlushData data(lineCountInSuperPage);
+
+              data.setIdx = setIdx;
+              data.wayIdx = way;
+              data.tag = line.tag;
+              data.bitset.set(setIdx % lineCountInSuperPage);
+
+              list.push_back(data);
               found.set(setIdx % lineCountInSuperPage);
-
-              Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                                 "----- | Flush (%u, %u) | LCA %" PRIu64,
-                                 setIdx, way, pLine->tag);
 
               break;
             }
@@ -181,6 +190,22 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
           break;
         }
       }
+
+      // Check if there is same super page
+      for (auto i = list.begin(); i != list.end(); i++) {
+        if (!i->valid) {
+          continue;
+        }
+
+        for (auto j = i; j != list.end(); j++) {
+          if (i->tag != j->tag &&
+              i->tag / lineCountInSuperPage == j->tag / lineCountInSuperPage &&
+              j->valid) {
+            j->valid = false;
+            i->bitset |= j->bitset;
+          }
+        }
+      }
     }
 
     // Flush collected entries
@@ -189,17 +214,26 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
     FTL::Request reqInternal(lineCountInSuperPage);
 
     for (auto &iter : list) {
+      if (!iter.valid) {
+        continue;
+      }
+
       beginAt = tick;
 
-      reqInternal.lpn = iter.first;
-      reqInternal.ioFlag.set(iter.first % lineCountInSuperPage);
+      reqInternal.lpn = iter.tag / lineCountInSuperPage;
+      reqInternal.ioFlag = iter.bitset;
+
+      // Log
+      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                         "----- | Flush (%u, %u) | LCA %" PRIu64, iter.setIdx,
+                         iter.wayIdx, iter.tag);
 
       // Flush
       pFTL->write(reqInternal, beginAt);
 
       // Invalidate
-      iter.second->dirty = false;
-      iter.second->valid = false;
+      ppCache[iter.setIdx][iter.wayIdx].dirty = false;
+      ppCache[iter.setIdx][iter.wayIdx].valid = false;
 
       finishedAt = MAX(finishedAt, beginAt);
 

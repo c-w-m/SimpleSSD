@@ -29,6 +29,16 @@ namespace SimpleSSD {
 
 namespace ICL {
 
+struct FlushData {
+  uint32_t setIdx;
+  uint32_t wayIdx;
+  uint64_t tag;
+  bool valid;
+  DynamicBitset bitset;
+
+  FlushData(uint32_t);
+};
+
 class GenericCache : public AbstractCache {
  private:
   uint32_t setSize;

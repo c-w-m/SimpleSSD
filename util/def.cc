@@ -138,7 +138,7 @@ void DynamicBitset::flip(uint32_t idx) {
   boundCheck(idx);
 
   data[idx / 8] = (~data[idx / 8] & (0x01 << (idx % 8))) |
-                   (data[idx / 8] & ~(0x01 << (idx % 8)));
+                  (data[idx / 8] & ~(0x01 << (idx % 8)));
 }
 
 bool DynamicBitset::operator[](uint32_t idx) {

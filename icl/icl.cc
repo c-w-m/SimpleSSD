@@ -33,7 +33,8 @@ ICL::ICL(ConfigReader *c) : pConf(c) {
 
   FTL::Parameter *param = pFTL->getInfo();
 
-  totalLogicalPages = param->totalLogicalBlocks * param->pagesInBlock * param->ioUnitInPage;
+  totalLogicalPages =
+      param->totalLogicalBlocks * param->pagesInBlock * param->ioUnitInPage;
   logicalPageSize = param->pageSize / param->ioUnitInPage;
 
   pCache = new GenericCache(pConf, pFTL);

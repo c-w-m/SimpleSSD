@@ -214,16 +214,16 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
     FTL::Request reqInternal(lineCountInSuperPage);
 
     for (auto &iter : list) {
+      // Log
+      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                         "----- | Flush (%u, %u) | LCA %" PRIu64, iter.setIdx,
+                         iter.wayIdx, iter.tag);
+
       if (iter.valid) {
         beginAt = tick;
 
         reqInternal.lpn = iter.tag / lineCountInSuperPage;
         reqInternal.ioFlag = iter.bitset;
-
-        // Log
-        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "----- | Flush (%u, %u) | LCA %" PRIu64, iter.setIdx,
-                           iter.wayIdx, iter.tag);
 
         // Flush
         pFTL->write(reqInternal, beginAt);
@@ -238,6 +238,8 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
       // Clear
       reqInternal.ioFlag.reset();
     }
+
+    tick = finishedAt;
   }
 
   return wayIdx;

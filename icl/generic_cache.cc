@@ -198,6 +198,9 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
       iter.second->validBits.reset();
 
       finishedAt = MAX(finishedAt, beginAt);
+
+      // Clear
+      reqInternal.ioFlag.reset();
     }
   }
 

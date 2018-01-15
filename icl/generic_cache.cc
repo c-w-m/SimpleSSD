@@ -210,7 +210,6 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
 
     // Flush collected entries
     uint64_t beginAt;
-    uint64_t finishedAt = tick;
     FTL::Request reqInternal(lineCountInSuperPage);
 
     for (auto &iter : list) {
@@ -227,8 +226,6 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
 
         // Flush
         pFTL->write(reqInternal, beginAt);
-
-        finishedAt = MAX(finishedAt, beginAt);
       }
 
       // Invalidate
@@ -238,8 +235,6 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
       // Clear
       reqInternal.ioFlag.reset();
     }
-
-    tick = finishedAt;
   }
 
   return wayIdx;
@@ -472,8 +467,6 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
                          "WRITE | Cache hit at (%u, %u) | %" PRIu64
                          " - %" PRIu64 " (%" PRIu64 ")",
                          setIdx, wayIdx, tick, tick + lat, lat);
-
-      tick += lat;
     }
     else {
       bool cold;
@@ -487,8 +480,6 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       if (cold) {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                            "WRITE | Cache cold-miss, no need to flush", setIdx);
-
-        tick += lat;
       }
       else {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
@@ -501,9 +492,9 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       ppCache[setIdx][wayIdx].tag = req.range.slpn;
       ppCache[setIdx][wayIdx].lastAccessed = insertAt;
       ppCache[setIdx][wayIdx].insertedAt = insertAt;
-
-      // DRAM delay should be hidden by NAND I/O
     }
+
+    tick += lat;
   }
   else {
     FTL::Request reqInternal(lineCountInSuperPage);

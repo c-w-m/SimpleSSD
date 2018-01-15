@@ -99,6 +99,8 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
                                    bool *isCold, bool flushSuperPage) {
   uint32_t wayIdx = waySize;
   uint64_t min = std::numeric_limits<uint64_t>::max();
+  uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
+  uint64_t count = 0;
 
   if (isCold) {
     *isCold = false;
@@ -106,6 +108,8 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
 
   // Check set has empty entry
   for (uint32_t i = 0; i < waySize; i++) {
+    count++;
+
     if (!ppCache[setIdx][i].valid) {
       wayIdx = i;
 
@@ -126,6 +130,8 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
         break;
       case POLICY_FIFO:
         for (uint32_t i = 0; i < waySize; i++) {
+          count += 2;
+
           if (ppCache[setIdx][i].insertedAt < min) {
             min = ppCache[setIdx][i].insertedAt;
             wayIdx = i;
@@ -135,6 +141,8 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
         break;
       case POLICY_LEAST_RECENTLY_USED:
         for (uint32_t i = 0; i < waySize; i++) {
+          count += 2;
+
           if (ppCache[setIdx][i].lastAccessed < min) {
             min = ppCache[setIdx][i].lastAccessed;
             wayIdx = i;
@@ -168,6 +176,8 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
         if (!found.test(setIdx % lineCountInSuperPage)) {
           // Find cacheline to flush
           for (uint32_t way = 0; way < waySize; way++) {
+            count++;
+
             Line &line = ppCache[setIdx][way];
 
             if (line.valid && line.dirty) {
@@ -235,6 +245,8 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
       // Clear
       reqInternal.ioFlag.reset();
     }
+
+    tick += count * lat;
   }
 
   return wayIdx;
@@ -292,7 +304,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
   if (useReadCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    uint64_t lat = calculateDelay(req.length);
+    uint64_t lat = calculateDelay(sizeof(Line) + MIN(req.length, lineSize));
 
     // Check prefetch status
     if (useReadPrefetch) {
@@ -319,7 +331,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
                          " - %" PRIu64 " (%" PRIu64 ")",
                          setIdx, wayIdx, tick, tick + lat, lat);
 
-      tick += lat;
+      tick += lat * (wayIdx + 1);
     }
     else {
       uint64_t beginAt = tick;
@@ -438,7 +450,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
   if (useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    uint64_t lat = calculateDelay(req.length);
+    uint64_t lat = calculateDelay(sizeof(Line) + MIN(req.length, lineSize));
 
     // Reset prefetch status
     prefetchEnabled = false;
@@ -467,6 +479,8 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
                          "WRITE | Cache hit at (%u, %u) | %" PRIu64
                          " - %" PRIu64 " (%" PRIu64 ")",
                          setIdx, wayIdx, tick, tick + lat, lat);
+
+      tick += lat;
     }
     else {
       bool cold;
@@ -493,8 +507,6 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       ppCache[setIdx][wayIdx].lastAccessed = insertAt;
       ppCache[setIdx][wayIdx].insertedAt = insertAt;
     }
-
-    tick += lat;
   }
   else {
     FTL::Request reqInternal(lineCountInSuperPage);

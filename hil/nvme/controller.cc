@@ -40,6 +40,7 @@ Controller::Controller(Interface *intrface, ConfigReader *c)
     : pParent(intrface),
       adminQueueInited(false),
       interruptMask(0),
+      shutdownReserved(false),
       conf(c->nvmeConfig) {
   // Allocate array for Command Queues
   ppCQueue = (CQueue **)calloc(conf.readUint(NVME_MAX_IO_CQUEUE) + 1,
@@ -218,11 +219,10 @@ void Controller::writeRegister(uint64_t offset, uint64_t size, uint8_t *buffer,
 
         // Shotdown notification
         if (registers.configuration & 0x0000C000) {
-          registers.status &= 0xFFFFFFFE;
+          registers.status &= 0xFFFFFFF2;  // RDY = 1
+          registers.status |= 0x00000005;  // Shutdown processing occurring
 
-          pParent->disableController();
-
-          // TODO: do we need more things?
+          shutdownReserved = true;
         }
         // If EN = 1, Set CSTS.RDY = 1
         else if (registers.configuration & 0x00000001) {
@@ -1201,6 +1201,14 @@ void Controller::work(uint64_t &tick) {
         }
       }
     }
+  }
+  else if (shutdownReserved) {
+    pParent->disableController();
+
+    registers.status &= 0xFFFFFFF2;  // RDY = 0
+    registers.status |= 0x00000008;  // Shutdown processing complete
+
+    shutdownReserved = false;
   }
 
   // Check SQFIFO

@@ -1181,7 +1181,18 @@ void Controller::work(uint64_t &tick) {
   }
 
   // Check CQFIFO
-  if (lCQFIFO.size() > 0) {
+  if (shutdownReserved) {
+    pParent->disableController();
+
+    registers.status &= 0xFFFFFFF2;  // RDY = 0
+    registers.status |= 0x00000008;  // Shutdown processing complete
+
+    shutdownReserved = false;
+
+    lCQFIFO.clear();
+    lSQFIFO.clear();
+  }
+  else if (lCQFIFO.size() > 0) {
     CQueue *pQueue;
 
     for (auto iter = lCQFIFO.begin(); iter != lCQFIFO.end(); iter++) {
@@ -1201,14 +1212,6 @@ void Controller::work(uint64_t &tick) {
         }
       }
     }
-  }
-  else if (shutdownReserved) {
-    pParent->disableController();
-
-    registers.status &= 0xFFFFFFF2;  // RDY = 0
-    registers.status |= 0x00000008;  // Shutdown processing complete
-
-    shutdownReserved = false;
   }
 
   // Check SQFIFO

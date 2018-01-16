@@ -549,9 +549,6 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
 bool GenericCache::flush(Request &req, uint64_t &tick) {
   bool ret = false;
 
-  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "FLUSH | LCA %" PRIu64,
-                     req.range.slpn);
-
   if (useReadCaching || useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;

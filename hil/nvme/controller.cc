@@ -216,8 +216,16 @@ void Controller::writeRegister(uint64_t offset, uint64_t size, uint8_t *buffer,
               sqstride);
         }
 
+        // Shotdown notification
+        if (registers.configuration & 0x0000C000) {
+          registers.status &= 0xFFFFFFFE;
+
+          pParent->disableController();
+
+          // TODO: do we need more things?
+        }
         // If EN = 1, Set CSTS.RDY = 1
-        if (registers.configuration & 0x00000001) {
+        else if (registers.configuration & 0x00000001) {
           registers.status |= 0x00000001;
 
           pParent->enableController(conf.readUint(NVME_QUEUE_INTERVAL),

@@ -98,9 +98,41 @@ uint32_t GenericCache::calcSet(uint64_t lpn) {
 uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
                                    bool *isCold, bool flushSuperPage) {
   uint32_t wayIdx = waySize;
-  uint64_t min = std::numeric_limits<uint64_t>::max();
-  uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
+  uint64_t lat = calculateDelay(sizeof(Line));
+  uint64_t latAll = calculateDelay(sizeof(Line) + lineSize);
   uint64_t count = 0;
+  uint64_t countAll = 0;
+  static auto selectFunction = [this](uint32_t setIdx) -> uint32_t {
+    uint32_t ret = 0;
+    uint64_t min = std::numeric_limits<uint64_t>::max();
+
+    switch (policy) {
+      case POLICY_RANDOM:
+        ret = dist(gen);
+
+        break;
+      case POLICY_FIFO:
+        for (uint32_t i = 0; i < waySize; i++) {
+          if (ppCache[setIdx][i].insertedAt < min) {
+            min = ppCache[setIdx][i].insertedAt;
+            ret = i;
+          }
+        }
+
+        break;
+      case POLICY_LEAST_RECENTLY_USED:
+        for (uint32_t i = 0; i < waySize; i++) {
+          if (ppCache[setIdx][i].lastAccessed < min) {
+            min = ppCache[setIdx][i].lastAccessed;
+            ret = i;
+          }
+        }
+
+        break;
+    }
+
+    return ret;
+  };
 
   if (isCold) {
     *isCold = false;
@@ -123,38 +155,13 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
 
   // If no empty entry
   if (wayIdx == waySize) {
-    switch (policy) {
-      case POLICY_RANDOM:
-        wayIdx = dist(gen);
-
-        break;
-      case POLICY_FIFO:
-        for (uint32_t i = 0; i < waySize; i++) {
-          count += 2;
-
-          if (ppCache[setIdx][i].insertedAt < min) {
-            min = ppCache[setIdx][i].insertedAt;
-            wayIdx = i;
-          }
-        }
-
-        break;
-      case POLICY_LEAST_RECENTLY_USED:
-        for (uint32_t i = 0; i < waySize; i++) {
-          count += 2;
-
-          if (ppCache[setIdx][i].lastAccessed < min) {
-            min = ppCache[setIdx][i].lastAccessed;
-            wayIdx = i;
-          }
-        }
-
-        break;
-    }
+    wayIdx = selectFunction(setIdx);
 
     // Let's flush 'em if dirty
     DynamicBitset found(lineCountInSuperPage);
     std::vector<FlushData> list;
+    uint32_t flushSet = setIdx;
+    uint32_t flushWay = wayIdx;
 
     if (ppCache[setIdx][wayIdx].dirty) {
       uint32_t flushedIdx;
@@ -174,25 +181,29 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
       // Find more entries to flush to maximize internal parallelism
       for (setIdx = 0; setIdx < setSize; setIdx++) {
         if (!found.test(setIdx % lineCountInSuperPage)) {
+          bool empty = false;
+
           // Find cacheline to flush
           for (uint32_t way = 0; way < waySize; way++) {
             count++;
 
-            Line &line = ppCache[setIdx][way];
-
-            if (line.valid && line.dirty) {
-              FlushData data(lineCountInSuperPage);
-
-              data.setIdx = setIdx;
-              data.wayIdx = way;
-              data.tag = line.tag;
-              data.bitset.set(setIdx % lineCountInSuperPage);
-
-              list.push_back(data);
-              found.set(setIdx % lineCountInSuperPage);
+            if (!ppCache[setIdx][way].valid) {
+              empty = true;
 
               break;
             }
+          }
+
+          if (!empty) {
+            FlushData data(lineCountInSuperPage);
+
+            data.setIdx = setIdx;
+            data.wayIdx = selectFunction(setIdx);
+            data.tag = ppCache[data.setIdx][data.wayIdx].tag;
+            data.bitset.set(setIdx % lineCountInSuperPage);
+
+            list.push_back(data);
+            found.set(setIdx % lineCountInSuperPage);
           }
         }
 
@@ -213,6 +224,11 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
               j->valid) {
             j->valid = false;
             i->bitset |= j->bitset;
+
+            if (j->setIdx == flushSet && j->wayIdx == flushWay) {
+              flushSet = i->setIdx;
+              flushWay = i->wayIdx;
+            }
           }
         }
       }
@@ -234,8 +250,14 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
         reqInternal.lpn = iter.tag / lineCountInSuperPage;
         reqInternal.ioFlag = iter.bitset;
 
+        countAll++;
+
         // Flush
         pFTL->write(reqInternal, beginAt);
+
+        if (iter.setIdx == flushSet && iter.wayIdx == flushWay) {
+          tick = beginAt;
+        }
       }
 
       // Invalidate
@@ -246,7 +268,7 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
       reqInternal.ioFlag.reset();
     }
 
-    tick += count * lat;
+    tick += count * lat + countAll + latAll;
   }
 
   return wayIdx;

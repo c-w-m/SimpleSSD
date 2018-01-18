@@ -273,6 +273,8 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                            "----- | Flush (%u, %u) | LCA %" PRIu64, iter.setIdx,
                            iter.wayIdx, iter.tag);
+        
+        iter.tag.print();
 
         beginAt = tick;
 

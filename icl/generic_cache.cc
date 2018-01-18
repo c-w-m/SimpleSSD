@@ -416,8 +416,6 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         uint32_t beginSet = setIdx - (setIdx % lineCountInSuperPage);
         uint32_t endSet = beginSet + lineCountInSuperPage;
 
-        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "Prepare for prefetch | Set %u - %u", beginSet, endSet);
-
         for (uint32_t set = beginSet; set < endSet; set++) {
           if (set != setIdx) {
             data.tag = beginLPN + set - beginSet;
@@ -436,8 +434,6 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
             data.wayIdx = wayIdx;
 
             list.push_back(data);
-
-            Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "For set %u, way %u selected", set, wayIdx);
           }
         }
 

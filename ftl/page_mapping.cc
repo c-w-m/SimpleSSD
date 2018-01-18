@@ -41,6 +41,9 @@ PageMapping::PageMapping(Parameter *p, PAL::PAL *l, ConfigReader *c)
   }
 
   lastFreeBlock = getFreeBlock();
+
+  status.totalLogicalPages =
+      pFTLParam->totalLogicalBlocks * pFTLParam->pagesInBlock;
 }
 
 PageMapping::~PageMapping() {}
@@ -132,6 +135,13 @@ void PageMapping::format(LPNRange &range, uint64_t &tick) {
 
   // Do GC only in specified blocks
   doGarbageCollection(list, tick);
+}
+
+Status *PageMapping::getStatus() {
+  status.freePhysicalBlocks = freeBlocks.size();
+  status.mappedLogicalPages = table.size();
+
+  return &status;
 }
 
 float PageMapping::freeBlockRatio() {

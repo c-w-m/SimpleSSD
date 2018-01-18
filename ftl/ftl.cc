@@ -94,6 +94,10 @@ Parameter *FTL::getInfo() {
   return &param;
 }
 
+uint64_t FTL::getUsedPageCount() {
+  return pFTL->getStatus()->mappedLogicalPages;
+}
+
 }  // namespace FTL
 
 }  // namespace SimpleSSD

@@ -102,6 +102,10 @@ void HIL::getLPNInfo(uint64_t &totalLogicalPages, uint32_t &logicalPageSize) {
   pICL->getLPNInfo(totalLogicalPages, logicalPageSize);
 }
 
+uint64_t HIL::getUsedPageCount() {
+  return pICL->getUsedPageCount();
+}
+
 }  // namespace HIL
 
 }  // namespace SimpleSSD

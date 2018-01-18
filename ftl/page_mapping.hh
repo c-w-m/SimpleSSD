@@ -68,6 +68,8 @@ class PageMapping : public AbstractFTL {
   void trim(Request &, uint64_t &) override;
 
   void format(LPNRange &, uint64_t &) override;
+
+  Status *getStatus() override;
 };
 
 }  // namespace FTL

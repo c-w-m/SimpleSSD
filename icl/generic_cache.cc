@@ -295,7 +295,7 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
       reqInternal.ioFlag.reset();
     }
 
-    tick += firstFlush;
+    tick = firstFlush;
   }
 
   return wayIdx;

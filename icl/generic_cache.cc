@@ -135,7 +135,7 @@ uint32_t GenericCache::getEmptyWay(uint32_t setIdx, uint64_t &tick) {
 }
 
 uint32_t GenericCache::getVictim(uint32_t setIdx, uint64_t &tick) {
-  uint32_t wayIdx;
+  uint32_t wayIdx = 0;
   uint32_t count = 0;
   uint64_t min = std::numeric_limits<uint64_t>::max();
   static const uint64_t lat = calculateDelay(sizeof(uint64_t));

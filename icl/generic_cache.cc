@@ -274,7 +274,7 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
                            "----- | Flush (%u, %u) | LCA %" PRIu64, iter.setIdx,
                            iter.wayIdx, iter.tag);
         
-        iter.tag.print();
+        iter.bitset.print();
 
         beginAt = tick;
 

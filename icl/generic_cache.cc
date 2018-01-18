@@ -183,7 +183,7 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
   }
 
   // Check set has empty entry
-  waySize = getEmptyWay(setIdx, tick);
+  wayIdx = getEmptyWay(setIdx, tick);
 
   // If no empty entry
   if (wayIdx == waySize) {

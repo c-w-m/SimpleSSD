@@ -392,11 +392,22 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       }
 
       // Read missing data to cache
-      std::vector<std::pair<uint64_t, Line *>> list;
+      std::vector<FlushData> list;
+      FlushData data(1);  // bitset not used
+
+      list.reserve(lineCountInSuperPage);
 
       reqInternal.reqID = req.reqID;
       reqInternal.reqSubID = req.reqSubID;
       reqInternal.lpn = req.range.slpn / lineCountInSuperPage;
+
+      // Push flushed way index
+      data.tag = req.range.slpn;
+      data.setIdx = setIdx;
+      data.wayIdx = wayIdx;
+
+      list.push_back(data);
+      reqInternal.ioFlag.set(req.range.slpn % lineCountInSuperPage);
 
       // We have to load one superpage
       if (prefetchEnabled) {
@@ -405,17 +416,14 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         uint32_t beginSet = setIdx - (setIdx % lineCountInSuperPage);
         uint32_t endSet = beginSet + lineCountInSuperPage;
 
-        // Push flushed way index
-        list.resize(lineCountInSuperPage);
-        list.at(setIdx % lineCountInSuperPage) = {req.range.slpn,
-                                                  &ppCache[setIdx][wayIdx]};
+        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "Prepare for prefetch | Set %u - %u", beginSet, endSet);
 
         for (uint32_t set = beginSet; set < endSet; set++) {
           if (set != setIdx) {
-            uint64_t lpn = beginLPN + set - beginSet;
-            Line *pLine = nullptr;
+            data.tag = beginLPN + set - beginSet;
+            data.setIdx = set;
 
-            wayIdx = getValidWay(lpn, tick);
+            wayIdx = getValidWay(data.tag, tick);
 
             if (wayIdx == waySize) {
               wayIdx = getEmptyWay(set, tick);
@@ -423,19 +431,17 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
               if (wayIdx == waySize) {
                 Logger::panic("Bug on flushVictim strict");
               }
-
-              pLine = &ppCache[set][wayIdx];
             }
 
-            list.at(set - beginSet) = {beginLPN + set - beginSet, pLine};
+            data.wayIdx = wayIdx;
+
+            list.push_back(data);
+
+            Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "For set %u, way %u selected", set, wayIdx);
           }
         }
 
         reqInternal.ioFlag.set();
-      }
-      else {
-        list.push_back({req.range.slpn, &ppCache[setIdx][wayIdx]});
-        reqInternal.ioFlag.set(req.range.slpn % lineCountInSuperPage);
       }
 
       // Request read after flush
@@ -443,11 +449,11 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 
       // Set cache
       for (auto &iter : list) {
-        iter.second->dirty = false;
-        iter.second->valid = true;
-        iter.second->tag = iter.first;
-        iter.second->lastAccessed = tick;
-        iter.second->insertedAt = tick;
+        ppCache[iter.setIdx][iter.wayIdx].dirty = false;
+        ppCache[iter.setIdx][iter.wayIdx].valid = true;
+        ppCache[iter.setIdx][iter.wayIdx].tag = iter.tag;
+        ppCache[iter.setIdx][iter.wayIdx].lastAccessed = tick;
+        ppCache[iter.setIdx][iter.wayIdx].insertedAt = tick;
       }
 
       // DRAM delay should be hidden by NAND I/O

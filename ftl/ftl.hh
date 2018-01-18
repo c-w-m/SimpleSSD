@@ -57,6 +57,7 @@ class FTL {
   void format(LPNRange &, uint64_t &);
 
   Parameter *getInfo();
+  uint64_t getUsedPageCount();
 };
 
 }  // namespace FTL

@@ -29,13 +29,22 @@ namespace SimpleSSD {
 
 namespace ICL {
 
+struct FlushData {
+  uint32_t setIdx;
+  uint32_t wayIdx;
+  uint64_t tag;
+  bool valid;
+  DynamicBitset bitset;
+
+  FlushData(uint32_t);
+};
+
 class GenericCache : public AbstractCache {
  private:
   uint32_t setSize;
   uint32_t waySize;
   uint32_t lineSize;
 
-  uint32_t lbaInLine;
   uint32_t lineCountInSuperPage;
   uint32_t superPageSize;
 
@@ -63,7 +72,10 @@ class GenericCache : public AbstractCache {
   std::vector<std::vector<Line>> ppCache;
 
   uint32_t calcSet(uint64_t);
-  uint32_t flushVictim(uint32_t, uint64_t &, bool * = nullptr, bool = true);
+  uint32_t getValidWay(uint64_t, uint64_t &);
+  uint32_t getEmptyWay(uint32_t, uint64_t &);
+  uint32_t getVictim(uint32_t, uint64_t &);
+  uint32_t flushVictim(uint32_t, uint64_t &, bool * = nullptr, bool = false);
   uint64_t calculateDelay(uint64_t);
   void checkPrefetch(Request &);
 

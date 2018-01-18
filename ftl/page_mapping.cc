@@ -41,6 +41,9 @@ PageMapping::PageMapping(Parameter *p, PAL::PAL *l, ConfigReader *c)
   }
 
   lastFreeBlock = getFreeBlock();
+
+  status.totalLogicalPages =
+      pFTLParam->totalLogicalBlocks * pFTLParam->pagesInBlock;
 }
 
 PageMapping::~PageMapping() {}
@@ -48,7 +51,7 @@ PageMapping::~PageMapping() {}
 bool PageMapping::initialize() {
   uint64_t nPagesToWarmup;
   uint64_t nTotalPages;
-  uint64_t tick = 0;
+  uint64_t tick;
   Request req(pFTLParam->ioUnitInPage);
 
   nTotalPages = pFTLParam->totalLogicalBlocks * pFTLParam->pagesInBlock;
@@ -56,13 +59,10 @@ bool PageMapping::initialize() {
   nPagesToWarmup = MIN(nPagesToWarmup, nTotalPages);
   req.ioFlag.set();
 
-  for (uint64_t lpn = 0; lpn < pFTLParam->totalLogicalBlocks;
-       lpn += nTotalPages) {
-    for (uint32_t page = 0; page < nPagesToWarmup; page++) {
-      req.lpn = lpn + page;
+  for (req.lpn = 0; req.lpn < nPagesToWarmup; req.lpn++) {
+    tick = 0;
 
-      writeInternal(req, tick, false);
-    }
+    writeInternal(req, tick, false);
   }
 
   return true;
@@ -135,6 +135,13 @@ void PageMapping::format(LPNRange &range, uint64_t &tick) {
 
   // Do GC only in specified blocks
   doGarbageCollection(list, tick);
+}
+
+Status *PageMapping::getStatus() {
+  status.freePhysicalBlocks = freeBlocks.size();
+  status.mappedLogicalPages = table.size();
+
+  return &status;
 }
 
 float PageMapping::freeBlockRatio() {
@@ -403,9 +410,13 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   }
   else {
     // Create empty mapping
-    table.insert({req.lpn, std::pair<uint32_t, uint32_t>()});
+    auto ret = table.insert({req.lpn, std::pair<uint32_t, uint32_t>()});
 
-    mapping = table.find(req.lpn);
+    if (!ret.second) {
+      Logger::panic("Failed to insert new mapping");
+    }
+
+    mapping = ret.first;
   }
 
   // Write data to free block

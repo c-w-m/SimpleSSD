@@ -179,7 +179,7 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
   uint32_t wayIdx = waySize;
 
   if (isCold) {
-    *isCold = false;
+    *isCold = true;
   }
 
   // Check set has empty entry
@@ -187,6 +187,10 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
 
   // If no empty entry
   if (wayIdx == waySize) {
+    if (isCold) {
+      *isCold = false;
+    }
+
     wayIdx = getVictim(setIdx, tick);
 
     // Let's flush 'em if dirty

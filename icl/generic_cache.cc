@@ -390,11 +390,6 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                            "READ  | Cache cold-miss, no need to flush", setIdx);
       }
-      else {
-        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "READ  | Flush (%u, %u) | LCA %" PRIu64, setIdx,
-                           wayIdx, ppCache[setIdx][wayIdx].tag);
-      }
 
       // Read missing data to cache
       std::vector<std::pair<uint64_t, Line *>> list;
@@ -522,11 +517,6 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       if (cold) {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                            "WRITE | Cache cold-miss, no need to flush", setIdx);
-      }
-      else {
-        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "WRITE | Flush (%u, %u) | LCA %" PRIu64, setIdx,
-                           wayIdx, ppCache[setIdx][wayIdx].tag);
       }
 
       ppCache[setIdx][wayIdx].valid = true;

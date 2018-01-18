@@ -175,7 +175,7 @@ uint32_t GenericCache::getVictim(uint32_t setIdx, uint64_t &tick) {
 }
 
 uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
-                                   bool *isCold, bool flushSuperPage) {
+                                   bool *isCold, bool strict) {
   uint32_t wayIdx = waySize;
 
   if (isCold) {
@@ -211,44 +211,53 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
       list.push_back(data);
     }
 
-    if (flushSuperPage) {
-      // Find more entries to flush to maximize internal parallelism
-      for (setIdx = 0; setIdx < setSize; setIdx++) {
-        if (!found.test(setIdx % lineCountInSuperPage)) {
-          // Find cacheline to flush
-          uint32_t way = getEmptyWay(setIdx, tick);
+    // Find more entries to flush to maximize internal parallelism
+    uint64_t beginSet = 0;
+    uint64_t endSet = setSize;
 
-          if (way == waySize) {
-            FlushData data(lineCountInSuperPage);
+    if (strict) {
+      beginSet = setIdx - (setIdx % lineCountInSuperPage);
+      endSet = beginSet + lineCountInSuperPage;
+    }
 
-            data.setIdx = setIdx;
-            data.wayIdx = getVictim(setIdx, tick);
-            data.tag = ppCache[data.setIdx][data.wayIdx].tag;
+    for (setIdx = beginSet; setIdx < endSet; setIdx++) {
+      if (!found.test(setIdx % lineCountInSuperPage)) {
+        // Find cacheline to flush
+        uint32_t way = getEmptyWay(setIdx, tick);
+
+        if (way == waySize) {
+          FlushData data(lineCountInSuperPage);
+
+          data.setIdx = setIdx;
+          data.wayIdx = getVictim(setIdx, tick);
+          data.tag = ppCache[data.setIdx][data.wayIdx].tag;
+
+          if (ppCache[data.setIdx][data.wayIdx].dirty) {
             data.bitset.set(setIdx % lineCountInSuperPage);
-
-            list.push_back(data);
-            found.set(setIdx % lineCountInSuperPage);
           }
-        }
 
-        if (found.all()) {
-          break;
+          list.push_back(data);
+          found.set(setIdx % lineCountInSuperPage);
         }
       }
 
-      // Check if there is same super page
-      for (auto i = list.begin(); i != list.end(); i++) {
-        if (!i->valid) {
-          continue;
-        }
+      if (found.all()) {
+        break;
+      }
+    }
 
-        for (auto j = i; j != list.end(); j++) {
-          if (i->tag != j->tag &&
-              i->tag / lineCountInSuperPage == j->tag / lineCountInSuperPage &&
-              j->valid) {
-            j->valid = false;
-            i->bitset |= j->bitset;
-          }
+    // Check if there is same super page
+    for (auto i = list.begin(); i != list.end(); i++) {
+      if (!i->valid) {
+        continue;
+      }
+
+      for (auto j = i; j != list.end(); j++) {
+        if (i->tag != j->tag &&
+            i->tag / lineCountInSuperPage == j->tag / lineCountInSuperPage &&
+            j->valid) {
+          j->valid = false;
+          i->bitset |= j->bitset;
         }
       }
     }
@@ -264,7 +273,7 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
                          "----- | Flush (%u, %u) | LCA %" PRIu64, iter.setIdx,
                          iter.wayIdx, iter.tag);
 
-      if (iter.valid) {
+      if (iter.valid && iter.bitset.any()) {
         beginAt = tick;
 
         reqInternal.lpn = iter.tag / lineCountInSuperPage;
@@ -374,7 +383,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       // We have to flush to store data to cache
       bool cold;
 
-      wayIdx = flushVictim(setIdx, beginAt, &cold);
+      wayIdx = flushVictim(setIdx, beginAt, &cold, true);
       finishedAt = beginAt;
 
       if (cold) {
@@ -388,7 +397,6 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       }
 
       // Read missing data to cache
-      bool hit;
       std::vector<std::pair<uint64_t, Line *>> list;
 
       reqInternal.reqID = req.reqID;
@@ -409,23 +417,17 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 
         for (uint32_t set = beginSet; set < endSet; set++) {
           if (set != setIdx) {
+            uint64_t lpn = beginLPN + set - beginSet;
             Line *pLine = nullptr;
-            hit = false;  // This checks hit
 
-            for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
-              pLine = &ppCache[set][wayIdx];
+            wayIdx = getValidWay(lpn, tick);
 
-              if (pLine->valid && pLine->tag == beginLPN + set - beginSet) {
-                hit = true;
+            if (wayIdx == waySize) {
+              wayIdx = getEmptyWay(set, tick);
 
-                break;
+              if (wayIdx == waySize) {
+                Logger::panic("Bug on flushVictim strict");
               }
-            }
-
-            if (!hit) {
-              beginAt = tick;
-              wayIdx = flushVictim(beginSet, beginAt, nullptr, false);
-              finishedAt = MAX(finishedAt, beginAt);
 
               pLine = &ppCache[set][wayIdx];
             }

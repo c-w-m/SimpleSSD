@@ -75,7 +75,7 @@ class GenericCache : public AbstractCache {
   uint32_t getValidWay(uint64_t, uint64_t &);
   uint32_t getEmptyWay(uint32_t, uint64_t &);
   uint32_t getVictim(uint32_t, uint64_t &);
-  uint32_t flushVictim(uint32_t, uint64_t &, bool * = nullptr, bool = true);
+  uint32_t flushVictim(uint32_t, uint64_t &, bool * = nullptr, bool = false);
   uint64_t calculateDelay(uint64_t);
   void checkPrefetch(Request &);
 

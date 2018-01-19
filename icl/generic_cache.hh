@@ -22,6 +22,7 @@
 
 #include <random>
 #include <vector>
+#include <functional>
 
 #include "icl/abstract_cache.hh"
 
@@ -65,7 +66,7 @@ class GenericCache : public AbstractCache {
 
   SequentialIO readIOData, writeIOData;
 
-  EVICT_POLICY policy;
+  std::function<uint32_t(uint32_t)> evictFunction;
   std::random_device rd;
   std::mt19937 gen;
   std::uniform_int_distribution<> dist;
@@ -79,7 +80,7 @@ class GenericCache : public AbstractCache {
   uint32_t calcSet(uint64_t);
   uint32_t getValidWay(uint64_t);
   uint32_t getVictimWay(uint64_t);
-  void flushVictim(std::vector<FlushData> &, uint64_t &tick);
+  void flushVictim(std::vector<FlushData> &, uint64_t &);
   uint64_t calculateDelay(uint64_t);
   void checkSequential(Request &, SequentialIO &);
 

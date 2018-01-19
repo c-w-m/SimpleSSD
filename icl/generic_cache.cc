@@ -48,8 +48,6 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
   sequentialIOCount = c->iclConfig.readUint(ICL_MIN_SEQ_IO_COUNT);
   sequentialIORatio = c->iclConfig.readFloat(ICL_MIN_SEQ_IO_RATIO);
 
-  policy = (EVICT_POLICY)c->iclConfig.readInt(ICL_EVICT_POLICY);
-
   lineCountInSuperPage = superPageSize / MIN_LBA_SIZE;
   lineSize = MIN_LBA_SIZE;
 
@@ -90,6 +88,51 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
 
   readIOData.lastRequest.reqID = 1;
   writeIOData.lastRequest.reqID = 1;
+
+  // Set evict policy functional
+  EVICT_POLICY policy = (EVICT_POLICY)c->iclConfig.readInt(ICL_EVICT_POLICY);
+
+  switch (policy) {
+    case POLICY_RANDOM:
+      evictFunction = [this](uint32_t setIdx) -> uint32_t { return dist(gen); };
+
+      break;
+    case POLICY_FIFO:
+      evictFunction = [this](uint32_t setIdx) -> uint32_t {
+        uint32_t wayIdx;
+        uint32_t min = std::numeric_limits<uint32_t>::max();
+
+        for (uint32_t i = 0; i < waySize; i++) {
+          if (ppCache[setIdx][i].insertedAt < min) {
+            min = ppCache[setIdx][i].insertedAt;
+            wayIdx = i;
+          }
+        }
+
+        return wayIdx;
+      };
+
+      break;
+    case POLICY_LEAST_RECENTLY_USED:
+      evictFunction = [this](uint32_t setIdx) -> uint32_t {
+        uint32_t wayIdx;
+        uint32_t min = std::numeric_limits<uint32_t>::max();
+
+        for (uint32_t i = 0; i < waySize; i++) {
+          if (ppCache[setIdx][i].lastAccessed < min) {
+            min = ppCache[setIdx][i].lastAccessed;
+            wayIdx = i;
+          }
+        }
+
+        return wayIdx;
+      };
+
+      break;
+    default:
+      evictFunction = [](uint32_t setIdx) -> uint32_t { return 0; };
+      break;
+  }
 }
 
 GenericCache::~GenericCache() {}
@@ -111,6 +154,91 @@ uint32_t GenericCache::getValidWay(uint64_t lpn) {
   }
 
   return wayIdx;
+}
+
+uint32_t GenericCache::getVictimWay(uint64_t lpn) {
+  uint32_t setIdx = calcSet(lpn);
+  uint32_t wayIdx;
+
+  for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
+    Line &line = ppCache[setIdx][wayIdx];
+
+    if ((line.valid && line.tag == lpn) || !line.valid) {
+      break;
+    }
+  }
+
+  if (wayIdx == waySize) {
+    wayIdx = evictFunction(setIdx);
+  }
+
+  return wayIdx;
+}
+
+void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick) {
+  std::vector<FTL::Request> reqList;
+
+  // Collect lines to write
+  for (auto &iter : list) {
+    auto &line = ppCache[iter.setIdx][iter.wayIdx];
+
+    if (line.valid && line.dirty && line.tag != iter.tag) {
+      FTL::Request req(lineCountInSuperPage);
+
+      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                         "----- | Flush (%u, %u) | LBA %" PRIu64, iter.setIdx,
+                         iter.wayIdx, iter.tag);
+
+      // We need to flush this
+      req.lpn = line.tag / lineCountInSuperPage;
+      req.ioFlag.set(line.tag % lineCountInSuperPage);
+
+      reqList.push_back(req);
+    }
+
+    // Update line
+    line.valid = true;
+    line.dirty = false;
+    line.tag = iter.tag;
+    line.insertedAt = tick;
+    line.lastAccessed = tick;
+  }
+
+  if (reqList.size() == 0) {
+    Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                       "----- | Cache line is clean, no need to flush");
+  }
+  else {
+    // Merge same lpn for performance
+    for (auto i = reqList.begin(); i != reqList.end(); i++) {
+      if (i->reqID) {  // reqID should zero (internal I/O)
+        continue;
+      }
+
+      for (auto j = i + 1; j != reqList.end(); j++) {
+        if (i->lpn == j->lpn && j->reqID == 0) {
+          j->reqID = 1;
+          i->ioFlag |= j->ioFlag;
+        }
+      }
+    }
+
+    // Do write
+    uint64_t beginAt;
+    uint64_t finishedAt = tick;
+
+    for (auto &iter : reqList) {
+      if (iter.reqID == 0) {
+        beginAt = tick;
+
+        pFTL->write(iter, beginAt);
+
+        finishedAt = MAX(finishedAt, beginAt);
+      }
+    }
+
+    tick = finishedAt;
+  }
 }
 
 uint64_t GenericCache::calculateDelay(uint64_t bytesize) {
@@ -211,8 +339,14 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         list.push_back(data);
       }
 
-      // Flush collected lines
-      flushVictim(list, tick);
+      if (list.size() == 0) {
+        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                           "READ  | Cache cold-miss, no need to flush", setIdx);
+      }
+      else {
+        // Flush collected lines
+        flushVictim(list, tick);
+      }
     }
   }
   else {
@@ -265,8 +399,6 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       ret = true;
     }
     else {
-      FTL::Request reqInternal(lineCountInSuperPage);
-
       // Calculate range of set to collect cachelines to flush
       uint32_t beginSet;
       uint32_t endSet;
@@ -298,8 +430,14 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         list.push_back(data);
       }
 
-      // Flush collected lines
-      flushVictim(list, tick);
+      if (list.size() == 0) {
+        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                           "WRITE | Cache cold-miss, no need to flush", setIdx);
+      }
+      else {
+        // Flush collected lines
+        flushVictim(list, tick);
+      }
     }
   }
   else {

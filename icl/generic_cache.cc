@@ -175,7 +175,7 @@ uint32_t GenericCache::getVictim(uint32_t setIdx, uint64_t &tick) {
 }
 
 uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
-                                   bool *isCold, bool strict) {
+                                   bool *isCold) {
   uint32_t wayIdx = waySize;
 
   if (isCold) {
@@ -194,7 +194,6 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
     wayIdx = getVictim(setIdx, tick);
 
     // Let's flush 'em if dirty
-    DynamicBitset found(lineCountInSuperPage);
     std::vector<FlushData> list;
 
     if (ppCache[setIdx][wayIdx].dirty) {
@@ -206,30 +205,22 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
       data.wayIdx = wayIdx;
       data.tag = ppCache[setIdx][wayIdx].tag;
       data.bitset.set(flushedIdx);
-
-      found.set(flushedIdx);
-      list.push_back(data);
     }
 
     // Find more entries to flush to maximize internal parallelism
-    uint64_t beginSet = 0;
-    uint64_t endSet = setSize;
+    uint32_t beginSet = setIdx - (setIdx % lineCountInSuperPage);
+    uint32_t endSet = beginSet + lineCountInSuperPage;
 
-    if (strict) {
-      beginSet = setIdx - (setIdx % lineCountInSuperPage);
-      endSet = beginSet + lineCountInSuperPage;
-    }
-
-    for (setIdx = beginSet; setIdx < endSet; setIdx++) {
-      if (!found.test(setIdx % lineCountInSuperPage)) {
+    for (uint32_t set = beginSet; set < endSet; set++) {
+      if (set != setIdx) {
         // Find cacheline to flush
-        uint32_t way = getEmptyWay(setIdx, tick);
+        uint32_t way = getEmptyWay(set, tick);
 
         if (way == waySize) {
           FlushData data(lineCountInSuperPage);
 
-          data.setIdx = setIdx;
-          data.wayIdx = getVictim(setIdx, tick);
+          data.setIdx = set;
+          data.wayIdx = getVictim(set, tick);
           data.tag = ppCache[data.setIdx][data.wayIdx].tag;
 
           if (ppCache[data.setIdx][data.wayIdx].dirty) {
@@ -237,12 +228,7 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
           }
 
           list.push_back(data);
-          found.set(setIdx % lineCountInSuperPage);
         }
-      }
-
-      if (found.all()) {
-        break;
       }
     }
 
@@ -273,7 +259,7 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                            "----- | Flush (%u, %u) | LCA %" PRIu64, iter.setIdx,
                            iter.wayIdx, iter.tag);
-        
+
         iter.bitset.print();
 
         beginAt = tick;
@@ -385,7 +371,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       // We have to flush to store data to cache
       bool cold;
 
-      wayIdx = flushVictim(setIdx, beginAt, &cold, true);
+      wayIdx = flushVictim(setIdx, beginAt, &cold);
       finishedAt = beginAt;
 
       if (cold) {

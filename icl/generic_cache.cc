@@ -30,6 +30,9 @@ namespace ICL {
 
 FlushData::FlushData() : setIdx(0), wayIdx(0), tag(0) {}
 
+SequentialIO::SequentialIO()
+    : sequentialIOEnabled(false), hitCounter(0), accessCounter(0) {}
+
 GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
     : AbstractCache(c, f),
       waySize(c->iclConfig.readUint(ICL_WAY_SIZE)),
@@ -41,9 +44,9 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
 
   useReadCaching = c->iclConfig.readBoolean(ICL_USE_READ_CACHE);
   useWriteCaching = c->iclConfig.readBoolean(ICL_USE_WRITE_CACHE);
-  useReadPrefetch = c->iclConfig.readBoolean(ICL_USE_READ_PREFETCH);
-  prefetchIOCount = c->iclConfig.readUint(ICL_PREFETCH_COUNT);
-  prefetchIORatio = c->iclConfig.readFloat(ICL_PREFETCH_RATIO);
+  useSequentialIODetection = c->iclConfig.readBoolean(ICL_USE_SEQ_IO_DETECTION);
+  sequentialIOCount = c->iclConfig.readUint(ICL_MIN_SEQ_IO_COUNT);
+  sequentialIORatio = c->iclConfig.readFloat(ICL_MIN_SEQ_IO_RATIO);
 
   policy = (EVICT_POLICY)c->iclConfig.readInt(ICL_EVICT_POLICY);
 
@@ -122,31 +125,31 @@ uint64_t GenericCache::calculateDelay(uint64_t bytesize) {
   return (uint64_t)(pageFetch + pageCount * pStructure->pageSize / bandwidth);
 }
 
-void GenericCache::checkPrefetch(Request &req) {
-  if (lastRequest.reqID == req.reqID) {
-    lastRequest.range = req.range;
+void GenericCache::checkSequential(Request &req, SequentialIO &data) {
+  if (data.lastRequest.reqID == req.reqID) {
+    data.lastRequest.range = req.range;
 
     return;
   }
 
-  if (lastRequest.range.slpn * lineSize == req.range.slpn * lineSize) {
-    if (!prefetchEnabled) {
-      hitCounter++;
-      accessCounter += lineSize;
+  if (data.lastRequest.range.slpn * lineSize == req.range.slpn * lineSize) {
+    if (!data.sequentialIOEnabled) {
+      data.hitCounter++;
+      data.accessCounter += lineSize;
 
-      if (hitCounter >= prefetchIOCount &&
-          (float)accessCounter / superPageSize > prefetchIORatio) {
-        prefetchEnabled = true;
+      if (data.hitCounter >= sequentialIOCount &&
+          (float)data.accessCounter / superPageSize > sequentialIORatio) {
+        data.sequentialIOEnabled = true;
       }
     }
   }
   else {
-    prefetchEnabled = false;
-    hitCounter = 0;
-    accessCounter = 0;
+    data.sequentialIOEnabled = false;
+    data.hitCounter = 0;
+    data.accessCounter = 0;
   }
 
-  lastRequest = req;
+  data.lastRequest = req;
 }
 
 // True when hit
@@ -161,9 +164,9 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
     uint32_t wayIdx;
     uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
 
-    // Check prefetch status
-    if (useReadPrefetch) {
-      checkPrefetch(req);
+    // Check sequential IO status
+    if (useSequentialIODetection) {
+      checkSequential(req, readIOData);
     }
 
     // Check cache that we have data for corresponding LBA
@@ -189,7 +192,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       reqInternal.reqSubID = req.reqSubID;
       reqInternal.lpn = req.range.slpn / lineCountInSuperPage;
 
-      if (prefetchEnabled) {
+      if (readIOData.sequentialIOEnabled) {
         reqInternal.ioFlag.set();
       }
       else {
@@ -241,10 +244,10 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
     uint32_t wayIdx;
     uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
 
-    // Reset prefetch status
-    prefetchEnabled = false;
-    hitCounter = 0;
-    accessCounter = 0;
+    // Check sequential IO status
+    if (useSequentialIODetection) {
+      checkSequential(req, writeIOData);
+    }
 
     // Check cache that we have data for corresponding LBA
     wayIdx = getValidWay(req.range.slpn);

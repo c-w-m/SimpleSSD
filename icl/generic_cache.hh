@@ -37,6 +37,15 @@ struct FlushData {
   FlushData();
 };
 
+struct SequentialIO {
+  bool sequentialIOEnabled;
+  uint32_t hitCounter;
+  uint32_t accessCounter;
+  Request lastRequest;
+
+  SequentialIO();
+};
+
 class GenericCache : public AbstractCache {
  private:
   uint32_t setSize;
@@ -47,17 +56,14 @@ class GenericCache : public AbstractCache {
   uint32_t lineCountInIOUnit;
   uint32_t superPageSize;
 
-  uint32_t prefetchIOCount;
-  float prefetchIORatio;
+  uint32_t sequentialIOCount;
+  float sequentialIORatio;
 
   bool useReadCaching;
   bool useWriteCaching;
-  bool useReadPrefetch;
+  bool useSequentialIODetection;
 
-  Request lastRequest;
-  bool prefetchEnabled;
-  uint32_t hitCounter;
-  uint32_t accessCounter;
+  SequentialIO readIOData, writeIOData;
 
   EVICT_POLICY policy;
   std::random_device rd;
@@ -75,7 +81,7 @@ class GenericCache : public AbstractCache {
   uint32_t getVictimWay(uint64_t);
   void flushVictim(std::vector<FlushData> &, uint64_t &tick);
   uint64_t calculateDelay(uint64_t);
-  void checkPrefetch(Request &);
+  void checkSequential(Request &, SequentialIO &);
 
  public:
   GenericCache(ConfigReader *, FTL::FTL *);

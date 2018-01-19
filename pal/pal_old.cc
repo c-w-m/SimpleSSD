@@ -126,15 +126,34 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
   static uint8_t superblock = conf.getSuperblockConfig();
   static bool useMultiplaneOP = conf.readBoolean(NAND_USE_MULTI_PLANE_OP);
   static uint32_t pageInSuperPage = param.pageInSuperPage;
+  static uint32_t lbaInSuperPage = param.superPageSize / MIN_LBA_SIZE;
+  static uint32_t ratio = lbaInSuperPage / pageInSuperPage;
+  static DynamicBitset ioflag(pageInSuperPage);
   uint32_t value[4];
   uint32_t *ptr[4];
   uint64_t tmp = req.blockIndex;
   int count = 0;
 
-  if (req.ioFlag.size() != pageInSuperPage) {
+  // Convert LBA I/O map to physical page I/O map
+  if (req.ioFlag.size() != lbaInSuperPage) {
     Logger::panic("Invalid size of I/O flag");
   }
 
+  for (uint32_t i = 0; i < pageInSuperPage; i++) {
+    bool flag = false;
+
+    for (uint32_t j = i * ratio; j < (i + 1) * ratio; j++) {
+      if (req.ioFlag.test(j)) {
+        flag = true;
+
+        break;
+      }
+    }
+
+    ioflag.set(i, flag);
+  }
+
+  // Assign addresses
   list.clear();
 
   addr.Plane = 0;

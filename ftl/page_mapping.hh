@@ -43,6 +43,7 @@ class PageMapping : public AbstractFTL {
   std::unordered_map<uint32_t, Block> blocks;
   std::unordered_map<uint32_t, Block> freeBlocks;
   uint32_t lastFreeBlock;
+  uint32_t lbaInPage;
 
   bool bReclaimMore;
 

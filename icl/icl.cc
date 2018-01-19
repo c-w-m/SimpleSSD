@@ -33,9 +33,9 @@ ICL::ICL(ConfigReader *c) : pConf(c) {
 
   FTL::Parameter *param = pFTL->getInfo();
 
-  totalLogicalPages =
-      param->totalLogicalBlocks * param->pagesInBlock * param->ioUnitInPage;
-  logicalPageSize = param->pageSize / param->ioUnitInPage;
+  ratio = param->pageSize / MIN_LBA_SIZE;
+  totalLogicalBlocks = param->totalLogicalBlocks * param->pagesInBlock * ratio;
+  logicalBlockSize = MIN_LBA_SIZE;
 
   pCache = new GenericCache(pConf, pFTL);
 }
@@ -59,7 +59,7 @@ void ICL::read(Request &req, uint64_t &tick) {
 
     reqInternal.reqSubID = i + 1;
     reqInternal.range.slpn = req.range.slpn + i;
-    reqInternal.length = MIN(reqRemain, logicalPageSize - reqInternal.offset);
+    reqInternal.length = MIN(reqRemain, logicalBlockSize - reqInternal.offset);
     pCache->read(reqInternal, beginAt);
     reqRemain -= reqInternal.length;
     reqInternal.offset = 0;
@@ -90,7 +90,7 @@ void ICL::write(Request &req, uint64_t &tick) {
 
     reqInternal.reqSubID = i + 1;
     reqInternal.range.slpn = req.range.slpn + i;
-    reqInternal.length = MIN(reqRemain, logicalPageSize - reqInternal.offset);
+    reqInternal.length = MIN(reqRemain, logicalBlockSize - reqInternal.offset);
     pCache->write(reqInternal, beginAt);
     reqRemain -= reqInternal.length;
     reqInternal.offset = 0;
@@ -121,7 +121,7 @@ void ICL::flush(Request &req, uint64_t &tick) {
 
     reqInternal.reqSubID = i + 1;
     reqInternal.range.slpn = req.range.slpn + i;
-    reqInternal.length = MIN(reqRemain, logicalPageSize - reqInternal.offset);
+    reqInternal.length = MIN(reqRemain, logicalBlockSize - reqInternal.offset);
     pCache->flush(reqInternal, beginAt);
     reqRemain -= reqInternal.length;
     reqInternal.offset = 0;
@@ -152,7 +152,7 @@ void ICL::trim(Request &req, uint64_t &tick) {
 
     reqInternal.reqSubID = i + 1;
     reqInternal.range.slpn = req.range.slpn + i;
-    reqInternal.length = MIN(reqRemain, logicalPageSize - reqInternal.offset);
+    reqInternal.length = MIN(reqRemain, logicalBlockSize - reqInternal.offset);
     pCache->trim(reqInternal, beginAt);
     reqRemain -= reqInternal.length;
     reqInternal.offset = 0;
@@ -181,13 +181,11 @@ void ICL::format(LPNRange &range, uint64_t &tick) {
 }
 
 void ICL::getLPNInfo(uint64_t &t, uint32_t &s) {
-  t = totalLogicalPages;
-  s = logicalPageSize;
+  t = totalLogicalBlocks;
+  s = logicalBlockSize;
 }
 
 uint64_t ICL::getUsedPageCount() {
-  static uint32_t ratio = pFTL->getInfo()->ioUnitInPage;
-
   return pFTL->getUsedPageCount() * ratio;
 }
 

@@ -35,7 +35,6 @@ typedef struct {
   uint64_t totalLogicalBlocks;
   uint64_t pagesInBlock;  //!< (PAL::Parameter::page)
   uint32_t pageSize;      //!< Mapping unit (PAL::Parameter::superPageSize)
-  uint32_t ioUnitInPage;  //!< # smallest I/O unit in one page
 } Parameter;
 
 class FTL {

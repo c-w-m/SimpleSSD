@@ -20,9 +20,9 @@
 #ifndef __ICL_GENERIC_CACHE__
 #define __ICL_GENERIC_CACHE__
 
+#include <functional>
 #include <random>
 #include <vector>
-#include <functional>
 
 #include "icl/abstract_cache.hh"
 

@@ -38,8 +38,7 @@ PageMapping::PageMapping(Parameter *p, PAL::PAL *l, ConfigReader *c)
   lbaInPage = pFTLParam->pageSize / MIN_LBA_SIZE;
 
   for (uint32_t i = 0; i < pFTLParam->totalPhysicalBlocks; i++) {
-    freeBlocks.insert(
-        {i, Block(pFTLParam->pagesInBlock, lbaInPage)});
+    freeBlocks.insert({i, Block(pFTLParam->pagesInBlock, lbaInPage)});
   }
 
   lastFreeBlock = getFreeBlock();

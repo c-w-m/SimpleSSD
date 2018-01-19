@@ -52,6 +52,8 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
 
   setSize = MAX(cacheSize / lineSize / waySize, 1);
 
+  lineCountInIOUnit = f->getInfo()->minIOSize / MIN_LBA_SIZE;
+
   // Set size should multiples of lineCountInSuperPage
   uint32_t left = setSize % lineCountInSuperPage;
 
@@ -250,7 +252,6 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
     // We have space for corresponding LBA
     if (wayIdx != waySize) {
       ppCache[setIdx][wayIdx].lastAccessed = tick;
-      ppCache[setIdx][wayIdx].valid = true;
       ppCache[setIdx][wayIdx].dirty = true;
 
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
@@ -263,24 +264,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       ret = true;
     }
     else {
-      bool cold;
-      uint64_t insertAt = tick;
-
-      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                         "WRITE | Cache miss at %u", setIdx);
-
-      wayIdx = flushVictim(setIdx, tick, &cold);
-
-      if (cold) {
-        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "WRITE | Cache cold-miss, no need to flush", setIdx);
-      }
-
-      ppCache[setIdx][wayIdx].valid = true;
-      ppCache[setIdx][wayIdx].dirty = true;
-      ppCache[setIdx][wayIdx].tag = req.range.slpn;
-      ppCache[setIdx][wayIdx].lastAccessed = insertAt;
-      ppCache[setIdx][wayIdx].insertedAt = insertAt;
+      //
     }
   }
   else {

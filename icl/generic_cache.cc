@@ -233,7 +233,7 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
 
     // Flush collected entries
     uint64_t beginAt;
-    uint64_t firstFlush = 0;
+    uint64_t finishedAt = tick;
     FTL::Request reqInternal(lineCountInSuperPage);
 
     for (auto &iter : list) {
@@ -253,9 +253,7 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
         // Flush
         pFTL->write(reqInternal, beginAt);
 
-        if (firstFlush == 0) {
-          firstFlush = beginAt;
-        }
+        finishedAt = MAX(finishedAt, beginAt);
       }
 
       // Invalidate
@@ -265,7 +263,7 @@ uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
       reqInternal.ioFlag.reset();
     }
 
-    tick = firstFlush;
+    tick = finishedAt;
   }
 
   return wayIdx;

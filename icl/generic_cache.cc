@@ -28,8 +28,7 @@ namespace SimpleSSD {
 
 namespace ICL {
 
-FlushData::FlushData(uint32_t size)
-    : setIdx(0), wayIdx(0), tag(0), valid(true), bitset(size) {}
+FlushData::FlushData() : setIdx(0), wayIdx(0), tag(0) {}
 
 GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
     : AbstractCache(c, f),
@@ -111,164 +110,6 @@ uint32_t GenericCache::getValidWay(uint64_t lpn) {
   return wayIdx;
 }
 
-uint32_t GenericCache::getEmptyWay(uint32_t setIdx) {
-  uint32_t wayIdx;
-
-  for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
-    Line &line = ppCache[setIdx][wayIdx];
-
-    if (!line.valid) {
-      break;
-    }
-  }
-
-  return wayIdx;
-}
-
-uint32_t GenericCache::getVictim(uint32_t setIdx) {
-  uint32_t wayIdx = 0;
-  uint64_t min = std::numeric_limits<uint64_t>::max();
-
-  switch (policy) {
-    case POLICY_RANDOM:
-      wayIdx = dist(gen);
-
-      break;
-    case POLICY_FIFO:
-      for (uint32_t i = 0; i < waySize; i++) {
-        if (ppCache[setIdx][i].insertedAt < min) {
-          min = ppCache[setIdx][i].insertedAt;
-          wayIdx = i;
-        }
-      }
-
-      break;
-    case POLICY_LEAST_RECENTLY_USED:
-      for (uint32_t i = 0; i < waySize; i++) {
-        if (ppCache[setIdx][i].lastAccessed < min) {
-          min = ppCache[setIdx][i].lastAccessed;
-          wayIdx = i;
-        }
-      }
-
-      break;
-  }
-
-  return wayIdx;
-}
-
-uint32_t GenericCache::flushVictim(uint32_t setIdx, uint64_t &tick,
-                                   bool *isCold) {
-  uint32_t wayIdx = waySize;
-
-  if (isCold) {
-    *isCold = true;
-  }
-
-  // Check set has empty entry
-  wayIdx = getEmptyWay(setIdx);
-
-  // If no empty entry
-  if (wayIdx == waySize) {
-    if (isCold) {
-      *isCold = false;
-    }
-
-    wayIdx = getVictim(setIdx);
-
-    // Let's flush 'em if dirty
-    std::vector<FlushData> list;
-
-    if (ppCache[setIdx][wayIdx].dirty) {
-      uint32_t flushedIdx;
-      FlushData data(lineCountInSuperPage);
-
-      flushedIdx = ppCache[setIdx][wayIdx].tag % lineCountInSuperPage;
-      data.setIdx = setIdx;
-      data.wayIdx = wayIdx;
-      data.tag = ppCache[setIdx][wayIdx].tag;
-      data.bitset.set(flushedIdx);
-    }
-
-    // Find more entries to flush to maximize internal parallelism
-    uint32_t beginSet = setIdx - (setIdx % lineCountInSuperPage);
-    uint32_t endSet = beginSet + lineCountInSuperPage;
-
-    for (uint32_t set = beginSet; set < endSet; set++) {
-      if (set != setIdx) {
-        // Find cacheline to flush
-        uint32_t way = getEmptyWay(set);
-
-        if (way == waySize) {
-          FlushData data(lineCountInSuperPage);
-
-          data.setIdx = set;
-          data.wayIdx = getVictim(set);
-          data.tag = ppCache[data.setIdx][data.wayIdx].tag;
-
-          if (ppCache[data.setIdx][data.wayIdx].dirty) {
-            data.bitset.set(setIdx % lineCountInSuperPage);
-          }
-
-          list.push_back(data);
-        }
-      }
-    }
-
-    // Check if there is same super page
-    for (auto i = list.begin(); i != list.end(); i++) {
-      if (!i->valid) {
-        continue;
-      }
-
-      for (auto j = i; j != list.end(); j++) {
-        if (i->tag != j->tag &&
-            i->tag / lineCountInSuperPage == j->tag / lineCountInSuperPage &&
-            j->valid) {
-          j->valid = false;
-          i->bitset |= j->bitset;
-        }
-      }
-    }
-
-    // Flush collected entries
-    uint64_t beginAt;
-    uint64_t finishedAt = tick;
-    FTL::Request reqInternal(lineCountInSuperPage);
-
-    for (auto &iter : list) {
-      if (iter.valid && iter.bitset.any()) {
-        // Log
-        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "----- | Flush (%u, %u) | LBA %" PRIu64, iter.setIdx,
-                           iter.wayIdx, iter.tag);
-
-        iter.bitset.print();
-
-        beginAt = tick;
-
-        reqInternal.lpn = iter.tag / lineCountInSuperPage;
-        reqInternal.ioFlag = iter.bitset;
-
-        // Flush
-        pFTL->write(reqInternal, beginAt);
-
-        finishedAt = MAX(finishedAt, beginAt);
-      }
-
-      // Invalidate
-      ppCache[iter.setIdx][iter.wayIdx] = Line();
-
-      // Clear
-      reqInternal.ioFlag.reset();
-    }
-
-    tick = finishedAt;
-  }
-
-  return wayIdx;
-}
-
 uint64_t GenericCache::calculateDelay(uint64_t bytesize) {
   uint64_t pageCount =
       (bytesize > 0) ? (bytesize - 1) / pStructure->pageSize + 1 : 0;
@@ -339,84 +180,36 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       ret = true;
     }
     else {
-      uint64_t beginAt = tick;
-      uint64_t finishedAt = tick;
       FTL::Request reqInternal(lineCountInSuperPage);
 
-      // We have to flush to store data to cache
-      bool cold;
-
-      wayIdx = flushVictim(setIdx, beginAt, &cold);
-      finishedAt = beginAt;
-
-      if (cold) {
-        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "READ  | Cache cold-miss, no need to flush", setIdx);
-      }
-
-      // Read missing data to cache
-      std::vector<FlushData> list;
-      FlushData data(1);  // bitset not used
-
-      list.reserve(lineCountInSuperPage);
-
+      // Read page
       reqInternal.reqID = req.reqID;
       reqInternal.reqSubID = req.reqSubID;
       reqInternal.lpn = req.range.slpn / lineCountInSuperPage;
 
-      // Push flushed way index
-      data.tag = req.range.slpn;
-      data.setIdx = setIdx;
-      data.wayIdx = wayIdx;
-
-      list.push_back(data);
-      reqInternal.ioFlag.set(req.range.slpn % lineCountInSuperPage);
-
-      // We have to load one superpage
       if (prefetchEnabled) {
-        // Ensure cache have space to load superpage
-        uint64_t beginLPN = req.range.slpn - (setIdx % lineCountInSuperPage);
-        uint32_t beginSet = setIdx - (setIdx % lineCountInSuperPage);
-        uint32_t endSet = beginSet + lineCountInSuperPage;
-
-        for (uint32_t set = beginSet; set < endSet; set++) {
-          if (set != setIdx) {
-            data.tag = beginLPN + set - beginSet;
-            data.setIdx = set;
-
-            wayIdx = getValidWay(data.tag);
-
-            if (wayIdx == waySize) {
-              wayIdx = getEmptyWay(set);
-
-              if (wayIdx == waySize) {
-                Logger::panic("Bug on flushVictim strict");
-              }
-            }
-
-            data.wayIdx = wayIdx;
-
-            list.push_back(data);
-          }
-        }
-
         reqInternal.ioFlag.set();
       }
-
-      // Request read after flush
-      pFTL->read(reqInternal, finishedAt);
-
-      // Set cache
-      for (auto &iter : list) {
-        ppCache[iter.setIdx][iter.wayIdx].dirty = false;
-        ppCache[iter.setIdx][iter.wayIdx].valid = true;
-        ppCache[iter.setIdx][iter.wayIdx].tag = iter.tag;
-        ppCache[iter.setIdx][iter.wayIdx].lastAccessed = tick;
-        ppCache[iter.setIdx][iter.wayIdx].insertedAt = tick;
+      else {
+        reqInternal.ioFlag.set(req.range.slpn % lineCountInSuperPage);
       }
 
-      // DRAM delay should be hidden by NAND I/O
-      tick = finishedAt;
+      pFTL->read(reqInternal, tick);
+
+      // Collect cachelines to flush from returned I/O map
+      FlushData data;
+      std::vector<FlushData> list;
+
+      for (uint64_t i = 0; i < lineCountInSuperPage; i++) {
+        data.tag = reqInternal.lpn * lineCountInSuperPage + i;
+        data.setIdx = calcSet(data.tag);
+        data.wayIdx = getVictimWay(data.tag);
+
+        list.push_back(data);
+      }
+
+      // Flush collected lines
+      flushVictim(list, tick);
     }
   }
   else {

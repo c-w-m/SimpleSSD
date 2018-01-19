@@ -90,8 +90,8 @@ void HIL::format(LPNRange &range, bool erase, uint64_t &tick) {
   }
 }
 
-void HIL::getLPNInfo(uint64_t &totalLogicalPages, uint32_t &logicalPageSize) {
-  pICL->getLPNInfo(totalLogicalPages, logicalPageSize);
+uint64_t HIL::getTotalLogicalBlocks() {
+  return pICL->getTotalLogicalBlocks();
 }
 
 uint64_t HIL::getUsedPageCount() {

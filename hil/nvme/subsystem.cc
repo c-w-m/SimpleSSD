@@ -53,7 +53,8 @@ Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
       allocatedLogicalPages(0) {
   pHIL = new HIL(cfg->pConfigReader);
 
-  pHIL->getLPNInfo(totalLogicalPages, logicalPageSize);
+  totalLogicalPages = pHIL->getTotalLogicalBlocks();
+  logicalPageSize = MIN_LBA_SIZE;
 
   if (conf.readBoolean(NVME_ENABLE_DEFAULT_NAMESPACE)) {
     Namespace::Information info;

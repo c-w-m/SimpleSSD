@@ -164,9 +164,8 @@ void ICL::format(LPNRange &range, uint64_t &tick) {
                      range.slpn, range.nlp, beginAt, tick, tick - beginAt);
 }
 
-void ICL::getLPNInfo(uint64_t &t, uint32_t &s) {
-  t = totalLogicalBlocks;
-  s = logicalBlockSize;
+uint64_t ICL::getTotalLogicalBlocks() {
+  return totalLogicalBlocks;
 }
 
 uint64_t ICL::getUsedPageCount() {

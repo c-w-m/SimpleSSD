@@ -36,8 +36,9 @@ class ICL {
   ConfigReader *pConf;
   AbstractCache *pCache;
 
-  uint64_t totalLogicalPages;
-  uint32_t logicalPageSize;
+  uint64_t totalLogicalBlocks;
+  uint32_t logicalBlockSize;
+  uint32_t ratio;
 
  public:
   ICL(ConfigReader *);
@@ -50,7 +51,7 @@ class ICL {
 
   void format(LPNRange &, uint64_t &);
 
-  void getLPNInfo(uint64_t &, uint32_t &);
+  uint64_t getTotalLogicalBlocks();
   uint64_t getUsedPageCount();
 };
 

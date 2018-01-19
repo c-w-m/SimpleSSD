@@ -20,6 +20,7 @@
 #ifndef __ICL_GENERIC_CACHE__
 #define __ICL_GENERIC_CACHE__
 
+#include <functional>
 #include <random>
 #include <vector>
 
@@ -33,34 +34,39 @@ struct FlushData {
   uint32_t setIdx;
   uint32_t wayIdx;
   uint64_t tag;
-  bool valid;
-  DynamicBitset bitset;
 
-  FlushData(uint32_t);
+  FlushData();
+};
+
+struct SequentialIO {
+  bool sequentialIOEnabled;
+  uint32_t hitCounter;
+  uint32_t accessCounter;
+  Request lastRequest;
+
+  SequentialIO();
 };
 
 class GenericCache : public AbstractCache {
  private:
   uint32_t setSize;
-  uint32_t waySize;
-  uint32_t lineSize;
+  const uint32_t waySize;
+  uint32_t lineSize;  //!< Same as MIN_LBA_SIZE
 
   uint32_t lineCountInSuperPage;
+  uint32_t lineCountInIOUnit;
   uint32_t superPageSize;
 
-  uint32_t prefetchIOCount;
-  float prefetchIORatio;
+  uint32_t sequentialIOCount;
+  float sequentialIORatio;
 
   bool useReadCaching;
   bool useWriteCaching;
-  bool useReadPrefetch;
+  bool useSequentialIODetection;
 
-  Request lastRequest;
-  bool prefetchEnabled;
-  uint32_t hitCounter;
-  uint32_t accessCounter;
+  SequentialIO readIOData, writeIOData;
 
-  EVICT_POLICY policy;
+  std::function<uint32_t(uint32_t)> evictFunction;
   std::random_device rd;
   std::mt19937 gen;
   std::uniform_int_distribution<> dist;
@@ -72,12 +78,11 @@ class GenericCache : public AbstractCache {
   std::vector<std::vector<Line>> ppCache;
 
   uint32_t calcSet(uint64_t);
-  uint32_t getValidWay(uint64_t, uint64_t &);
-  uint32_t getEmptyWay(uint32_t, uint64_t &);
-  uint32_t getVictim(uint32_t, uint64_t &);
-  uint32_t flushVictim(uint32_t, uint64_t &, bool * = nullptr);
+  uint32_t getValidWay(uint64_t);
+  uint32_t getVictimWay(uint64_t);
+  void flushVictim(std::vector<FlushData> &, uint64_t &);
   uint64_t calculateDelay(uint64_t);
-  void checkPrefetch(Request &);
+  void checkSequential(Request &, SequentialIO &);
 
  public:
   GenericCache(ConfigReader *, FTL::FTL *);

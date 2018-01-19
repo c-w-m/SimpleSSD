@@ -30,9 +30,9 @@ typedef enum {
   /* Cache config */
   ICL_USE_READ_CACHE,
   ICL_USE_WRITE_CACHE,
-  ICL_USE_READ_PREFETCH,
-  ICL_PREFETCH_COUNT,
-  ICL_PREFETCH_RATIO,
+  ICL_USE_SEQ_IO_DETECTION,
+  ICL_MIN_SEQ_IO_COUNT,
+  ICL_MIN_SEQ_IO_RATIO,
   ICL_EVICT_POLICY,
   ICL_CACHE_SIZE,
   ICL_WAY_SIZE,
@@ -163,12 +163,12 @@ class Config : public BaseConfig {
  private:
   bool readCaching;          //!< Default: false
   bool writeCaching;         //!< Default: true
-  bool readPrefetch;         //!< Default: false
+  bool seqIODetect;          //!< Default: false
   EVICT_POLICY evictPolicy;  //!< Default: POLICY_LEAST_RECENTLY_USED
   uint64_t cacheWaySize;     //!< Default: 1
   uint64_t cacheSize;        //!< Default: 33554432 (32MiB)
-  uint64_t prefetchCount;    //!< Default: 1
-  float prefetchRatio;       //!< Default: 0.5
+  uint64_t seqIOCount;       //!< Default: 1
+  float seqIORatio;          //!< Default: 0.5
 
   DRAMStructure dram;
   DRAMTiming dramTiming;

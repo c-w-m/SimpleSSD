@@ -37,10 +37,8 @@ HIL::~HIL() {
 void HIL::read(ICL::Request &req, uint64_t &tick) {
   // TODO: stat
 
-  Logger::debugprint(Logger::LOG_HIL,
-                     "READ  | LCA %" PRIu64 " + %" PRIu64 " | BYTE %" PRIu64
-                     " + %" PRIu64,
-                     req.range.slpn, req.range.nlp, req.offset, req.length);
+  Logger::debugprint(Logger::LOG_HIL, "READ  | LBA %" PRIu64 " + %" PRIu64,
+                     req.range.slpn, req.range.nlp);
 
   req.reqID = ++reqCount;
   pICL->read(req, tick);
@@ -49,10 +47,8 @@ void HIL::read(ICL::Request &req, uint64_t &tick) {
 void HIL::write(ICL::Request &req, uint64_t &tick) {
   // TODO: stat
 
-  Logger::debugprint(Logger::LOG_HIL,
-                     "WRITE | LCA %" PRIu64 " + %" PRIu64 " | BYTE %" PRIu64
-                     " + %" PRIu64,
-                     req.range.slpn, req.range.nlp, req.offset, req.length);
+  Logger::debugprint(Logger::LOG_HIL, "WRITE | LBA %" PRIu64 " + %" PRIu64,
+                     req.range.slpn, req.range.nlp);
 
   req.reqID = ++reqCount;
   pICL->write(req, tick);
@@ -61,10 +57,8 @@ void HIL::write(ICL::Request &req, uint64_t &tick) {
 void HIL::flush(ICL::Request &req, uint64_t &tick) {
   // TODO: stat
 
-  Logger::debugprint(Logger::LOG_HIL,
-                     "FLUSH | LCA %" PRIu64 " + %" PRIu64 " | BYTE %" PRIu64
-                     " + %" PRIu64,
-                     req.range.slpn, req.range.nlp, req.offset, req.length);
+  Logger::debugprint(Logger::LOG_HIL, "FLUSH | LBA %" PRIu64 " + %" PRIu64,
+                     req.range.slpn, req.range.nlp);
 
   req.reqID = ++reqCount;
   pICL->flush(req, tick);
@@ -73,17 +67,15 @@ void HIL::flush(ICL::Request &req, uint64_t &tick) {
 void HIL::trim(ICL::Request &req, uint64_t &tick) {
   // TODO: stat
 
-  Logger::debugprint(Logger::LOG_HIL,
-                     "TRIM  | LCA %" PRIu64 " + %" PRIu64 " | BYTE %" PRIu64
-                     " + %" PRIu64,
-                     req.range.slpn, req.range.nlp, req.offset, req.length);
+  Logger::debugprint(Logger::LOG_HIL, "TRIM  | LBA %" PRIu64 " + %" PRIu64,
+                     req.range.slpn, req.range.nlp);
 
   req.reqID = ++reqCount;
   pICL->trim(req, tick);
 }
 
 void HIL::format(LPNRange &range, bool erase, uint64_t &tick) {
-  Logger::debugprint(Logger::LOG_HIL, "FORMAT| LCA %" PRIu64 " + %" PRIu64,
+  Logger::debugprint(Logger::LOG_HIL, "FORMAT| LBA %" PRIu64 " + %" PRIu64,
                      range.slpn, range.nlp);
 
   if (erase) {
@@ -98,8 +90,8 @@ void HIL::format(LPNRange &range, bool erase, uint64_t &tick) {
   }
 }
 
-void HIL::getLPNInfo(uint64_t &totalLogicalPages, uint32_t &logicalPageSize) {
-  pICL->getLPNInfo(totalLogicalPages, logicalPageSize);
+uint64_t HIL::getTotalLogicalBlocks() {
+  return pICL->getTotalLogicalBlocks();
 }
 
 uint64_t HIL::getUsedPageCount() {

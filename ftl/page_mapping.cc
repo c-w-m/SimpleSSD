@@ -372,6 +372,8 @@ void PageMapping::readInternal(Request &req, uint64_t &tick) {
     block->second.read(palRequest.pageIndex, palRequest.ioFlag, tick);
 
     pPAL->read(palRequest, tick);
+
+    req.ioFlag = palRequest.ioFlag;
   }
 }
 
@@ -441,6 +443,8 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
     palRequest.pageIndex = mapping->second.second;
 
     pPAL->write(palRequest, tick);
+
+    req.ioFlag = palRequest.ioFlag;
   }
 
   // GC if needed

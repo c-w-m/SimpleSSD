@@ -151,6 +151,12 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
     }
 
     ioflag.set(i, flag);
+
+    if (flag) {
+      for (uint32_t j = i * ratio; j < (i + 1) * ratio; j++) {
+        req.ioFlag.set(j);
+      }
+    }
   }
 
   // debug

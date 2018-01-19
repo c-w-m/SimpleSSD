@@ -199,7 +199,7 @@ DynamicBitset DynamicBitset::operator~() const {
 
 namespace ICL {
 
-Request::_Request() : reqID(0), reqSubID(0), offset(0), length(0) {}
+Request::_Request() : reqID(0), reqSubID(0) {}
 
 }  // namespace ICL
 

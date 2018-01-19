@@ -284,18 +284,14 @@ uint64_t GenericCache::calculateDelay(uint64_t bytesize) {
 void GenericCache::checkPrefetch(Request &req) {
   if (lastRequest.reqID == req.reqID) {
     lastRequest.range = req.range;
-    lastRequest.offset = req.offset;
-    lastRequest.length = req.length;
 
     return;
   }
 
-  if (lastRequest.range.slpn * lineSize + lastRequest.offset +
-          lastRequest.length ==
-      req.range.slpn * lineSize + req.offset) {
+  if (lastRequest.range.slpn * lineSize == req.range.slpn * lineSize) {
     if (!prefetchEnabled) {
       hitCounter++;
-      accessCounter += req.length;
+      accessCounter += lineSize;
 
       if (hitCounter >= prefetchIOCount &&
           (float)accessCounter / superPageSize > prefetchIORatio) {
@@ -316,14 +312,13 @@ void GenericCache::checkPrefetch(Request &req) {
 bool GenericCache::read(Request &req, uint64_t &tick) {
   bool ret = false;
 
-  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                     "READ  | LBA %" PRIu64 " | SIZE %" PRIu64, req.range.slpn,
-                     req.length);
+  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "READ  | LBA %" PRIu64,
+                     req.range.slpn);
 
   if (useReadCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    uint64_t lat = calculateDelay(sizeof(Line) + MIN(req.length, lineSize));
+    uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
 
     // Check prefetch status
     if (useReadPrefetch) {
@@ -445,14 +440,13 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 bool GenericCache::write(Request &req, uint64_t &tick) {
   bool ret = false;
 
-  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                     "WRITE | LBA %" PRIu64 " | SIZE %" PRIu64, req.range.slpn,
-                     req.length);
+  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "WRITE | LBA %" PRIu64,
+                     req.range.slpn);
 
   if (useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    uint64_t lat = calculateDelay(sizeof(Line) + MIN(req.length, lineSize));
+    uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
 
     // Reset prefetch status
     prefetchEnabled = false;

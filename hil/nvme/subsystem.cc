@@ -340,19 +340,10 @@ void Subsystem::read(Namespace *ns, uint64_t slba, uint64_t nlblk,
                      uint64_t &tick) {
   ICL::Request req;
   Namespace::Information *info = ns->getInfo();
-  uint32_t lbaratio = logicalPageSize / info->lbaSize;
-  uint64_t slpn;
-  uint64_t nlp;
-  uint64_t off;
+  uint32_t lbaratio = info->lbaSize / logicalPageSize;
 
-  slpn = slba / lbaratio;
-  off = slba % lbaratio;
-  nlp = (nlblk + off + lbaratio - 1) / lbaratio;
-
-  req.range.slpn = slpn + info->range.slpn;
-  req.range.nlp = nlp;
-  req.offset = off * info->lbaSize;
-  req.length = nlblk * info->lbaSize;
+  req.range.slpn = slba * lbaratio + info->range.slpn;
+  req.range.nlp = nlblk * lbaratio;
 
   pHIL->read(req, tick);
 }
@@ -361,19 +352,10 @@ void Subsystem::write(Namespace *ns, uint64_t slba, uint64_t nlblk,
                       uint64_t &tick) {
   ICL::Request req;
   Namespace::Information *info = ns->getInfo();
-  uint32_t lbaratio = logicalPageSize / info->lbaSize;
-  uint64_t slpn;
-  uint64_t nlp;
-  uint64_t off;
+  uint32_t lbaratio = info->lbaSize / logicalPageSize;
 
-  slpn = slba / lbaratio;
-  off = slba % lbaratio;
-  nlp = (nlblk + off + lbaratio - 1) / lbaratio;
-
-  req.range.slpn = slpn + info->range.slpn;
-  req.range.nlp = nlp;
-  req.offset = off * info->lbaSize;
-  req.length = nlblk * info->lbaSize;
+  req.range.slpn = slba * lbaratio + info->range.slpn;
+  req.range.nlp = nlblk * lbaratio;
 
   pHIL->write(req, tick);
 }
@@ -384,8 +366,6 @@ void Subsystem::flush(Namespace *ns, uint64_t &tick) {
 
   req.range.slpn = info->range.slpn;
   req.range.nlp = info->range.nlp;
-  req.offset = 0;
-  req.length = info->range.nlp * logicalPageSize;
 
   pHIL->flush(req, tick);
 }
@@ -394,19 +374,10 @@ void Subsystem::trim(Namespace *ns, uint64_t slba, uint64_t nlblk,
                      uint64_t &tick) {
   ICL::Request req;
   Namespace::Information *info = ns->getInfo();
-  uint32_t lbaratio = logicalPageSize / info->lbaSize;
-  uint64_t slpn;
-  uint64_t nlp;
-  uint64_t off;
+  uint32_t lbaratio = info->lbaSize / logicalPageSize;
 
-  slpn = slba / lbaratio;
-  off = slba % lbaratio;
-  nlp = (nlblk + off + lbaratio - 1) / lbaratio;
-
-  req.range.slpn = slpn + info->range.slpn;
-  req.range.nlp = nlp;
-  req.offset = off * info->lbaSize;
-  req.length = nlblk * info->lbaSize;
+  req.range.slpn = slba * lbaratio + info->range.slpn;
+  req.range.nlp = nlblk * lbaratio;
 
   pHIL->trim(req, tick);
 }

@@ -88,10 +88,8 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
     ppCache[i] = std::vector<Line>(waySize, Line());
   }
 
-  lastRequest.reqID = 1;
-  prefetchEnabled = false;
-  hitCounter = 0;
-  accessCounter = 0;
+  readIOData.lastRequest.reqID = 1;
+  writeIOData.lastRequest.reqID = 1;
 }
 
 GenericCache::~GenericCache() {}
@@ -267,7 +265,41 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       ret = true;
     }
     else {
-      //
+      FTL::Request reqInternal(lineCountInSuperPage);
+
+      // Calculate range of set to collect cachelines to flush
+      uint32_t beginSet;
+      uint32_t endSet;
+
+      if (writeIOData.sequentialIOEnabled) {
+        uint32_t left = req.range.slpn % lineCountInSuperPage;
+
+        beginSet = setIdx - left;
+        endSet = setIdx + lineCountInSuperPage;
+      }
+      else {
+        uint32_t left = req.range.slpn % lineCountInIOUnit;
+
+        beginSet = setIdx - left;
+        endSet = setIdx + lineCountInIOUnit;
+      }
+
+      // Collect cachelines
+      FlushData data;
+      std::vector<FlushData> list;
+
+      for (uint32_t curSet = setIdx; curSet < endSet; curSet++) {
+        data.tag =
+            (req.range.slpn / lineCountInSuperPage) * lineCountInSuperPage +
+            curSet - beginSet;
+        data.setIdx = curSet;
+        data.wayIdx = getVictimWay(data.tag);
+
+        list.push_back(data);
+      }
+
+      // Flush collected lines
+      flushVictim(list, tick);
     }
   }
   else {

@@ -227,7 +227,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
       for (uint32_t j = 0; j < value[2]; j++) {
         for (uint32_t k = 0; k < value[1]; k++) {
           for (uint32_t l = 0; l < value[0]; l++) {
-            if (req.ioFlag.test(tmp++)) {
+            if (ioflag.test(tmp++)) {
               *ptr[0] = l;
               *ptr[1] = k;
               *ptr[2] = j;
@@ -244,7 +244,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
     for (uint32_t j = 0; j < value[2]; j++) {
       for (uint32_t k = 0; k < value[1]; k++) {
         for (uint32_t l = 0; l < value[0]; l++) {
-          if (req.ioFlag.test(tmp++)) {
+          if (ioflag.test(tmp++)) {
             *ptr[0] = l;
             *ptr[1] = k;
             *ptr[2] = j;
@@ -258,7 +258,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
   else if (count == 2) {
     for (uint32_t k = 0; k < value[1]; k++) {
       for (uint32_t l = 0; l < value[0]; l++) {
-        if (req.ioFlag.test(tmp++)) {
+        if (ioflag.test(tmp++)) {
           *ptr[0] = l;
           *ptr[1] = k;
 
@@ -269,7 +269,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
   }
   else if (count == 1) {
     for (uint32_t l = 0; l < value[0]; l++) {
-      if (req.ioFlag.test(tmp++)) {
+      if (ioflag.test(tmp++)) {
         *ptr[0] = l;
 
         list.push_back(addr);
@@ -277,7 +277,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
     }
   }
   else {
-    if (req.ioFlag.test(tmp++)) {
+    if (ioflag.test(tmp++)) {
       list.push_back(addr);
     }
   }

@@ -141,6 +141,20 @@ uint32_t GenericCache::calcSet(uint64_t lpn) {
   return lpn % setSize;
 }
 
+uint32_t GenericCache::getEmptyWay(uint32_t setIdx) {
+  uint32_t wayIdx;
+
+  for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
+    Line &line = ppCache[setIdx][wayIdx];
+
+    if (!line.valid) {
+      break;
+    }
+  }
+
+  return wayIdx;
+}
+
 uint32_t GenericCache::getValidWay(uint64_t lpn) {
   uint32_t setIdx = calcSet(lpn);
   uint32_t wayIdx;

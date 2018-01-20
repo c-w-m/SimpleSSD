@@ -188,7 +188,7 @@ void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick) {
 
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                          "----- | Flush (%u, %u) | LBA %" PRIu64, iter.setIdx,
-                         iter.wayIdx, iter.tag);
+                         iter.wayIdx, line.tag);
 
       // We need to flush this
       req.lpn = line.tag / lineCountInSuperPage;
@@ -216,15 +216,18 @@ void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick) {
 
     // Merge same lpn for performance
     for (uint64_t i = 0; i < size; i++) {
-      if (reqList.at(i).reqID) {  // reqID should zero (internal I/O)
+      auto &reqi = reqList.at(i);
+
+      if (reqi.reqID) {  // reqID should zero (internal I/O)
         continue;
       }
 
       for (uint64_t j = i + 1; j < size; j++) {
-        if (reqList.at(i).lpn == reqList.at(j).lpn &&
-            reqList.at(j).reqID == 0) {
-          reqList.at(j).reqID = 1;
-          reqList.at(i).ioFlag |= reqList.at(i).ioFlag;
+        auto &reqj = reqList.at(j);
+
+        if (reqi.lpn == reqj.lpn && reqj.reqID == 0) {
+          reqj.reqID = 1;
+          reqi.ioFlag |= reqj.ioFlag;
         }
       }
     }

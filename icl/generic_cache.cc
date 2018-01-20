@@ -267,7 +267,7 @@ void GenericCache::checkSequential(Request &req, SequentialIO &data) {
     return;
   }
 
-  if (data.lastRequest.range.slpn * lineSize == req.range.slpn * lineSize) {
+  if (data.lastRequest.range.slpn + 1 == req.range.slpn) {
     if (!data.sequentialIOEnabled) {
       data.hitCounter++;
       data.accessCounter += lineSize;

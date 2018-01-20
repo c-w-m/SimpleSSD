@@ -445,6 +445,11 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         // Flush collected lines
         flushVictim(list, tick);
       }
+
+      // Set as dirty on current cacheline
+      data = list.front();
+
+      ppCache[data.setIdx][data.wayIdx].dirty = true;
     }
   }
   else {

@@ -406,8 +406,6 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
     }
     else {
       // Calculate range of set to collect cachelines to flush
-      uint32_t beginLBA =
-          (req.range.slpn / lineCountInSuperPage) * lineCountInSuperPage;
       uint32_t beginSet;
       uint32_t endSet;
 
@@ -415,13 +413,13 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         uint32_t left = req.range.slpn % lineCountInSuperPage;
 
         beginSet = setIdx - left;
-        endSet = setIdx + lineCountInSuperPage;
+        endSet = beginSet + lineCountInSuperPage;
       }
       else {
         uint32_t left = req.range.slpn % lineCountInIOUnit;
 
         beginSet = setIdx - left;
-        endSet = setIdx + lineCountInIOUnit;
+        endSet = beginSet + lineCountInIOUnit;
       }
 
       // Collect cachelines
@@ -429,7 +427,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       std::vector<FlushData> list;
 
       for (uint32_t curSet = setIdx; curSet < endSet; curSet++) {
-        data.tag = beginLBA + curSet - beginSet;
+        data.tag = req.range.slpn + curSet - setIdx;
         data.setIdx = curSet;
         data.wayIdx = getVictimWay(data.tag);
 

@@ -100,7 +100,7 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
     case POLICY_FIFO:
       evictFunction = [this](uint32_t setIdx) -> uint32_t {
         uint32_t wayIdx = 0;
-        uint32_t min = std::numeric_limits<uint32_t>::max();
+        uint64_t min = std::numeric_limits<uint64_t>::max();
 
         for (uint32_t i = 0; i < waySize; i++) {
           if (ppCache[setIdx][i].insertedAt < min) {
@@ -116,7 +116,7 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
     case POLICY_LEAST_RECENTLY_USED:
       evictFunction = [this](uint32_t setIdx) -> uint32_t {
         uint32_t wayIdx = 0;
-        uint32_t min = std::numeric_limits<uint32_t>::max();
+        uint64_t min = std::numeric_limits<uint64_t>::max();
 
         for (uint32_t i = 0; i < waySize; i++) {
           if (ppCache[setIdx][i].lastAccessed < min) {

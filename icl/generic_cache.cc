@@ -176,6 +176,7 @@ uint32_t GenericCache::getVictimWay(uint64_t lpn) {
 }
 
 void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick) {
+  static uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
   std::vector<FTL::Request> reqList;
 
   // Collect lines to write
@@ -207,18 +208,23 @@ void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick) {
   if (reqList.size() == 0) {
     Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                        "----- | Cache line is clean, no need to flush");
+
+    tick += lat;
   }
   else {
+    uint64_t size = reqList.size();
+
     // Merge same lpn for performance
-    for (auto i = reqList.begin(); i != reqList.end(); i++) {
-      if (i->reqID) {  // reqID should zero (internal I/O)
+    for (uint64_t i = 0; i < size; i++) {
+      if (reqList.at(i).reqID) {  // reqID should zero (internal I/O)
         continue;
       }
 
-      for (auto j = i + 1; j != reqList.end(); j++) {
-        if (i->lpn == j->lpn && j->reqID == 0) {
-          j->reqID = 1;
-          i->ioFlag |= j->ioFlag;
+      for (uint64_t j = i + 1; j < size; j++) {
+        if (reqList.at(i).lpn == reqList.at(j).lpn &&
+            reqList.at(j).reqID == 0) {
+          reqList.at(j).reqID = 1;
+          reqList.at(i).ioFlag |= reqList.at(i).ioFlag;
         }
       }
     }
@@ -288,7 +294,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
   if (useReadCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
+    static uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
 
     // Check sequential IO status
     if (useSequentialIODetection) {
@@ -374,7 +380,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
   if (useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
+    static uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
 
     // Check sequential IO status
     if (useSequentialIODetection) {
@@ -407,13 +413,13 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         uint32_t left = req.range.slpn % lineCountInSuperPage;
 
         beginSet = setIdx - left;
-        endSet = setIdx + lineCountInSuperPage;
+        endSet = beginSet + lineCountInSuperPage;
       }
       else {
         uint32_t left = req.range.slpn % lineCountInIOUnit;
 
         beginSet = setIdx - left;
-        endSet = setIdx + lineCountInIOUnit;
+        endSet = beginSet + lineCountInIOUnit;
       }
 
       // Collect cachelines
@@ -421,9 +427,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       std::vector<FlushData> list;
 
       for (uint32_t curSet = setIdx; curSet < endSet; curSet++) {
-        data.tag =
-            (req.range.slpn / lineCountInSuperPage) * lineCountInSuperPage +
-            curSet - beginSet;
+        data.tag = req.range.slpn + curSet - setIdx;
         data.setIdx = curSet;
         data.wayIdx = getVictimWay(data.tag);
 

@@ -176,6 +176,7 @@ uint32_t GenericCache::getVictimWay(uint64_t lpn) {
 }
 
 void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick) {
+  static uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
   std::vector<FTL::Request> reqList;
 
   // Collect lines to write
@@ -207,6 +208,8 @@ void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick) {
   if (reqList.size() == 0) {
     Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                        "----- | Cache line is clean, no need to flush");
+
+    tick += lat;
   }
   else {
     // Merge same lpn for performance
@@ -288,7 +291,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
   if (useReadCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
+    static uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
 
     // Check sequential IO status
     if (useSequentialIODetection) {
@@ -374,7 +377,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
   if (useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
+    static uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
 
     // Check sequential IO status
     if (useSequentialIODetection) {

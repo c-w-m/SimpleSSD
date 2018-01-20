@@ -212,16 +212,19 @@ void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick) {
     tick += lat;
   }
   else {
+    uint64_t size = reqList.size();
+
     // Merge same lpn for performance
-    for (auto i = reqList.begin(); i != reqList.end(); i++) {
-      if (i->reqID) {  // reqID should zero (internal I/O)
+    for (uint64_t i = 0; i < size; i++) {
+      if (reqList.at(i).reqID) {  // reqID should zero (internal I/O)
         continue;
       }
 
-      for (auto j = i + 1; j != reqList.end(); j++) {
-        if (i->lpn == j->lpn && j->reqID == 0) {
-          j->reqID = 1;
-          i->ioFlag |= j->ioFlag;
+      for (uint64_t j = i + 1; j < size; j++) {
+        if (reqList.at(i).lpn == reqList.at(j).lpn &&
+            reqList.at(j).reqID == 0) {
+          reqList.at(j).reqID = 1;
+          reqList.at(i).ioFlag |= reqList.at(i).ioFlag;
         }
       }
     }

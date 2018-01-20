@@ -175,7 +175,8 @@ uint32_t GenericCache::getVictimWay(uint64_t lpn) {
   return wayIdx;
 }
 
-void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick) {
+void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick,
+                               bool dirty) {
   static uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
   std::vector<FTL::Request> reqList;
 
@@ -199,7 +200,7 @@ void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick) {
 
     // Update line
     line.valid = true;
-    line.dirty = false;
+    line.dirty = dirty;
     line.tag = iter.tag;
     line.insertedAt = tick;
     line.lastAccessed = tick;
@@ -354,7 +355,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       }
       else {
         // Flush collected lines
-        flushVictim(list, tick);
+        flushVictim(list, tick, false);
       }
     }
   }
@@ -443,13 +444,8 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       }
       else {
         // Flush collected lines
-        flushVictim(list, tick);
+        flushVictim(list, tick, true);
       }
-
-      // Set as dirty on current cacheline
-      data = list.front();
-
-      ppCache[data.setIdx][data.wayIdx].dirty = true;
     }
   }
   else {

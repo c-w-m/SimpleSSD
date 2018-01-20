@@ -80,7 +80,7 @@ class GenericCache : public AbstractCache {
   uint32_t calcSet(uint64_t);
   uint32_t getValidWay(uint64_t);
   uint32_t getVictimWay(uint64_t);
-  void flushVictim(std::vector<FlushData> &, uint64_t &);
+  void flushVictim(std::vector<FlushData> &, uint64_t &, bool);
   uint64_t calculateDelay(uint64_t);
   void checkSequential(Request &, SequentialIO &);
 

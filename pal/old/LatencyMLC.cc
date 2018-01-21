@@ -32,11 +32,10 @@ inline uint8_t LatencyMLC::GetPageType(uint32_t AddrPage) {
 uint64_t LatencyMLC::GetLatency(uint32_t AddrPage, uint8_t Oper, uint8_t Busy) {
 #if 1
   // ps
-  static uint64_t lat_tbl[3][5] = {
-      /*  LSB         MSB         DMA0,                     DMA1*/
-      {65000000, 110000000, 100000 / SPDIV, 185000000 * 2 / (PGDIV * SPDIV)},
-      {1250000000, 3000000000, 185000000 * 2 / (PGDIV * SPDIV), 100000 / SPDIV},
-      {5000000000, 5000000000, 1500000 / SPDIV, 100000 / SPDIV}};
+  static uint64_t lat_tbl[3][5] = {/*  LSB       MSB       DMA0, DMA1*/
+                                   {65000000, 110000000, 21000, 49222222},
+                                   {1250000000, 3000000000, 49222222, 3000},
+                                   {5000000000, 5000000000, 15000, 3000}};
 #else
   // ns
   uint32_t lat_tbl[3][5] = {

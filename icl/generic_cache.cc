@@ -141,6 +141,20 @@ uint32_t GenericCache::calcSet(uint64_t lpn) {
   return lpn % setSize;
 }
 
+uint32_t GenericCache::getEmptyWay(uint32_t setIdx) {
+  uint32_t wayIdx;
+
+  for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
+    Line &line = ppCache[setIdx][wayIdx];
+
+    if (!line.valid) {
+      break;
+    }
+  }
+
+  return wayIdx;
+}
+
 uint32_t GenericCache::getValidWay(uint64_t lpn) {
   uint32_t setIdx = calcSet(lpn);
   uint32_t wayIdx;
@@ -175,7 +189,8 @@ uint32_t GenericCache::getVictimWay(uint64_t lpn) {
   return wayIdx;
 }
 
-void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick) {
+void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick,
+                               bool write) {
   static uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
   std::vector<FTL::Request> reqList;
 
@@ -198,7 +213,15 @@ void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick) {
     }
 
     // Update line
-    line.valid = true;
+    if (write) {
+      // On write, make this cacheline empty
+      line.valid = false;
+    }
+    else {
+      // On read, make this cacheline valid and clean
+      line.valid = true;
+    }
+
     line.dirty = false;
     line.tag = iter.tag;
     line.insertedAt = tick;
@@ -246,7 +269,7 @@ void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick) {
       }
     }
 
-    tick = finishedAt;
+    // tick = finishedAt;
   }
 }
 
@@ -354,7 +377,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       }
       else {
         // Flush collected lines
-        flushVictim(list, tick);
+        flushVictim(list, tick, false);
       }
     }
   }
@@ -408,48 +431,69 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       ret = true;
     }
     else {
-      // Calculate range of set to collect cachelines to flush
-      uint32_t beginSet;
-      uint32_t endSet;
+      wayIdx = getEmptyWay(setIdx);
 
-      if (writeIOData.sequentialIOEnabled) {
-        uint32_t left = req.range.slpn % lineCountInSuperPage;
-
-        beginSet = setIdx - left;
-        endSet = beginSet + lineCountInSuperPage;
-      }
-      else {
-        uint32_t left = req.range.slpn % lineCountInIOUnit;
-
-        beginSet = setIdx - left;
-        endSet = beginSet + lineCountInIOUnit;
-      }
-
-      // Collect cachelines
-      FlushData data;
-      std::vector<FlushData> list;
-
-      for (uint32_t curSet = setIdx; curSet < endSet; curSet++) {
-        data.tag = req.range.slpn + curSet - setIdx;
-        data.setIdx = curSet;
-        data.wayIdx = getVictimWay(data.tag);
-
-        list.push_back(data);
-      }
-
-      if (list.size() == 0) {
+      // We have to flush
+      if (wayIdx != waySize) {
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "WRITE | Cache cold-miss, no need to flush", setIdx);
+                           "WRITE | Cache miss at (%u, %u) | %" PRIu64
+                           " - %" PRIu64 " (%" PRIu64 ")",
+                           setIdx, wayIdx, tick, tick + lat, lat);
+
+        tick += lat;
+
+        ret = true;
       }
       else {
-        // Flush collected lines
-        flushVictim(list, tick);
+        // Calculate range of set to collect cachelines to flush
+        uint32_t beginSet;
+        uint32_t endSet;
+
+        if (writeIOData.sequentialIOEnabled) {
+          uint32_t left = req.range.slpn % lineCountInSuperPage;
+
+          beginSet = setIdx - left;
+          endSet = beginSet + lineCountInSuperPage;
+        }
+        else {
+          uint32_t left = req.range.slpn % lineCountInIOUnit;
+
+          beginSet = setIdx - left;
+          endSet = beginSet + lineCountInIOUnit;
+        }
+
+        // Collect cachelines
+        FlushData data;
+        std::vector<FlushData> list;
+
+        for (uint32_t curSet = setIdx; curSet < endSet; curSet++) {
+          data.tag = req.range.slpn + curSet - setIdx;
+          data.setIdx = curSet;
+          data.wayIdx = getVictimWay(data.tag);
+
+          list.push_back(data);
+        }
+
+        if (list.size() == 0) {
+          Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                             "WRITE | Cache cold-miss, no need to flush",
+                             setIdx);
+        }
+        else {
+          // Flush collected lines
+          flushVictim(list, tick, true);
+        }
+
+        // Current data
+        wayIdx = list.front().wayIdx;
       }
 
-      // Set as dirty on current cacheline
-      data = list.front();
-
-      ppCache[data.setIdx][data.wayIdx].dirty = true;
+      // Update line
+      ppCache[setIdx][wayIdx].valid = true;
+      ppCache[setIdx][wayIdx].dirty = true;
+      ppCache[setIdx][wayIdx].tag = req.range.slpn;
+      ppCache[setIdx][wayIdx].insertedAt = tick;
+      ppCache[setIdx][wayIdx].lastAccessed = tick;
     }
   }
   else {

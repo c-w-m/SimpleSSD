@@ -269,7 +269,7 @@ void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick,
       }
     }
 
-    tick = finishedAt;
+    // tick = finishedAt;
   }
 }
 
@@ -449,18 +449,18 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         uint32_t beginSet;
         uint32_t endSet;
 
-        // if (writeIOData.sequentialIOEnabled) {
-        uint32_t left = req.range.slpn % lineCountInSuperPage;
+        if (writeIOData.sequentialIOEnabled) {
+          uint32_t left = req.range.slpn % lineCountInSuperPage;
 
-        beginSet = setIdx - left;
-        endSet = beginSet + lineCountInSuperPage;
-        // }
-        // else {
-        //   uint32_t left = req.range.slpn % lineCountInIOUnit;
-        //
-        //   beginSet = setIdx - left;
-        //   endSet = beginSet + lineCountInIOUnit;
-        // }
+          beginSet = setIdx - left;
+          endSet = beginSet + lineCountInSuperPage;
+        }
+        else {
+          uint32_t left = req.range.slpn % lineCountInIOUnit;
+
+          beginSet = setIdx - left;
+          endSet = beginSet + lineCountInIOUnit;
+        }
 
         // Collect cachelines
         FlushData data;

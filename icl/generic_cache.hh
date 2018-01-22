@@ -22,6 +22,7 @@
 
 #include <random>
 #include <vector>
+#include <functional>
 
 #include "icl/abstract_cache.hh"
 
@@ -60,7 +61,7 @@ class GenericCache : public AbstractCache {
   uint32_t hitCounter;
   uint32_t accessCounter;
 
-  EVICT_POLICY policy;
+  std::function<uint32_t(uint32_t)> evictFunction;
   std::random_device rd;
   std::mt19937 gen;
   std::uniform_int_distribution<> dist;

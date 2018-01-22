@@ -45,8 +45,6 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
   prefetchIOCount = c->iclConfig.readUint(ICL_PREFETCH_COUNT);
   prefetchIORatio = c->iclConfig.readFloat(ICL_PREFETCH_RATIO);
 
-  policy = (EVICT_POLICY)c->iclConfig.readInt(ICL_EVICT_POLICY);
-
   lineCountInSuperPage = f->getInfo()->ioUnitInPage;
   lineSize = superPageSize / lineCountInSuperPage;
 
@@ -87,6 +85,51 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
   prefetchEnabled = false;
   hitCounter = 0;
   accessCounter = 0;
+
+  // Set evict policy functional
+  EVICT_POLICY policy = (EVICT_POLICY)c->iclConfig.readInt(ICL_EVICT_POLICY);
+
+  switch (policy) {
+    case POLICY_RANDOM:
+      evictFunction = [this](uint32_t setIdx) -> uint32_t { return dist(gen); };
+
+      break;
+    case POLICY_FIFO:
+      evictFunction = [this](uint32_t setIdx) -> uint32_t {
+        uint32_t wayIdx = 0;
+        uint64_t min = std::numeric_limits<uint64_t>::max();
+
+        for (uint32_t i = 0; i < waySize; i++) {
+          if (ppCache[setIdx][i].insertedAt < min) {
+            min = ppCache[setIdx][i].insertedAt;
+            wayIdx = i;
+          }
+        }
+
+        return wayIdx;
+      };
+
+      break;
+    case POLICY_LEAST_RECENTLY_USED:
+      evictFunction = [this](uint32_t setIdx) -> uint32_t {
+        uint32_t wayIdx = 0;
+        uint64_t min = std::numeric_limits<uint64_t>::max();
+
+        for (uint32_t i = 0; i < waySize; i++) {
+          if (ppCache[setIdx][i].lastAccessed < min) {
+            min = ppCache[setIdx][i].lastAccessed;
+            wayIdx = i;
+          }
+        }
+
+        return wayIdx;
+      };
+
+      break;
+    default:
+      evictFunction = [](uint32_t setIdx) -> uint32_t { return 0; };
+      break;
+  }
 }
 
 GenericCache::~GenericCache() {}
@@ -145,6 +188,10 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
                      req.reqID, req.reqSubID, req.range.slpn, req.length);
 
   if (useReadCaching) {
+    // Check prefetch
+    if (useReadPrefetch) {
+      checkPrefetch(req);
+    }
   }
   else {
     FTL::Request reqInternal(lineCountInSuperPage, req);

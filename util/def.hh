@@ -109,6 +109,8 @@ namespace ICL {
 typedef struct _Request {
   uint64_t reqID;
   uint64_t reqSubID;
+  uint64_t offset;
+  uint64_t length;
   LPNRange range;
 
   _Request();

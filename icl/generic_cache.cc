@@ -50,18 +50,18 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
   setSize = MAX(cacheSize / lineSize / waySize, 1);
 
   // Set size should multiples of lineCountInSuperPage
-  uint32_t left = setSize % lineCountInSuperPage;
+  uint32_t left = setSize % lineCountInMaxIO;
 
   if (left) {
-    if (left * 2 > lineCountInSuperPage) {
-      setSize = (setSize / lineCountInSuperPage + 1) * lineCountInSuperPage;
+    if (left * 2 > lineCountInMaxIO) {
+      setSize = (setSize / lineCountInMaxIO + 1) * lineCountInMaxIO;
     }
     else {
       setSize -= left;
     }
 
     if (setSize < 1) {
-      setSize = lineCountInSuperPage;
+      setSize = lineCountInMaxIO;
     }
   }
 
@@ -69,6 +69,10 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
       Logger::LOG_ICL_GENERIC_CACHE,
       "CREATE  | Set size %u | Way size %u | Line size %u | Capacity %" PRIu64,
       setSize, waySize, lineSize, (uint64_t)setSize * waySize * lineSize);
+  Logger::debugprint(
+      Logger::LOG_ICL_GENERIC_CACHE,
+      "CREATE  | line count in super page %u | line count in max I/O %u",
+      lineCountInSuperPage, lineCountInMaxIO);
 
   // TODO: replace this with DRAM model
   pTiming = c->iclConfig.getDRAMTiming();

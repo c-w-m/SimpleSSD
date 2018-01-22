@@ -269,12 +269,7 @@ void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick,
       }
     }
 
-    if (write) {
-      tick += 2000000000;
-    }
-    else {
-      tick = finishedAt;
-    }
+    tick = finishedAt;
   }
 }
 

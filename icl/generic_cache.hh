@@ -30,12 +30,12 @@ namespace SimpleSSD {
 
 namespace ICL {
 
-struct FlushData {
+struct EvictData {
   uint32_t setIdx;
   uint32_t wayIdx;
   uint64_t tag;
 
-  FlushData();
+  EvictData();
 };
 
 class GenericCache : public AbstractCache {
@@ -59,6 +59,7 @@ class GenericCache : public AbstractCache {
   uint32_t hitCounter;
   uint32_t accessCounter;
 
+  EVICT_POLICY policy;
   std::function<uint32_t(uint32_t)> evictFunction;
   std::random_device rd;
   std::mt19937 gen;
@@ -74,8 +75,10 @@ class GenericCache : public AbstractCache {
   uint32_t getEmptyWay(uint32_t);
   uint32_t getValidWay(uint64_t);
   uint32_t getVictimWay(uint64_t);
+  uint32_t getDirtyEntryCount(uint64_t, std::vector<EvictData> &);
+  bool compareEvictList(std::vector<EvictData> &, std::vector<EvictData> &);
   uint64_t calculateDelay(uint64_t);
-  void evictVictim(std::vector<FlushData> &, bool, uint64_t &);
+  void evictVictim(std::vector<EvictData> &, bool, uint64_t &);
   void checkPrefetch(Request &);
 
  public:

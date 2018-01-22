@@ -601,7 +601,30 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
 
           // Check this super page includes current setIdx will be evicted
           if (set <= setIdx && setIdx < set + lineCountInSuperPage) {
-            maxList.at(mapOffset).first = std::numeric_limits<uint32_t>::max();
+            EvictData data;
+
+            tempList.clear();
+
+            // Selelct way
+            wayIdx = getVictimWay(req.range.slpn);
+
+            if (ppCache[setIdx][wayIdx].valid) {
+              uint64_t beginlca = ppCache[setIdx][wayIdx].tag + set - setIdx;
+
+              for (uint32_t i = set; i < set + lineCountInSuperPage; i++) {
+                if (set != setIdx) {
+                  data.tag = beginlca + i - set;
+                  data.setIdx = calcSet(data.tag);
+                  data.wayIdx = getVictimWay(data.tag);
+
+                  tempList.push_back(data);
+                }
+              }
+
+              maxList.at(mapOffset).first =
+                  std::numeric_limits<uint32_t>::max();
+              maxList.at(mapOffset).second = tempList;
+            }
           }
 
           lpns.clear();
@@ -634,7 +657,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
           ppCache[setIdx][wayIdx].lastAccessed = tick;
         }
         else {
-          Logger::panic("No space to write data");
+          Logger::panic("No space to write data in set %u", setIdx);
         }
       }
     }

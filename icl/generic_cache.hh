@@ -34,19 +34,18 @@ struct FlushData {
   uint32_t setIdx;
   uint32_t wayIdx;
   uint64_t tag;
-  bool valid;
-  DynamicBitset bitset;
 
-  FlushData(uint32_t);
+  FlushData();
 };
 
 class GenericCache : public AbstractCache {
  private:
   const uint32_t lineCountInSuperPage;
   const uint32_t superPageSize;
-  uint32_t setSize;
   const uint32_t waySize;
   const uint32_t lineSize;
+  const uint32_t lineCountInMaxIO;
+  uint32_t setSize;
 
   const uint32_t prefetchIOCount;
   const float prefetchIORatio;
@@ -72,8 +71,11 @@ class GenericCache : public AbstractCache {
   std::vector<std::vector<Line>> ppCache;
 
   uint32_t calcSet(uint64_t);
+  uint32_t getEmptyWay(uint32_t);
   uint32_t getValidWay(uint64_t);
+  uint32_t getVictimWay(uint64_t);
   uint64_t calculateDelay(uint64_t);
+  void flushVictim(std::vector<FlushData> &, bool, uint64_t &);
   void checkPrefetch(Request &);
 
  public:

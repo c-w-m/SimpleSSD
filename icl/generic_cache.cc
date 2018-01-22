@@ -28,8 +28,7 @@ namespace SimpleSSD {
 
 namespace ICL {
 
-FlushData::FlushData(uint32_t size)
-    : setIdx(0), wayIdx(0), tag(0), valid(true), bitset(size) {}
+FlushData::FlushData() : setIdx(0), wayIdx(0), tag(0) {}
 
 GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
     : AbstractCache(c, f),
@@ -37,6 +36,7 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
       superPageSize(f->getInfo()->pageSize),
       waySize(c->iclConfig.readUint(ICL_WAY_SIZE)),
       lineSize(superPageSize / lineCountInSuperPage),
+      lineCountInMaxIO(f->getInfo()->pageCountToMaxPerf * lineCountInSuperPage),
       prefetchIOCount(c->iclConfig.readUint(ICL_PREFETCH_COUNT)),
       prefetchIORatio(c->iclConfig.readFloat(ICL_PREFETCH_RATIO)),
       useReadCaching(c->iclConfig.readBoolean(ICL_USE_READ_CACHE)),
@@ -136,6 +136,54 @@ uint32_t GenericCache::calcSet(uint64_t lpn) {
   return lpn % setSize;
 }
 
+uint32_t GenericCache::getEmptyWay(uint32_t setIdx) {
+  uint32_t wayIdx;
+
+  for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
+    Line &line = ppCache[setIdx][wayIdx];
+
+    if (!line.valid) {
+      break;
+    }
+  }
+
+  return wayIdx;
+}
+
+uint32_t GenericCache::getValidWay(uint64_t lpn) {
+  uint32_t setIdx = calcSet(lpn);
+  uint32_t wayIdx;
+
+  for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
+    Line &line = ppCache[setIdx][wayIdx];
+
+    if (line.valid && line.tag == lpn) {
+      break;
+    }
+  }
+
+  return wayIdx;
+}
+
+uint32_t GenericCache::getVictimWay(uint64_t lpn) {
+  uint32_t setIdx = calcSet(lpn);
+  uint32_t wayIdx;
+
+  for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
+    Line &line = ppCache[setIdx][wayIdx];
+
+    if ((line.valid && line.tag == lpn) || !line.valid) {
+      break;
+    }
+  }
+
+  if (wayIdx == waySize) {
+    wayIdx = evictFunction(setIdx);
+  }
+
+  return wayIdx;
+}
+
 uint64_t GenericCache::calculateDelay(uint64_t bytesize) {
   uint64_t pageCount =
       (bytesize > 0) ? (bytesize - 1) / pStructure->pageSize + 1 : 0;
@@ -186,9 +234,69 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
                      req.reqID, req.reqSubID, req.range.slpn, req.length);
 
   if (useReadCaching) {
+    uint32_t setIdx = calcSet(req.range.slpn);
+    uint32_t wayIdx;
+    static uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
+
     // Check prefetch
     if (useReadPrefetch) {
       checkPrefetch(req);
+    }
+
+    // Check cache that we have data for corresponding LCA
+    wayIdx = getValidWay(req.range.slpn);
+
+    if (wayIdx != waySize) {
+      uint64_t arrived = tick;
+
+      // Wait for cache
+      if (tick < ppCache[setIdx][wayIdx].insertedAt) {
+        tick = ppCache[setIdx][wayIdx].insertedAt;
+      }
+
+      // Update cache line
+      ppCache[setIdx][wayIdx].lastAccessed = tick;
+
+      // Add tDRAM
+      tick += lat;
+
+      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                         "READ  | Cache hit at (%u, %u) | %" PRIu64
+                         " - %" PRIu64 " (%" PRIu64 ")",
+                         setIdx, wayIdx, arrived, tick, tick - arrived);
+
+      // Data served from DRAM
+      ret = true;
+    }
+    else {
+      FTL::Request reqInternal(lineCountInSuperPage, req);
+      std::vector<FlushData> list;
+      FlushData data;
+
+      if (prefetchEnabled) {
+        // Read one superpage
+        reqInternal.ioFlag.set();
+
+        for (uint32_t i = 0; i < lineCountInSuperPage; i++) {
+          data.tag = reqInternal.lpn * lineCountInSuperPage + i;
+          data.setIdx = setIdx;
+          data.wayIdx = getVictimWay(data.tag);
+
+          list.push_back(data);
+        }
+      }
+      else {
+        data.tag = req.range.slpn;
+        data.setIdx = setIdx;
+        data.wayIdx = getVictimWay(data.tag);
+
+        list.push_back(data);
+      }
+
+      pFTL->read(reqInternal, tick);
+
+      // Flush collected lines
+      flushVictim(list, true, tick);
     }
   }
   else {

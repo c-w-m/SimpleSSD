@@ -33,9 +33,9 @@ ICL::ICL(ConfigReader *c) : pConf(c) {
 
   FTL::Parameter *param = pFTL->getInfo();
 
-  ratio = param->pageSize / MIN_LBA_SIZE;
-  totalLogicalBlocks = param->totalLogicalBlocks * param->pagesInBlock * ratio;
-  logicalBlockSize = MIN_LBA_SIZE;
+  totalLogicalPages =
+      param->totalLogicalBlocks * param->pagesInBlock * param->ioUnitInPage;
+  logicalPageSize = param->pageSize / param->ioUnitInPage;
 
   pCache = new GenericCache(pConf, pFTL);
 }
@@ -48,17 +48,21 @@ ICL::~ICL() {
 void ICL::read(Request &req, uint64_t &tick) {
   uint64_t beginAt;
   uint64_t finishedAt = tick;
+  uint64_t reqRemain = req.length;
   Request reqInternal;
 
   reqInternal.reqID = req.reqID;
-  reqInternal.range.nlp = 1;
+  reqInternal.offset = req.offset;
 
   for (uint64_t i = 0; i < req.range.nlp; i++) {
     beginAt = tick;
 
     reqInternal.reqSubID = i + 1;
     reqInternal.range.slpn = req.range.slpn + i;
+    reqInternal.length = MIN(reqRemain, logicalPageSize - reqInternal.offset);
     pCache->read(reqInternal, beginAt);
+    reqRemain -= reqInternal.length;
+    reqInternal.offset = 0;
 
     finishedAt = MAX(finishedAt, beginAt);
   }
@@ -75,17 +79,21 @@ void ICL::read(Request &req, uint64_t &tick) {
 void ICL::write(Request &req, uint64_t &tick) {
   uint64_t beginAt;
   uint64_t finishedAt = tick;
+  uint64_t reqRemain = req.length;
   Request reqInternal;
 
   reqInternal.reqID = req.reqID;
-  reqInternal.range.nlp = 1;
+  reqInternal.offset = req.offset;
 
   for (uint64_t i = 0; i < req.range.nlp; i++) {
     beginAt = tick;
 
     reqInternal.reqSubID = i + 1;
     reqInternal.range.slpn = req.range.slpn + i;
+    reqInternal.length = MIN(reqRemain, logicalPageSize - reqInternal.offset);
     pCache->write(reqInternal, beginAt);
+    reqRemain -= reqInternal.length;
+    reqInternal.offset = 0;
 
     finishedAt = MAX(finishedAt, beginAt);
   }
@@ -102,17 +110,21 @@ void ICL::write(Request &req, uint64_t &tick) {
 void ICL::flush(Request &req, uint64_t &tick) {
   uint64_t beginAt;
   uint64_t finishedAt = tick;
+  uint64_t reqRemain = req.length;
   Request reqInternal;
 
   reqInternal.reqID = req.reqID;
-  reqInternal.range.nlp = 1;
+  reqInternal.offset = req.offset;
 
   for (uint64_t i = 0; i < req.range.nlp; i++) {
     beginAt = tick;
 
     reqInternal.reqSubID = i + 1;
     reqInternal.range.slpn = req.range.slpn + i;
+    reqInternal.length = MIN(reqRemain, logicalPageSize - reqInternal.offset);
     pCache->flush(reqInternal, beginAt);
+    reqRemain -= reqInternal.length;
+    reqInternal.offset = 0;
 
     finishedAt = MAX(finishedAt, beginAt);
   }
@@ -129,17 +141,21 @@ void ICL::flush(Request &req, uint64_t &tick) {
 void ICL::trim(Request &req, uint64_t &tick) {
   uint64_t beginAt;
   uint64_t finishedAt = tick;
+  uint64_t reqRemain = req.length;
   Request reqInternal;
 
   reqInternal.reqID = req.reqID;
-  reqInternal.range.nlp = 1;
+  reqInternal.offset = req.offset;
 
   for (uint64_t i = 0; i < req.range.nlp; i++) {
     beginAt = tick;
 
     reqInternal.reqSubID = i + 1;
     reqInternal.range.slpn = req.range.slpn + i;
+    reqInternal.length = MIN(reqRemain, logicalPageSize - reqInternal.offset);
     pCache->trim(reqInternal, beginAt);
+    reqRemain -= reqInternal.length;
+    reqInternal.offset = 0;
 
     finishedAt = MAX(finishedAt, beginAt);
   }
@@ -164,11 +180,14 @@ void ICL::format(LPNRange &range, uint64_t &tick) {
                      range.slpn, range.nlp, beginAt, tick, tick - beginAt);
 }
 
-uint64_t ICL::getTotalLogicalBlocks() {
-  return totalLogicalBlocks;
+void ICL::getLPNInfo(uint64_t &t, uint32_t &s) {
+  t = totalLogicalPages;
+  s = logicalPageSize;
 }
 
 uint64_t ICL::getUsedPageCount() {
+  static uint32_t ratio = pFTL->getInfo()->ioUnitInPage;
+
   return pFTL->getUsedPageCount() * ratio;
 }
 

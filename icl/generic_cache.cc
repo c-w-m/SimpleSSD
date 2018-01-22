@@ -285,7 +285,7 @@ void GenericCache::evictVictim(std::vector<EvictData> &list, bool isRead,
     Logger::panic("Evict list is empty");
   }
 
-  // Check set has empty entry
+  // Collect lines to write
   Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                      "----- | Flushing set %u - %u (%u)", list.front().setIdx,
                      list.back().setIdx, list.size());
@@ -416,12 +416,12 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
     uint32_t wayIdx;
     static uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
 
-    // Check prefetch status
+    // Check prefetch
     if (useReadPrefetch) {
       checkPrefetch(req);
     }
 
-    // Check cache that we have data for corresponding LBA
+    // Check cache that we have data for corresponding LCA
     wayIdx = getValidWay(req.range.slpn);
 
     if (wayIdx != waySize) {
@@ -499,7 +499,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
     uint32_t wayIdx;
     static uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
 
-    // Reset prefetch status
+    // Check cache that we have data for corresponding LCA
     wayIdx = getValidWay(req.range.slpn);
 
     if (wayIdx != waySize) {
@@ -674,7 +674,7 @@ bool GenericCache::flush(Request &req, uint64_t &tick) {
         pFTL->write(reqInternal, tick);
       }
 
-      // Invalidate
+      // invalidate
       ppCache[setIdx][wayIdx].valid = false;
     }
   }
@@ -699,7 +699,7 @@ bool GenericCache::trim(Request &req, uint64_t &tick) {
     wayIdx = getValidWay(req.range.slpn);
 
     if (wayIdx != waySize) {
-      // Invalidate
+      // invalidate
       ppCache[setIdx][wayIdx].valid = false;
     }
   }
@@ -727,7 +727,7 @@ void GenericCache::format(LPNRange &range, uint64_t &tick) {
       wayIdx = getValidWay(lpn);
 
       if (wayIdx != waySize) {
-        // Invalidate
+        // invalidate
         ppCache[setIdx][wayIdx].valid = false;
       }
     }

@@ -126,43 +126,15 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
   static uint8_t superblock = conf.getSuperblockConfig();
   static bool useMultiplaneOP = conf.readBoolean(NAND_USE_MULTI_PLANE_OP);
   static uint32_t pageInSuperPage = param.pageInSuperPage;
-  static uint32_t lbaInSuperPage = param.superPageSize / MIN_LBA_SIZE;
-  static uint32_t ratio = lbaInSuperPage / pageInSuperPage;
-  static DynamicBitset ioflag(pageInSuperPage);
   uint32_t value[4];
   uint32_t *ptr[4];
   uint64_t tmp = req.blockIndex;
   int count = 0;
 
-  // Convert LBA I/O map to physical page I/O map
-  if (req.ioFlag.size() != lbaInSuperPage) {
+  if (req.ioFlag.size() != pageInSuperPage) {
     Logger::panic("Invalid size of I/O flag");
   }
 
-  for (uint32_t i = 0; i < pageInSuperPage; i++) {
-    bool flag = false;
-
-    for (uint32_t j = i * ratio; j < (i + 1) * ratio; j++) {
-      if (req.ioFlag.test(j)) {
-        flag = true;
-
-        break;
-      }
-    }
-
-    ioflag.set(i, flag);
-
-    if (flag) {
-      for (uint32_t j = i * ratio; j < (i + 1) * ratio; j++) {
-        req.ioFlag.set(j);
-      }
-    }
-  }
-
-  // debug
-  // req.ioFlag.print();
-
-  // Assign addresses
   list.clear();
 
   addr.Plane = 0;
@@ -233,7 +205,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
       for (uint32_t j = 0; j < value[2]; j++) {
         for (uint32_t k = 0; k < value[1]; k++) {
           for (uint32_t l = 0; l < value[0]; l++) {
-            if (ioflag.test(tmp++)) {
+            if (req.ioFlag.test(tmp++)) {
               *ptr[0] = l;
               *ptr[1] = k;
               *ptr[2] = j;
@@ -250,7 +222,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
     for (uint32_t j = 0; j < value[2]; j++) {
       for (uint32_t k = 0; k < value[1]; k++) {
         for (uint32_t l = 0; l < value[0]; l++) {
-          if (ioflag.test(tmp++)) {
+          if (req.ioFlag.test(tmp++)) {
             *ptr[0] = l;
             *ptr[1] = k;
             *ptr[2] = j;
@@ -264,7 +236,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
   else if (count == 2) {
     for (uint32_t k = 0; k < value[1]; k++) {
       for (uint32_t l = 0; l < value[0]; l++) {
-        if (ioflag.test(tmp++)) {
+        if (req.ioFlag.test(tmp++)) {
           *ptr[0] = l;
           *ptr[1] = k;
 
@@ -275,7 +247,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
   }
   else if (count == 1) {
     for (uint32_t l = 0; l < value[0]; l++) {
-      if (ioflag.test(tmp++)) {
+      if (req.ioFlag.test(tmp++)) {
         *ptr[0] = l;
 
         list.push_back(addr);
@@ -283,7 +255,7 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
     }
   }
   else {
-    if (ioflag.test(tmp++)) {
+    if (req.ioFlag.test(tmp++)) {
       list.push_back(addr);
     }
   }

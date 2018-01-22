@@ -35,10 +35,9 @@ PageMapping::PageMapping(Parameter *p, PAL::PAL *l, ConfigReader *c)
       conf(c->ftlConfig),
       pFTLParam(p),
       bReclaimMore(false) {
-  lbaInPage = pFTLParam->pageSize / MIN_LBA_SIZE;
-
   for (uint32_t i = 0; i < pFTLParam->totalPhysicalBlocks; i++) {
-    freeBlocks.insert({i, Block(pFTLParam->pagesInBlock, lbaInPage)});
+    freeBlocks.insert(
+        {i, Block(pFTLParam->pagesInBlock, pFTLParam->ioUnitInPage)});
   }
 
   lastFreeBlock = getFreeBlock();
@@ -53,7 +52,7 @@ bool PageMapping::initialize() {
   uint64_t nPagesToWarmup;
   uint64_t nTotalPages;
   uint64_t tick;
-  Request req(lbaInPage);
+  Request req(pFTLParam->ioUnitInPage);
 
   nTotalPages = pFTLParam->totalLogicalBlocks * pFTLParam->pagesInBlock;
   nPagesToWarmup = nTotalPages * conf.readFloat(FTL_WARM_UP_RATIO);
@@ -103,7 +102,7 @@ void PageMapping::trim(Request &req, uint64_t &tick) {
 }
 
 void PageMapping::format(LPNRange &range, uint64_t &tick) {
-  PAL::Request req(lbaInPage);
+  PAL::Request req(pFTLParam->ioUnitInPage);
   std::vector<uint32_t> list;
 
   req.ioFlag.set();
@@ -281,7 +280,7 @@ void PageMapping::selectVictimBlock(std::vector<uint32_t> &list,
 
 void PageMapping::doGarbageCollection(std::vector<uint32_t> &blocksToReclaim,
                                       uint64_t &tick) {
-  PAL::Request req(lbaInPage);
+  PAL::Request req(pFTLParam->ioUnitInPage);
   uint64_t beginAt;
   uint64_t finishedAt = tick;
 
@@ -371,8 +370,6 @@ void PageMapping::readInternal(Request &req, uint64_t &tick) {
     block->second.read(palRequest.pageIndex, palRequest.ioFlag, tick);
 
     pPAL->read(palRequest, tick);
-
-    req.ioFlag = palRequest.ioFlag;
   }
 }
 
@@ -383,7 +380,7 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
 
   if (mapping != table.end()) {
     uint64_t lpn;
-    PAL::Request read(lbaInPage);
+    PAL::Request read(pFTLParam->ioUnitInPage);
 
     block = blocks.find(mapping->second.first);
 
@@ -442,8 +439,6 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
     palRequest.pageIndex = mapping->second.second;
 
     pPAL->write(palRequest, tick);
-
-    req.ioFlag = palRequest.ioFlag;
   }
 
   // GC if needed

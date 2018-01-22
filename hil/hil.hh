@@ -48,7 +48,7 @@ class HIL {
 
   void format(LPNRange &, bool, uint64_t &);
 
-  uint64_t getTotalLogicalBlocks();
+  void getLPNInfo(uint64_t &, uint32_t &);
   uint64_t getUsedPageCount();
 };
 

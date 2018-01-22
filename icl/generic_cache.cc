@@ -595,10 +595,15 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
             }
           }
 
+          // Check this super page includes current setIdx will be evicted
+          if (set <= setIdx && setIdx < set + lineCountInSuperPage) {
+            maxList.at(mapOffset).first = std::numeric_limits<uint32_t>::max();
+          }
+
           lpns.clear();
         }
 
-        // Flush
+        // Evict
         uint64_t beginAt;
         uint64_t finishedAt = tick;
 

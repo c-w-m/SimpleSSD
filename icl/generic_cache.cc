@@ -605,11 +605,16 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
 
             tempList.clear();
 
-            // Selelct way
-            wayIdx = getVictimWay(req.range.slpn);
+            // Select way
+            data.tag = req.range.slpn;
+            data.setIdx = setIdx;
+            data.wayIdx = getVictimWay(req.range.slpn);
 
-            if (ppCache[setIdx][wayIdx].valid) {
-              uint64_t beginlca = ppCache[setIdx][wayIdx].tag + set - setIdx;
+            tempList.push_back(data);
+
+            if (ppCache[data.setIdx][data.wayIdx].valid) {
+              uint64_t beginlca =
+                  ppCache[data.setIdx][data.wayIdx].tag + set - setIdx;
 
               for (uint32_t i = set; i < set + lineCountInSuperPage; i++) {
                 if (set != setIdx) {
@@ -635,7 +640,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         uint64_t finishedAt = tick;
 
         for (uint32_t i = 0; i < mapSize; i++) {
-          if (maxList.at(i).first > 0) {
+          if (maxList.at(i).second.size() > 0) {
             beginAt = tick;
 
             evictVictim(maxList.at(i).second, false, beginAt);

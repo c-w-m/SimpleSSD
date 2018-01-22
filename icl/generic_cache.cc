@@ -335,8 +335,8 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
   bool ret = false;
 
   Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                     "READ  | LCA %" PRIu64 " | SIZE %" PRIu64, req.range.slpn,
-                     req.length);
+                     "READ  | REQ %7u-%-4u | LCA %" PRIu64 " | SIZE %" PRIu64,
+                     req.reqID, req.reqSubID, req.range.slpn, req.length);
 
   if (useReadCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
@@ -464,8 +464,8 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
   bool ret = false;
 
   Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                     "WRITE | LCA %" PRIu64 " | SIZE %" PRIu64, req.range.slpn,
-                     req.length);
+                     "WRITE | REQ %7u-%-4u | LCA %" PRIu64 " | SIZE %" PRIu64,
+                     req.reqID, req.reqSubID, req.range.slpn, req.length);
 
   if (useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
@@ -570,8 +570,9 @@ bool GenericCache::trim(Request &req, uint64_t &tick) {
   bool ret = false;
   FTL::Request reqInternal(lineCountInSuperPage);
 
-  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "TRIM  | LCA %" PRIu64,
-                     req.range.slpn);
+  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                     "TRIM  | REQ %7u-%-4u | LCA %" PRIu64 " | SIZE %" PRIu64,
+                     req.reqID, req.reqSubID, req.range.slpn, req.length);
 
   if (useReadCaching || useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);

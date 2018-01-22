@@ -501,6 +501,11 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
     if (wayIdx != waySize) {
       uint64_t arrived = tick;
 
+      // Wait for cache
+      if (tick < ppCache[setIdx][wayIdx].insertedAt) {
+        tick = ppCache[setIdx][wayIdx].insertedAt;
+      }
+
       // Update cache line
       ppCache[setIdx][wayIdx].insertedAt = tick;
       ppCache[setIdx][wayIdx].lastAccessed = tick;
@@ -523,6 +528,11 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
 
       if (wayIdx != waySize) {
         uint64_t arrived = tick;
+
+        // Wait for cache
+        if (tick < ppCache[setIdx][wayIdx].insertedAt) {
+          tick = ppCache[setIdx][wayIdx].insertedAt;
+        }
 
         // Update cache line
         ppCache[setIdx][wayIdx].valid = true;

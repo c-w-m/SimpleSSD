@@ -544,6 +544,8 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       }
       else {
         static const uint32_t mapSize = lineCountInMaxIO / lineCountInSuperPage;
+        uint32_t count;
+        std::vector<EvictData> tempList;
 
         // Collect LPNs we can evict
         std::vector<std::pair<uint32_t, std::vector<EvictData>>> maxList(
@@ -567,9 +569,6 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
           auto last = std::unique(lpns.begin(), lpns.end());
 
           for (auto iter = lpns.begin(); iter != last; iter++) {
-            uint32_t count;
-            std::vector<EvictData> tempList;
-
             count = getDirtyEntryCount(*iter, tempList);
 
             if (maxList.at(mapOffset).first < count) {

@@ -551,7 +551,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
 
         for (uint32_t set = 0; set < setSize; set += lineCountInSuperPage) {
           std::vector<uint64_t> lpns;
-          uint32_t mapOffset = (set / lineCountInSuperPage) % lineCountInMaxIO;
+          uint32_t mapOffset = (set / lineCountInSuperPage) % mapSize;
 
           for (uint32_t i = 0; i < lineCountInSuperPage; i++) {
             for (uint32_t j = 0; j < waySize; j++) {

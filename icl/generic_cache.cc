@@ -281,6 +281,10 @@ void GenericCache::evictVictim(std::vector<EvictData> &list, bool isRead,
   static uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
   std::vector<FTL::Request> reqList;
 
+  if (list.size() == 0) {
+    Logger::panic("Evict list is empty");
+  }
+
   // Collect lines to write
   Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                      "----- | Flushing set %u - %u (%u)", list.front().setIdx,

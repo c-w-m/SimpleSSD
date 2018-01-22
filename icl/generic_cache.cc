@@ -612,6 +612,8 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
           }
         }
 
+        tick = finishedAt;
+
         // Update cacheline
         wayIdx = getEmptyWay(setIdx);
 
@@ -625,8 +627,6 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         else {
           Logger::panic("No space to write data");
         }
-
-        tick = finishedAt;
       }
     }
   }

@@ -551,13 +551,15 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         std::vector<std::pair<uint32_t, std::vector<EvictData>>> maxList(
             mapSize, {0, std::vector<EvictData>()});
 
+        // For one super page
         for (uint32_t set = 0; set < setSize; set += lineCountInSuperPage) {
           std::vector<uint64_t> lpns;
           uint32_t mapOffset = (set / lineCountInSuperPage) % mapSize;
 
+          // Collect all LPNs exist on current super page
           for (uint32_t i = 0; i < lineCountInSuperPage; i++) {
             for (uint32_t j = 0; j < waySize; j++) {
-              Line &line = ppCache[i][j];
+              Line &line = ppCache[set + i][j];
 
               if (line.valid) {
                 lpns.push_back(line.tag / lineCountInSuperPage);
@@ -565,6 +567,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
             }
           }
 
+          // Remove duplicates
           std::sort(lpns.begin(), lpns.end());
           auto last = std::unique(lpns.begin(), lpns.end());
 
@@ -573,6 +576,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
 
             if (maxList.at(mapOffset).first < count) {
               maxList.at(mapOffset).first = count;
+              maxList.at(mapOffset).second = tempList;
             }
             else if (maxList.at(mapOffset).first == count) {
               if (compareEvictList(tempList, maxList.at(mapOffset).second)) {
@@ -609,7 +613,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
           ppCache[setIdx][wayIdx].lastAccessed = tick;
         }
         else {
-          Logger::panic("Panic");
+          Logger::panic("No space to write data");
         }
 
         tick = finishedAt;

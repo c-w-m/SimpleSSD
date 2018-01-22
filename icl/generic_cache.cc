@@ -32,21 +32,19 @@ FlushData::FlushData(uint32_t size)
     : setIdx(0), wayIdx(0), tag(0), valid(true), bitset(size) {}
 
 GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
-    : AbstractCache(c, f), gen(rd()) {
+    : AbstractCache(c, f),
+      lineCountInSuperPage(f->getInfo()->ioUnitInPage),
+      superPageSize(f->getInfo()->pageSize),
+      waySize(c->iclConfig.readUint(ICL_WAY_SIZE)),
+      lineSize(superPageSize / lineCountInSuperPage),
+      prefetchIOCount(c->iclConfig.readUint(ICL_PREFETCH_COUNT)),
+      prefetchIORatio(c->iclConfig.readFloat(ICL_PREFETCH_RATIO)),
+      useReadCaching(c->iclConfig.readBoolean(ICL_USE_READ_CACHE)),
+      useWriteCaching(c->iclConfig.readBoolean(ICL_USE_WRITE_CACHE)),
+      useReadPrefetch(c->iclConfig.readBoolean(ICL_USE_READ_PREFETCH)),
+      gen(rd()),
+      dist(std::uniform_int_distribution<>(0, waySize - 1)) {
   uint64_t cacheSize = c->iclConfig.readUint(ICL_CACHE_SIZE);
-  waySize = c->iclConfig.readUint(ICL_WAY_SIZE);
-  superPageSize = f->getInfo()->pageSize;
-
-  dist = std::uniform_int_distribution<>(0, waySize - 1);
-
-  useReadCaching = c->iclConfig.readBoolean(ICL_USE_READ_CACHE);
-  useWriteCaching = c->iclConfig.readBoolean(ICL_USE_WRITE_CACHE);
-  useReadPrefetch = c->iclConfig.readBoolean(ICL_USE_READ_PREFETCH);
-  prefetchIOCount = c->iclConfig.readUint(ICL_PREFETCH_COUNT);
-  prefetchIORatio = c->iclConfig.readFloat(ICL_PREFETCH_RATIO);
-
-  lineCountInSuperPage = f->getInfo()->ioUnitInPage;
-  lineSize = superPageSize / lineCountInSuperPage;
 
   setSize = MAX(cacheSize / lineSize / waySize, 1);
 

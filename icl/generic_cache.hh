@@ -20,9 +20,9 @@
 #ifndef __ICL_GENERIC_CACHE__
 #define __ICL_GENERIC_CACHE__
 
+#include <functional>
 #include <random>
 #include <vector>
-#include <functional>
 
 #include "icl/abstract_cache.hh"
 
@@ -42,19 +42,18 @@ struct FlushData {
 
 class GenericCache : public AbstractCache {
  private:
+  const uint32_t lineCountInSuperPage;
+  const uint32_t superPageSize;
   uint32_t setSize;
-  uint32_t waySize;
-  uint32_t lineSize;
+  const uint32_t waySize;
+  const uint32_t lineSize;
 
-  uint32_t lineCountInSuperPage;
-  uint32_t superPageSize;
+  const uint32_t prefetchIOCount;
+  const float prefetchIORatio;
 
-  uint32_t prefetchIOCount;
-  float prefetchIORatio;
-
-  bool useReadCaching;
-  bool useWriteCaching;
-  bool useReadPrefetch;
+  const bool useReadCaching;
+  const bool useWriteCaching;
+  const bool useReadPrefetch;
 
   Request lastRequest;
   bool prefetchEnabled;

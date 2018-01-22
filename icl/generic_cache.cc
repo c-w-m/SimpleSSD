@@ -195,6 +195,10 @@ void GenericCache::flushVictim(std::vector<FlushData> &list, uint64_t &tick,
   std::vector<FTL::Request> reqList;
 
   // Collect lines to write
+  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                     "----- | Flushing set %u - %u (%u)", list.front().setIdx,
+                     list.back().setIdx, list.size());
+
   for (auto &iter : list) {
     auto &line = ppCache[iter.setIdx][iter.wayIdx];
 
@@ -314,8 +318,9 @@ void GenericCache::checkSequential(Request &req, SequentialIO &data) {
 bool GenericCache::read(Request &req, uint64_t &tick) {
   bool ret = false;
 
-  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "READ  | LBA %" PRIu64,
-                     req.range.slpn);
+  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                     "READ  | REQ %7u-%-4u | LBA %" PRIu64, req.reqID,
+                     req.reqSubID, req.range.slpn);
 
   if (useReadCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
@@ -400,8 +405,9 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 bool GenericCache::write(Request &req, uint64_t &tick) {
   bool ret = false;
 
-  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "WRITE | LBA %" PRIu64,
-                     req.range.slpn);
+  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                     "WRITE | REQ %7u-%-4u | LBA %" PRIu64, req.reqID,
+                     req.reqSubID, req.range.slpn);
 
   if (useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
@@ -550,8 +556,9 @@ bool GenericCache::trim(Request &req, uint64_t &tick) {
   bool ret = false;
   FTL::Request reqInternal(lineCountInSuperPage);
 
-  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE, "TRIM  | LBA %" PRIu64,
-                     req.range.slpn);
+  Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                     "TRIM  | REQ %7u-%-4u | LBA %" PRIu64, req.reqID,
+                     req.reqSubID, req.range.slpn);
 
   if (useReadCaching || useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);

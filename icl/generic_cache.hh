@@ -30,42 +30,36 @@ namespace SimpleSSD {
 
 namespace ICL {
 
-struct FlushData {
+struct EvictData {
   uint32_t setIdx;
   uint32_t wayIdx;
   uint64_t tag;
 
-  FlushData();
-};
-
-struct SequentialIO {
-  bool sequentialIOEnabled;
-  uint32_t hitCounter;
-  uint32_t accessCounter;
-  Request lastRequest;
-
-  SequentialIO();
+  EvictData();
 };
 
 class GenericCache : public AbstractCache {
  private:
-  uint32_t setSize;
+  const uint32_t lineCountInSuperPage;
+  const uint32_t superPageSize;
   const uint32_t waySize;
-  uint32_t lineSize;  //!< Same as MIN_LBA_SIZE
+  const uint32_t lineSize;
+  const uint32_t lineCountInMaxIO;
+  uint32_t setSize;
 
-  uint32_t lineCountInSuperPage;
-  uint32_t lineCountInIOUnit;
-  uint32_t superPageSize;
+  const uint32_t prefetchIOCount;
+  const float prefetchIORatio;
 
-  uint32_t sequentialIOCount;
-  float sequentialIORatio;
+  const bool useReadCaching;
+  const bool useWriteCaching;
+  const bool useReadPrefetch;
 
-  bool useReadCaching;
-  bool useWriteCaching;
-  bool useSequentialIODetection;
+  Request lastRequest;
+  bool prefetchEnabled;
+  uint32_t hitCounter;
+  uint32_t accessCounter;
 
-  SequentialIO readIOData, writeIOData;
-
+  EVICT_POLICY policy;
   std::function<uint32_t(uint32_t)> evictFunction;
   std::random_device rd;
   std::mt19937 gen;
@@ -81,9 +75,11 @@ class GenericCache : public AbstractCache {
   uint32_t getEmptyWay(uint32_t);
   uint32_t getValidWay(uint64_t);
   uint32_t getVictimWay(uint64_t);
-  void flushVictim(std::vector<FlushData> &, uint64_t &, bool);
+  uint32_t getDirtyEntryCount(uint64_t, std::vector<EvictData> &);
+  bool compareEvictList(std::vector<EvictData> &, std::vector<EvictData> &);
   uint64_t calculateDelay(uint64_t);
-  void checkSequential(Request &, SequentialIO &);
+  void evictVictim(std::vector<EvictData> &, bool, uint64_t &);
+  void checkPrefetch(Request &);
 
  public:
   GenericCache(ConfigReader *, FTL::FTL *);

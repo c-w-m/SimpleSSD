@@ -38,7 +38,8 @@ FTL::FTL(ConfigReader *c) : pConf(c) {
       (1 - pConf->ftlConfig.readFloat(FTL_OVERPROVISION_RATIO));
   param.pagesInBlock = palparam->page;
   param.pageSize = palparam->superPageSize;
-  param.minIOSize = palparam->superPageSize / palparam->pageInSuperPage;
+  param.ioUnitInPage = palparam->pageInSuperPage;
+  param.pageCountToMaxPerf = palparam->superBlock / palparam->block;
 
   switch (pConf->ftlConfig.readInt(FTL_MAPPING_MODE)) {
     case PAGE_MAPPING:

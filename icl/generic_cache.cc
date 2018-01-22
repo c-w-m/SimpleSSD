@@ -595,6 +595,20 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
           }
         }
 
+        // Update cacheline
+        wayIdx = getEmptyWay(setIdx);
+
+        if (wayIdx != waySize) {
+          ppCache[setIdx][wayIdx].valid = true;
+          ppCache[setIdx][wayIdx].dirty = true;
+          ppCache[setIdx][wayIdx].tag = req.range.slpn;
+          ppCache[setIdx][wayIdx].insertedAt = tick;
+          ppCache[setIdx][wayIdx].lastAccessed = tick;
+        }
+        else {
+          Logger::panic("Panic");
+        }
+
         tick = finishedAt;
       }
     }

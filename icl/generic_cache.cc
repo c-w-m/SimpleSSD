@@ -279,7 +279,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 
         for (uint32_t i = 0; i < lineCountInSuperPage; i++) {
           data.tag = reqInternal.lpn * lineCountInSuperPage + i;
-          data.setIdx = setIdx;
+          data.setIdx = calcSet(data.tag);
           data.wayIdx = getVictimWay(data.tag);
 
           list.push_back(data);
@@ -296,7 +296,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       pFTL->read(reqInternal, tick);
 
       // Flush collected lines
-      flushVictim(list, true, tick);
+      evictVictim(list, true, tick);
     }
   }
   else {

@@ -75,7 +75,7 @@ class GenericCache : public AbstractCache {
   uint32_t getValidWay(uint64_t);
   uint32_t getVictimWay(uint64_t);
   uint64_t calculateDelay(uint64_t);
-  void flushVictim(std::vector<FlushData> &, bool, uint64_t &);
+  void evictVictim(std::vector<FlushData> &, bool, uint64_t &);
   void checkPrefetch(Request &);
 
  public:

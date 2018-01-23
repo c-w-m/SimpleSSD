@@ -48,8 +48,7 @@ FTL::FTL(ConfigReader *c) : pConf(c) {
   }
 
   if (param.totalPhysicalBlocks <=
-      param.totalLogicalBlocks +
-          pConf->ftlConfig.readUint(FTL_GC_RECLAIM_BLOCK)) {
+      param.totalLogicalBlocks + param.pageCountToMaxPerf) {
     Logger::panic("FTL Over-Provision Ratio is too small");
   }
 

@@ -42,13 +42,14 @@ class PageMapping : public AbstractFTL {
   std::unordered_map<uint64_t, std::pair<uint32_t, uint32_t>> table;
   std::unordered_map<uint32_t, Block> blocks;
   std::unordered_map<uint32_t, Block> freeBlocks;
-  uint32_t lastFreeBlock;
+  std::vector<uint32_t> lastFreeBlock;
 
-  bool bReclaimMore;
+  uint32_t reclaimMore;
 
   float freeBlockRatio();
-  uint32_t getFreeBlock();
-  uint32_t getLastFreeBlock();
+  uint32_t convertBlockIdx(uint32_t);
+  uint32_t getFreeBlock(uint32_t);
+  uint32_t getLastFreeBlock(uint32_t);
   void selectVictimBlock(std::vector<uint32_t> &, uint64_t &);
   void doGarbageCollection(std::vector<uint32_t> &, uint64_t &);
 

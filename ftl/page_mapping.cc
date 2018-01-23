@@ -34,16 +34,20 @@ PageMapping::PageMapping(Parameter *p, PAL::PAL *l, ConfigReader *c)
       pPAL(l),
       conf(c->ftlConfig),
       pFTLParam(p),
-      bReclaimMore(false) {
+      lastFreeBlock(pFTLParam->pageCountToMaxPerf),
+      reclaimMore(0) {
   for (uint32_t i = 0; i < pFTLParam->totalPhysicalBlocks; i++) {
     freeBlocks.insert(
         {i, Block(pFTLParam->pagesInBlock, pFTLParam->ioUnitInPage)});
   }
 
-  lastFreeBlock = getFreeBlock();
-
   status.totalLogicalPages =
       pFTLParam->totalLogicalBlocks * pFTLParam->pagesInBlock;
+
+  // Allocate free blocks
+  for (uint32_t i = 0; i < pFTLParam->pageCountToMaxPerf; i++) {
+    lastFreeBlock.at(i) = getFreeBlock(i);
+  }
 }
 
 PageMapping::~PageMapping() {}
@@ -148,8 +152,19 @@ float PageMapping::freeBlockRatio() {
   return (float)freeBlocks.size() / pFTLParam->totalPhysicalBlocks;
 }
 
-uint32_t PageMapping::getFreeBlock() {
+uint32_t PageMapping::convertBlockIdx(uint32_t blockIdx) {
+  static uint32_t blockCount =
+      pFTLParam->totalPhysicalBlocks / pFTLParam->pageCountToMaxPerf;
+
+  return blockIdx / blockCount;
+}
+
+uint32_t PageMapping::getFreeBlock(uint32_t idx) {
   uint32_t blockIndex = 0;
+
+  if (idx >= pFTLParam->pageCountToMaxPerf) {
+    Logger::panic("Index out of range");
+  }
 
   if (freeBlocks.size() > 0) {
     uint32_t eraseCount = std::numeric_limits<uint32_t>::max();
@@ -157,11 +172,14 @@ uint32_t PageMapping::getFreeBlock() {
 
     // Found least erased block
     for (auto iter = freeBlocks.begin(); iter != freeBlocks.end(); iter++) {
-      uint32_t current = iter->second.getEraseCount();
-      if (current < eraseCount) {
-        eraseCount = current;
-        blockIndex = iter->first;
-        found = iter;
+      if (idx == convertBlockIdx(iter->first)) {
+        uint32_t current = iter->second.getEraseCount();
+
+        if (current < eraseCount) {
+          eraseCount = current;
+          blockIndex = iter->first;
+          found = iter;
+        }
       }
     }
 
@@ -182,8 +200,8 @@ uint32_t PageMapping::getFreeBlock() {
   return blockIndex;
 }
 
-uint32_t PageMapping::getLastFreeBlock() {
-  auto freeBlock = blocks.find(lastFreeBlock);
+uint32_t PageMapping::getLastFreeBlock(uint32_t idx) {
+  auto freeBlock = blocks.find(lastFreeBlock.at(idx));
 
   // Sanity check
   if (freeBlock == blocks.end()) {
@@ -192,12 +210,12 @@ uint32_t PageMapping::getLastFreeBlock() {
 
   // If current free block is full, get next block
   if (freeBlock->second.getNextWritePageIndex() == pFTLParam->pagesInBlock) {
-    lastFreeBlock = getFreeBlock();
+    lastFreeBlock.at(idx) = getFreeBlock(idx);
 
-    bReclaimMore = true;
+    reclaimMore++;
   }
 
-  return lastFreeBlock;
+  return lastFreeBlock.at(idx);
 }
 
 void PageMapping::selectVictimBlock(std::vector<uint32_t> &list,
@@ -225,10 +243,10 @@ void PageMapping::selectVictimBlock(std::vector<uint32_t> &list,
   }
 
   // reclaim one more if last free block fully used
-  if (bReclaimMore) {
-    bReclaimMore = false;
+  if (reclaimMore > 0) {
+    nBlocks += reclaimMore;
 
-    nBlocks++;
+    reclaimMore = 0;
   }
 
   // Calculate weights of all blocks
@@ -305,7 +323,8 @@ void PageMapping::doGarbageCollection(std::vector<uint32_t> &blocksToReclaim,
       // Valid?
       if (block->second.getPageInfo(pageIndex, lpn, req.ioFlag)) {
         // Retrive free block
-        auto freeBlock = blocks.find(getLastFreeBlock());
+        auto freeBlock =
+            blocks.find(getLastFreeBlock(convertBlockIdx(block->first)));
 
         // Get mapping table entry
         auto mapping = table.find(lpn);
@@ -420,7 +439,7 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   }
 
   // Write data to free block
-  block = blocks.find(getLastFreeBlock());
+  block = blocks.find(getLastFreeBlock(mapping->second.first));
 
   if (block == blocks.end()) {
     Logger::panic("No such block");

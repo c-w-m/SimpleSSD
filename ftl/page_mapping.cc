@@ -206,6 +206,7 @@ uint32_t PageMapping::getFreeBlock(uint32_t idx) {
 
 uint32_t PageMapping::getLastFreeBlock() {
   auto freeBlock = blocks.find(lastFreeBlock.at(lastFreeBlockIndex));
+  uint32_t blockIndex = 0;
 
   // Sanity check
   if (freeBlock == blocks.end()) {
@@ -219,6 +220,8 @@ uint32_t PageMapping::getLastFreeBlock() {
     reclaimMore++;
   }
 
+  blockIndex = lastFreeBlock.at(lastFreeBlockIndex);
+
   // Update lastFreeBlockIndex
   lastFreeBlockIndex++;
 
@@ -226,7 +229,7 @@ uint32_t PageMapping::getLastFreeBlock() {
     lastFreeBlockIndex = 0;
   }
 
-  return lastFreeBlock.at(lastFreeBlockIndex);
+  return blockIndex;
 }
 
 void PageMapping::selectVictimBlock(std::vector<uint32_t> &list,

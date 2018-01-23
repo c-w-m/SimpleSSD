@@ -452,15 +452,21 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       EvictData data;
 
       if (prefetchEnabled) {
-        // Read one superpage
+        // Read one superpage except already read pages
         reqInternal.ioFlag.set();
 
         for (uint32_t i = 0; i < lineCountInSuperPage; i++) {
           data.tag = reqInternal.lpn * lineCountInSuperPage + i;
-          data.setIdx = calcSet(data.tag);
-          data.wayIdx = getVictimWay(data.tag);
 
-          list.push_back(data);
+          if (getValidWay(data.tag) == waySize) {
+            data.setIdx = calcSet(data.tag);
+            data.wayIdx = getVictimWay(data.tag);
+
+            list.push_back(data);
+          }
+          else {
+            reqInternal.ioFlag.set(i, false);
+          }
         }
       }
       else {

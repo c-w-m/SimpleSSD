@@ -452,21 +452,28 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       EvictData data;
 
       if (prefetchEnabled) {
+        static const uint32_t mapSize = lineCountInMaxIO / lineCountInSuperPage;
+
         // Read one superpage except already read pages
-        reqInternal.ioFlag.set();
+        for (uint32_t count = 0; count < mapSize; count++) {
+          reqInternal.ioFlag.set();
 
-        for (uint32_t i = 0; i < lineCountInSuperPage; i++) {
-          data.tag = reqInternal.lpn * lineCountInSuperPage + i;
+          for (uint32_t i = 0; i < lineCountInMaxIO; i++) {
+            data.tag = reqInternal.lpn * lineCountInMaxIO + i;
 
-          if (getValidWay(data.tag) == waySize) {
-            data.setIdx = calcSet(data.tag);
-            data.wayIdx = getVictimWay(data.tag);
+            if (getValidWay(data.tag) == waySize) {
+              data.setIdx = calcSet(data.tag);
+              data.wayIdx = getVictimWay(data.tag);
 
-            list.push_back(data);
+              list.push_back(data);
+            }
+            else {
+              reqInternal.ioFlag.set(i, false);
+            }
           }
-          else {
-            reqInternal.ioFlag.set(i, false);
-          }
+
+          pFTL->read(reqInternal, tick);
+          reqInternal.lpn++;
         }
       }
       else {
@@ -475,9 +482,9 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         data.wayIdx = getVictimWay(data.tag);
 
         list.push_back(data);
-      }
 
-      pFTL->read(reqInternal, tick);
+        pFTL->read(reqInternal, tick);
+      }
 
       // Flush collected lines
       evictVictim(list, true, tick);

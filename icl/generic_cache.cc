@@ -452,15 +452,28 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       EvictData data;
 
       if (prefetchEnabled) {
-        // Read one superpage
-        reqInternal.ioFlag.set();
+        static const uint32_t mapSize = lineCountInMaxIO / lineCountInSuperPage;
 
-        for (uint32_t i = 0; i < lineCountInSuperPage; i++) {
-          data.tag = reqInternal.lpn * lineCountInSuperPage + i;
-          data.setIdx = calcSet(data.tag);
-          data.wayIdx = getVictimWay(data.tag);
+        // Read one superpage except already read pages
+        for (uint32_t count = 0; count < mapSize; count++) {
+          reqInternal.ioFlag.set();
 
-          list.push_back(data);
+          for (uint32_t i = 0; i < lineCountInMaxIO; i++) {
+            data.tag = reqInternal.lpn * lineCountInMaxIO + i;
+
+            if (getValidWay(data.tag) == waySize) {
+              data.setIdx = calcSet(data.tag);
+              data.wayIdx = getVictimWay(data.tag);
+
+              list.push_back(data);
+            }
+            else {
+              reqInternal.ioFlag.set(i, false);
+            }
+          }
+
+          pFTL->read(reqInternal, tick);
+          reqInternal.lpn++;
         }
       }
       else {
@@ -469,9 +482,9 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         data.wayIdx = getVictimWay(data.tag);
 
         list.push_back(data);
-      }
 
-      pFTL->read(reqInternal, tick);
+        pFTL->read(reqInternal, tick);
+      }
 
       // Flush collected lines
       evictVictim(list, true, tick);
@@ -569,6 +582,12 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         for (uint32_t set = 0; set < setSize; set += lineCountInSuperPage) {
           std::vector<uint64_t> lpns;
           uint32_t mapOffset = (set / lineCountInSuperPage) % mapSize;
+          bool force = false;
+
+          // Check this super page includes current setIdx will be evicted
+          if (set <= setIdx && setIdx < set + lineCountInSuperPage) {
+            force = true;
+          }
 
           // Collect all LPNs exist on current super page
           for (uint32_t i = 0; i < lineCountInSuperPage; i++) {
@@ -585,6 +604,11 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
           std::sort(lpns.begin(), lpns.end());
           auto last = std::unique(lpns.begin(), lpns.end());
 
+          // Check this super page includes current setIdx will be evicted
+          if (force) {
+            maxList.at(mapOffset).first = 0;
+          }
+
           for (auto iter = lpns.begin(); iter != last; iter++) {
             count = getDirtyEntryCount(*iter, tempList);
 
@@ -599,37 +623,8 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
             }
           }
 
-          // Check this super page includes current setIdx will be evicted
-          if (set <= setIdx && setIdx < set + lineCountInSuperPage) {
-            EvictData data;
-
-            tempList.clear();
-
-            // Select way
-            data.tag = req.range.slpn;
-            data.setIdx = setIdx;
-            data.wayIdx = getVictimWay(req.range.slpn);
-
-            tempList.push_back(data);
-
-            if (ppCache[data.setIdx][data.wayIdx].valid) {
-              uint64_t beginlca =
-                  ppCache[data.setIdx][data.wayIdx].tag + set - setIdx;
-
-              for (uint32_t i = set; i < set + lineCountInSuperPage; i++) {
-                if (set != setIdx) {
-                  data.tag = beginlca + i - set;
-                  data.setIdx = calcSet(data.tag);
-                  data.wayIdx = getVictimWay(data.tag);
-
-                  tempList.push_back(data);
-                }
-              }
-
-              maxList.at(mapOffset).first =
-                  std::numeric_limits<uint32_t>::max();
-              maxList.at(mapOffset).second = tempList;
-            }
+          if (force) {
+            maxList.at(mapOffset).first = std::numeric_limits<uint32_t>::max();
           }
 
           lpns.clear();

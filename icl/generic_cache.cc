@@ -458,8 +458,8 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         for (uint32_t count = 0; count < mapSize; count++) {
           reqInternal.ioFlag.set();
 
-          for (uint32_t i = 0; i < lineCountInMaxIO; i++) {
-            data.tag = reqInternal.lpn * lineCountInMaxIO + i;
+          for (uint32_t i = 0; i < lineCountInSuperPage; i++) {
+            data.tag = reqInternal.lpn * lineCountInSuperPage + i;
 
             if (getValidWay(data.tag) == waySize) {
               data.setIdx = calcSet(data.tag);

@@ -572,6 +572,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       else {
         static const uint32_t mapSize = lineCountInMaxIO / lineCountInSuperPage;
         uint32_t count;
+        uint32_t idxToReturn = 0;
         std::vector<EvictData> tempList;
 
         // Collect LPNs we can evict
@@ -587,6 +588,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
           // Check this super page includes current setIdx will be evicted
           if (set <= setIdx && setIdx < set + lineCountInSuperPage) {
             force = true;
+            idxToReturn = mapOffset;
           }
 
           // Collect all LPNs exist on current super page
@@ -661,13 +663,19 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         uint64_t beginAt;
         uint64_t finishedAt = tick;
 
+        // Evict current set first for performance
+        beginAt = tick;
+
+        evictVictim(maxList.at(idxToReturn).second, false, beginAt);
+
+        finishedAt = beginAt;
+
+        // Evict others
         for (uint32_t i = 0; i < mapSize; i++) {
-          if (maxList.at(i).second.size() > 0) {
+          if (maxList.at(i).second.size() > 0 && i != idxToReturn) {
             beginAt = tick;
 
             evictVictim(maxList.at(i).second, false, beginAt);
-
-            finishedAt = MAX(finishedAt, beginAt);
           }
         }
 

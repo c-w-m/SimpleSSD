@@ -20,7 +20,6 @@
 #ifndef __PAL_PAL_OLD__
 #define __PAL_PAL_OLD__
 
-#include <array>
 #include <cinttypes>
 #include <vector>
 
@@ -41,8 +40,6 @@ class PALOLD : public AbstractPAL {
   ::PALStatistics *stats;
   ::Latency *lat;
 
-  void parseBlockIdx(uint32_t, std::array<uint32_t, 4> &,
-                     std::array<uint32_t *, 4> &, ::CPDPBP &);
   void convertCPDPBP(Request &, std::vector<::CPDPBP> &);
   void printCPDPBP(::CPDPBP &, const char *);
   void printPPN(Request &, const char *);

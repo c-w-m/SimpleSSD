@@ -120,19 +120,24 @@ void PALOLD::erase(Request &req, uint64_t &tick) {
   tick = finishedAt;
 }
 
-void PALOLD::parseBlockIdx(uint32_t blockIdx, std::array<uint32_t, 4> &limits,
-                           std::array<uint32_t *, 4> &pointers,
-                           ::CPDPBP &addr) {
+void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
+  ::CPDPBP addr;
   static uint32_t pageAllocation = conf.getPageAllocationConfig();
   static uint8_t superblock = conf.getSuperblockConfig();
   static bool useMultiplaneOP = conf.readBoolean(NAND_USE_MULTI_PLANE_OP);
-  uint64_t tmp = blockIdx;
+  static uint32_t pageInSuperPage = param.pageInSuperPage;
+  uint32_t value[4];
+  uint32_t *ptr[4];
+  uint64_t tmp = req.blockIndex;
   int count = 0;
 
-  // clear
-  limits.fill(0);
-  pointers.fill(nullptr);
-  memset(&addr, 0, sizeof(::CPDPBP));
+  if (req.ioFlag.size() != pageInSuperPage) {
+    Logger::panic("Invalid size of I/O flag");
+  }
+
+  list.clear();
+
+  addr.Plane = 0;
 
   for (int i = 0; i < 4; i++) {
     uint8_t idx = (pageAllocation >> (i * 8)) & 0xFF;
@@ -140,8 +145,8 @@ void PALOLD::parseBlockIdx(uint32_t blockIdx, std::array<uint32_t, 4> &limits,
     switch (idx) {
       case INDEX_CHANNEL:
         if (superblock & INDEX_CHANNEL) {
-          limits[count] = param.channel;
-          pointers[count++] = &addr.Channel;
+          value[count] = param.channel;
+          ptr[count++] = &addr.Channel;
         }
         else {
           addr.Channel = tmp % param.channel;
@@ -151,8 +156,8 @@ void PALOLD::parseBlockIdx(uint32_t blockIdx, std::array<uint32_t, 4> &limits,
         break;
       case INDEX_PACKAGE:
         if (superblock & INDEX_PACKAGE) {
-          limits[count] = param.package;
-          pointers[count++] = &addr.Package;
+          value[count] = param.package;
+          ptr[count++] = &addr.Package;
         }
         else {
           addr.Package = tmp % param.package;
@@ -162,8 +167,8 @@ void PALOLD::parseBlockIdx(uint32_t blockIdx, std::array<uint32_t, 4> &limits,
         break;
       case INDEX_DIE:
         if (superblock & INDEX_DIE) {
-          limits[count] = param.die;
-          pointers[count++] = &addr.Die;
+          value[count] = param.die;
+          ptr[count++] = &addr.Die;
         }
         else {
           addr.Die = tmp % param.die;
@@ -174,8 +179,8 @@ void PALOLD::parseBlockIdx(uint32_t blockIdx, std::array<uint32_t, 4> &limits,
       case INDEX_PLANE:
         if (!useMultiplaneOP) {
           if (superblock & INDEX_PLANE) {
-            limits[count] = param.plane;
-            pointers[count++] = &addr.Plane;
+            value[count] = param.plane;
+            ptr[count++] = &addr.Plane;
           }
           else {
             addr.Plane = tmp % param.plane;
@@ -190,38 +195,17 @@ void PALOLD::parseBlockIdx(uint32_t blockIdx, std::array<uint32_t, 4> &limits,
   }
 
   addr.Block = tmp;
-}
-
-void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
-  ::CPDPBP addr;
-  static uint32_t pageInSuperPage = param.pageInSuperPage;
-  static std::array<uint32_t, 4> value;
-  static std::array<uint32_t *, 4> ptr;
-  static uint8_t validPointers = 0;
-  static uint8_t counter = 0;
-
-  if (req.ioFlag.size() != pageInSuperPage) {
-    Logger::panic("Invalid size of I/O flag");
-  }
-
-  list.clear();
-
-  parseBlockIdx(req.blockIndex, value, ptr, addr);
-
   addr.Page = req.pageIndex;
 
-  for (auto & iter : ptr) {
-    if (iter != nullptr) {
-      validPointers++;
-    }
-  }
+  // Index of ioFlag
+  tmp = 0;
 
-  if (validPointers == 4) {
+  if (count == 4) {
     for (uint32_t i = 0; i < value[3]; i++) {
       for (uint32_t j = 0; j < value[2]; j++) {
         for (uint32_t k = 0; k < value[1]; k++) {
           for (uint32_t l = 0; l < value[0]; l++) {
-            if (req.ioFlag.test(counter++)) {
+            if (req.ioFlag.test(tmp++)) {
               *ptr[0] = l;
               *ptr[1] = k;
               *ptr[2] = j;
@@ -234,11 +218,11 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
       }
     }
   }
-  else if (validPointers == 3) {
+  else if (count == 3) {
     for (uint32_t j = 0; j < value[2]; j++) {
       for (uint32_t k = 0; k < value[1]; k++) {
         for (uint32_t l = 0; l < value[0]; l++) {
-          if (req.ioFlag.test(counter++)) {
+          if (req.ioFlag.test(tmp++)) {
             *ptr[0] = l;
             *ptr[1] = k;
             *ptr[2] = j;
@@ -249,10 +233,10 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
       }
     }
   }
-  else if (validPointers == 2) {
+  else if (count == 2) {
     for (uint32_t k = 0; k < value[1]; k++) {
       for (uint32_t l = 0; l < value[0]; l++) {
-        if (req.ioFlag.test(counter++)) {
+        if (req.ioFlag.test(tmp++)) {
           *ptr[0] = l;
           *ptr[1] = k;
 
@@ -261,9 +245,9 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
       }
     }
   }
-  else if (validPointers == 1) {
+  else if (count == 1) {
     for (uint32_t l = 0; l < value[0]; l++) {
-      if (req.ioFlag.test(counter++)) {
+      if (req.ioFlag.test(tmp++)) {
         *ptr[0] = l;
 
         list.push_back(addr);
@@ -271,12 +255,12 @@ void PALOLD::convertCPDPBP(Request &req, std::vector<::CPDPBP> &list) {
     }
   }
   else {
-    if (req.ioFlag.test(counter++)) {
+    if (req.ioFlag.test(tmp++)) {
       list.push_back(addr);
     }
   }
 
-  if (counter != pageInSuperPage) {
+  if (tmp != pageInSuperPage) {
     Logger::panic("I/O flag size != # pages in super page");
   }
 }

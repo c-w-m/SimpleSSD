@@ -205,13 +205,6 @@ uint32_t PageMapping::getFreeBlock(uint32_t idx) {
 }
 
 uint32_t PageMapping::getLastFreeBlock() {
-  // Update lastFreeBlockIndex
-  lastFreeBlockIndex++;
-
-  if (lastFreeBlockIndex == pFTLParam->pageCountToMaxPerf) {
-    lastFreeBlockIndex = 0;
-  }
-
   auto freeBlock = blocks.find(lastFreeBlock.at(lastFreeBlockIndex));
 
   // Sanity check
@@ -224,6 +217,13 @@ uint32_t PageMapping::getLastFreeBlock() {
     lastFreeBlock.at(lastFreeBlockIndex) = getFreeBlock(lastFreeBlockIndex);
 
     reclaimMore++;
+  }
+
+  // Update lastFreeBlockIndex
+  lastFreeBlockIndex++;
+
+  if (lastFreeBlockIndex == pFTLParam->pageCountToMaxPerf) {
+    lastFreeBlockIndex = 0;
   }
 
   return lastFreeBlock.at(lastFreeBlockIndex);
@@ -334,8 +334,7 @@ void PageMapping::doGarbageCollection(std::vector<uint32_t> &blocksToReclaim,
       // Valid?
       if (block->second.getPageInfo(pageIndex, lpn, req.ioFlag)) {
         // Retrive free block
-        auto freeBlock =
-            blocks.find(getLastFreeBlock());
+        auto freeBlock = blocks.find(getLastFreeBlock());
 
         // Get mapping table entry
         auto mapping = table.find(lpn);

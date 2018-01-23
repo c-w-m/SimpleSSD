@@ -400,6 +400,7 @@ void PageMapping::readInternal(Request &req, uint64_t &tick) {
 void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   PAL::Request palRequest(req);
   std::unordered_map<uint32_t, Block>::iterator block;
+  uint32_t freeBlockIdx;
   auto mapping = table.find(req.lpn);
 
   if (mapping != table.end()) {
@@ -431,6 +432,8 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
 
     // Invalidate current page
     block->second.invalidate(mapping->second.second);
+
+    freeBlockIdx = convertBlockIdx(block->first);
   }
   else {
     // Create empty mapping
@@ -441,10 +444,12 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
     }
 
     mapping = ret.first;
+
+    freeBlockIdx = req.lpn % pFTLParam->pageCountToMaxPerf;
   }
 
   // Write data to free block
-  block = blocks.find(getLastFreeBlock(mapping->second.first));
+  block = blocks.find(getLastFreeBlock(freeBlockIdx));
 
   if (block == blocks.end()) {
     Logger::panic("No such block");

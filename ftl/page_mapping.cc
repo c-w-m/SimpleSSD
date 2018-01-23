@@ -183,6 +183,11 @@ uint32_t PageMapping::getFreeBlock(uint32_t idx) {
       }
     }
 
+    // No free block found on specified index
+    if (found == freeBlocks.end()) {
+      Logger::panic("No free block at index %d found", idx);
+    }
+
     // Insert found block to block list
     if (blocks.find(blockIndex) != blocks.end()) {
       Logger::panic("Corrupted");

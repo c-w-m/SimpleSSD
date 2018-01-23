@@ -612,6 +612,23 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
           for (auto iter = lpns.begin(); iter != last; iter++) {
             count = getDirtyEntryCount(*iter, tempList);
 
+            // tempList should contain current setIdx
+            if (force) {
+              bool exist = false;
+
+              for (auto &iter : tempList) {
+                if (iter.setIdx == setIdx) {
+                  exist = true;
+
+                  break;
+                }
+              }
+
+              if (!exist) {
+                continue;
+              }
+            }
+
             if (maxList.at(mapOffset).first < count) {
               maxList.at(mapOffset).first = count;
               maxList.at(mapOffset).second = tempList;
@@ -625,6 +642,16 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
 
           if (force) {
             maxList.at(mapOffset).first = std::numeric_limits<uint32_t>::max();
+
+            if (maxList.at(mapOffset).second.size() == 0) {
+              EvictData data;
+
+              data.tag = req.range.slpn;
+              data.setIdx = setIdx;
+              data.wayIdx = getVictimWay(data.tag);
+
+              maxList.at(mapOffset).second.push_back(data);
+            }
           }
 
           lpns.clear();

@@ -155,10 +155,7 @@ float PageMapping::freeBlockRatio() {
 }
 
 uint32_t PageMapping::convertBlockIdx(uint32_t blockIdx) {
-  static uint32_t blockCount =
-      pFTLParam->totalPhysicalBlocks / pFTLParam->pageCountToMaxPerf;
-
-  return blockIdx / blockCount;
+  return blockIdx % pFTLParam->pageCountToMaxPerf;
 }
 
 uint32_t PageMapping::getFreeBlock(uint32_t idx) {

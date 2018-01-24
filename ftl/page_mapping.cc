@@ -321,7 +321,6 @@ void PageMapping::doGarbageCollection(std::vector<uint32_t> &blocksToReclaim,
                                       uint64_t &tick) {
   PAL::Request req(pFTLParam->ioUnitInPage);
   std::vector<uint64_t> lpns;
-  DynamicBitset bitmap(pFTLParam->ioUnitInPage);
   uint64_t beginAt;
   uint64_t finishedAt = tick;
 
@@ -343,54 +342,48 @@ void PageMapping::doGarbageCollection(std::vector<uint32_t> &blocksToReclaim,
     for (uint32_t pageIndex = 0; pageIndex < pFTLParam->pagesInBlock;
          pageIndex++) {
       // Valid?
-      if (block->second.getPageInfo(pageIndex, lpns, bitmap)) {
-        uint64_t beginAt2 = tick;
+      if (block->second.getPageInfo(pageIndex, lpns, req.ioFlag)) {
         // Retrive free block
         auto freeBlock = blocks.find(getLastFreeBlock());
 
-        // Get mapping table entry
+        // Issue Read
+        req.blockIndex = block->first;
+        req.pageIndex = pageIndex;
+
+        pPAL->read(req, beginAt);
+
+        // Invalidate
+        block->second.invalidate(pageIndex, req.ioFlag);
+
+        // Update mapping table
+        uint32_t newBlockIdx = freeBlock->first;
+
         for (uint32_t idx = 0; idx < pFTLParam->ioUnitInPage; idx++) {
-          if (bitmap.test(idx)) {
-            auto mapping = table.find(lpns.at(idx));
+          auto mappingList = table.find(lpns.at(idx));
 
-            if (mapping == table.end()) {
-              Logger::panic("Invalid mapping table entry");
-            }
-
-            // Make iomap
-            req.ioFlag.reset();
-            req.ioFlag.set(idx);
-
-            // Issue Read
-            req.blockIndex = mapping->second.at(idx).first;
-            req.pageIndex = mapping->second.at(idx).second;
-
-            pPAL->read(req, beginAt2);
-
-            // Invalidate
-            DynamicBitset bit(pFTLParam->ioUnitInPage);
-
-            bit.set(idx);
-
-            block->second.invalidate(pageIndex, bit);
-
-            // Update mapping table
-            mapping->second.at(idx).first = freeBlock->first;
-            mapping->second.at(idx).second =
-                freeBlock->second.getNextWritePageIndex(bit);
-
-            freeBlock->second.write(mapping->second.at(idx).second, lpns,
-                                    bit, beginAt);
-
-            // Issue Write
-            req.blockIndex = mapping->second.at(idx).first;
-            req.pageIndex = mapping->second.at(idx).second;
-
-            pPAL->write(req, beginAt2);
+          if (mappingList == table.end()) {
+            Logger::panic("Invalid mapping table entry");
           }
-        }
 
-        beginAt = MAX(beginAt, beginAt2);
+          auto &mapping = mappingList->second.at(idx);
+
+          req.ioFlag.reset();
+          req.ioFlag.set(idx);
+
+          uint32_t newPageIdx =
+              freeBlock->second.getNextWritePageIndex(req.ioFlag);
+
+          mapping.first = newBlockIdx;
+          mapping.second = newPageIdx;
+
+          freeBlock->second.write(newPageIdx, lpns, req.ioFlag, beginAt);
+
+          // Issue Write
+          req.blockIndex = newBlockIdx;
+          req.pageIndex = newPageIdx;
+
+          pPAL->write(req, beginAt);
+        }
       }
     }
 

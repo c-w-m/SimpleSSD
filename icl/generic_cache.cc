@@ -278,7 +278,7 @@ uint64_t GenericCache::calculateDelay(uint64_t bytesize) {
 
 void GenericCache::evictVictim(std::vector<EvictData> &list, bool isRead,
                                uint64_t &tick) {
-  static uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
+  static uint64_t lat = calculateDelay(sizeof(Line) + lineSize) * waySize / 2;
   std::vector<FTL::Request> reqList;
 
   if (list.size() == 0) {
@@ -414,7 +414,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
   if (useReadCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    static uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
+    static uint64_t lat = calculateDelay(sizeof(Line) + lineSize) * waySize / 2;
 
     // Check prefetch
     if (useReadPrefetch) {
@@ -521,7 +521,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
   if (useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    static uint64_t lat = calculateDelay(sizeof(Line) + lineSize);
+    static uint64_t lat = calculateDelay(sizeof(Line) + lineSize) * waySize / 2;
 
     // Check cache that we have data for corresponding LCA
     wayIdx = getValidWay(req.range.slpn);

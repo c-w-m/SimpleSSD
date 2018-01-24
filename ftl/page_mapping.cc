@@ -212,7 +212,7 @@ uint32_t PageMapping::getFreeBlock(uint32_t idx) {
   return blockIndex;
 }
 
-uint32_t PageMapping::getLastFreeBlock() {
+uint32_t PageMapping::getLastFreeBlock(bool count) {
   auto freeBlock = blocks.find(lastFreeBlock.at(lastFreeBlockIndex));
   uint32_t blockIndex = 0;
 
@@ -225,7 +225,9 @@ uint32_t PageMapping::getLastFreeBlock() {
   if (freeBlock->second.getNextWritePageIndex() == pFTLParam->pagesInBlock) {
     lastFreeBlock.at(lastFreeBlockIndex) = getFreeBlock(lastFreeBlockIndex);
 
-    reclaimMore++;
+    if (count) {
+      reclaimMore++;
+    }
   }
 
   blockIndex = lastFreeBlock.at(lastFreeBlockIndex);
@@ -346,7 +348,7 @@ void PageMapping::doGarbageCollection(std::vector<uint32_t> &blocksToReclaim,
       // Valid?
       if (block->second.getPageInfo(pageIndex, lpns, bit)) {
         // Retrive free block
-        auto freeBlock = blocks.find(getLastFreeBlock());
+        auto freeBlock = blocks.find(getLastFreeBlock(true));
 
         // Issue Read
         req.blockIndex = block->first;
@@ -521,7 +523,7 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
     selectVictimBlock(list, beginAt);
 
     Logger::debugprint(Logger::LOG_FTL_PAGE_MAPPING,
-                       "GC   | On-demand | %u blocks will reclaim",
+                       "GC   | On-demand | %u blocks will be reclaimed",
                        list.size());
 
     doGarbageCollection(list, beginAt);

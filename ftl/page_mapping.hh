@@ -52,7 +52,7 @@ class PageMapping : public AbstractFTL {
   float freeBlockRatio();
   uint32_t convertBlockIdx(uint32_t);
   uint32_t getFreeBlock(uint32_t);
-  uint32_t getLastFreeBlock();
+  uint32_t getLastFreeBlock(bool count = false);
   void selectVictimBlock(std::vector<uint32_t> &, uint64_t &);
   void doGarbageCollection(std::vector<uint32_t> &, uint64_t &);
 

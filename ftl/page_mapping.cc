@@ -533,7 +533,7 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
 }
 
 void PageMapping::trimInternal(Request &req, uint64_t &tick) {
-DynamicBitset bit(pFTLParam->ioUnitInPage);
+  DynamicBitset bit(pFTLParam->ioUnitInPage);
   auto mappingList = table.find(req.lpn);
 
   if (mappingList != table.end()) {

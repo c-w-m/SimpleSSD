@@ -35,7 +35,8 @@ Block::Block(uint32_t count, uint32_t ioUnit)
           std::vector<DynamicBitset>(pageCount, DynamicBitset(ioUnitInPage))),
       erasedBits(
           std::vector<DynamicBitset>(pageCount, DynamicBitset(ioUnitInPage))),
-      lpns(std::vector<uint64_t>(pageCount, 0)),
+      lpns(std::vector<std::vector<uint64_t>>(
+          pageCount, std::vector<uint64_t>(ioUnitInPage, 0))),
       lastAccessed(0),
       eraseCount(0) {
   erase();
@@ -96,7 +97,8 @@ uint32_t Block::getNextWritePageIndex(DynamicBitset &map) {
   return max;
 }
 
-bool Block::getPageInfo(uint32_t pageIndex, uint64_t &lpn, DynamicBitset &map) {
+bool Block::getPageInfo(uint32_t pageIndex, std::vector<uint64_t> &lpn,
+                        DynamicBitset &map) {
   map = validBits.at(pageIndex);
   lpn = lpns.at(pageIndex);
 
@@ -115,8 +117,8 @@ bool Block::read(uint32_t pageIndex, DynamicBitset &iomap, uint64_t tick) {
   return read;
 }
 
-bool Block::write(uint32_t pageIndex, uint64_t lpn, DynamicBitset &iomap,
-                  uint64_t tick) {
+bool Block::write(uint32_t pageIndex, std::vector<uint64_t> &lpn,
+                  DynamicBitset &iomap, uint64_t tick) {
   auto valid = erasedBits.at(pageIndex);
   auto tmp = valid & iomap;
   bool write = tmp == iomap;
@@ -141,11 +143,11 @@ bool Block::write(uint32_t pageIndex, uint64_t lpn, DynamicBitset &iomap,
     lastAccessed = tick;
     erasedBits.at(pageIndex) &= ~iomap;
     validBits.at(pageIndex) |= iomap;
-    lpns.at(pageIndex) = lpn;
 
     for (uint32_t i = 0; i < ioUnitInPage; i++) {
       if (iomap[i]) {
         nextWritePageIndex[i] = pageIndex + 1;
+        lpns.at(pageIndex).at(i) = lpn.at(i);
       }
     }
   }
@@ -170,8 +172,8 @@ void Block::erase() {
   eraseCount++;
 }
 
-void Block::invalidate(uint32_t pageIndex) {
-  validBits.at(pageIndex).reset();
+void Block::invalidate(uint32_t pageIndex, DynamicBitset &reset) {
+  validBits.at(pageIndex) &= ~reset;
 }
 
 }  // namespace FTL

@@ -143,11 +143,11 @@ bool Block::write(uint32_t pageIndex, std::vector<uint64_t> &lpn,
     lastAccessed = tick;
     erasedBits.at(pageIndex) &= ~iomap;
     validBits.at(pageIndex) |= iomap;
-    lpns.at(pageIndex) = lpn;
 
     for (uint32_t i = 0; i < ioUnitInPage; i++) {
       if (iomap[i]) {
         nextWritePageIndex[i] = pageIndex + 1;
+        lpns.at(pageIndex).at(i) = lpn.at(i);
       }
     }
   }

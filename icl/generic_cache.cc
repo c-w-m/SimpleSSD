@@ -450,6 +450,8 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       FTL::Request reqInternal(lineCountInSuperPage, req);
       std::vector<EvictData> list;
       EvictData data;
+      uint64_t beginAt;
+      uint64_t finishedAt = tick;
 
       if (prefetchEnabled) {
         static const uint32_t mapSize = lineCountInMaxIO / lineCountInSuperPage;
@@ -472,7 +474,14 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
             }
           }
 
-          pFTL->read(reqInternal, tick);
+          beginAt = tick;
+
+          pFTL->read(reqInternal, beginAt);
+
+          if (reqInternal.lpn == req.range.slpn / lineCountInSuperPage) {
+            finishedAt = beginAt;
+          }
+
           reqInternal.lpn++;
         }
       }
@@ -488,6 +497,8 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 
       // Flush collected lines
       evictVictim(list, true, tick);
+
+      tick = finishedAt;
     }
   }
   else {

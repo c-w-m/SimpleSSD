@@ -109,6 +109,7 @@ void PageMapping::trim(Request &req, uint64_t &tick) {
 
 void PageMapping::format(LPNRange &range, uint64_t &tick) {
   PAL::Request req(pFTLParam->ioUnitInPage);
+  DynamicBitset bit(pFTLParam->ioUnitInPage);
   std::vector<uint32_t> list;
 
   req.ioFlag.set();
@@ -121,12 +122,12 @@ void PageMapping::format(LPNRange &range, uint64_t &tick) {
       for (uint32_t idx = 0; idx < pFTLParam->ioUnitInPage; idx++) {
         auto &mapping = mappingList.at(idx);
         auto block = blocks.find(mapping.first);
-        DynamicBitset bit(pFTLParam->ioUnitInPage);
 
         if (block == blocks.end()) {
           Logger::panic("Block is not in use");
         }
 
+        bit.reset();
         bit.set(idx);
         block->second.invalidate(mapping.second, bit);
 
@@ -451,17 +452,17 @@ void PageMapping::readInternal(Request &req, uint64_t &tick) {
 
 void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   PAL::Request palRequest(req);
+  DynamicBitset bit(pFTLParam->ioUnitInPage);
   std::unordered_map<uint32_t, Block>::iterator block;
   auto mappingList = table.find(req.lpn);
 
   if (mappingList != table.end()) {
     for (uint32_t idx = 0; idx < pFTLParam->ioUnitInPage; idx++) {
       if (req.ioFlag.test(idx)) {
-        DynamicBitset bit(pFTLParam->ioUnitInPage);
-
         block = blocks.find(mappingList->second.at(idx).first);
 
         // Invalidate current page
+        bit.reset();
         bit.set(idx);
         block->second.invalidate(mappingList->second.at(idx).second, bit);
       }
@@ -491,8 +492,7 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
 
   for (uint32_t idx = 0; idx < pFTLParam->ioUnitInPage; idx++) {
     if (req.ioFlag.test(idx)) {
-      DynamicBitset bit(pFTLParam->ioUnitInPage);
-
+      bit.reset();
       bit.set(idx);
       uint32_t pageIndex = block->second.getNextWritePageIndex(bit);
       auto &mapping = mappingList->second.at(idx);
@@ -533,6 +533,7 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
 }
 
 void PageMapping::trimInternal(Request &req, uint64_t &tick) {
+DynamicBitset bit(pFTLParam->ioUnitInPage);
   auto mappingList = table.find(req.lpn);
 
   if (mappingList != table.end()) {
@@ -540,12 +541,12 @@ void PageMapping::trimInternal(Request &req, uint64_t &tick) {
     for (uint32_t idx = 0; idx < pFTLParam->ioUnitInPage; idx++) {
       auto &mapping = mappingList->second.at(idx);
       auto block = blocks.find(mapping.first);
-      DynamicBitset bit(pFTLParam->ioUnitInPage);
 
       if (block == blocks.end()) {
         Logger::panic("Block is not in use");
       }
 
+      bit.reset();
       bit.set(idx);
       block->second.invalidate(mapping.second, bit);
     }

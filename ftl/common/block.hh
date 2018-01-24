@@ -56,7 +56,7 @@ class Block {
   bool read(uint32_t, DynamicBitset &, uint64_t);
   bool write(uint32_t, std::vector<uint64_t> &, DynamicBitset &, uint64_t);
   void erase();
-  void invalidate(uint32_t);
+  void invalidate(uint32_t, DynamicBitset &);
 };
 
 }  // namespace FTL

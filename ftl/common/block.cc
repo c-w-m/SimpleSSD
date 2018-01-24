@@ -172,8 +172,8 @@ void Block::erase() {
   eraseCount++;
 }
 
-void Block::invalidate(uint32_t pageIndex) {
-  validBits.at(pageIndex).reset();
+void Block::invalidate(uint32_t pageIndex, DynamicBitset &reset) {
+  validBits.at(pageIndex) &= ~reset;
 }
 
 }  // namespace FTL

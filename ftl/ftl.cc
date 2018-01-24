@@ -26,8 +26,6 @@ namespace SimpleSSD {
 
 namespace FTL {
 
-#define FTL_DELAY 500000
-
 FTL::FTL(ConfigReader *c) : pConf(c) {
   PAL::Parameter *palparam;
 
@@ -74,24 +72,18 @@ void FTL::read(Request &req, uint64_t &tick) {
   Logger::debugprint(Logger::LOG_FTL, "READ  | LPN %" PRIu64, req.lpn);
 
   pFTL->read(req, tick);
-
-  tick += FTL_DELAY;
 }
 
 void FTL::write(Request &req, uint64_t &tick) {
   Logger::debugprint(Logger::LOG_FTL, "WRITE | LPN %" PRIu64, req.lpn);
 
   pFTL->write(req, tick);
-
-  tick += FTL_DELAY;
 }
 
 void FTL::trim(Request &req, uint64_t &tick) {
   Logger::debugprint(Logger::LOG_FTL, "TRIM  | LPN %" PRIu64, req.lpn);
 
   pFTL->trim(req, tick);
-
-  tick += FTL_DELAY;
 }
 
 void FTL::format(LPNRange &range, uint64_t &tick) {

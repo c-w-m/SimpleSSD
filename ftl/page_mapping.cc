@@ -35,7 +35,7 @@ PageMapping::PageMapping(Parameter *p, PAL::PAL *l, ConfigReader *c)
       conf(c->ftlConfig),
       pFTLParam(p),
       lastFreeBlock(pFTLParam->pageCountToMaxPerf),
-      reclaimMore(0) {
+      bReclaimMore(false) {
   for (uint32_t i = 0; i < pFTLParam->totalPhysicalBlocks; i++) {
     freeBlocks.insert(
         {i, Block(pFTLParam->pagesInBlock, pFTLParam->ioUnitInPage)});
@@ -212,7 +212,7 @@ uint32_t PageMapping::getFreeBlock(uint32_t idx) {
   return blockIndex;
 }
 
-uint32_t PageMapping::getLastFreeBlock(bool count) {
+uint32_t PageMapping::getLastFreeBlock() {
   auto freeBlock = blocks.find(lastFreeBlock.at(lastFreeBlockIndex));
   uint32_t blockIndex = 0;
 
@@ -225,9 +225,7 @@ uint32_t PageMapping::getLastFreeBlock(bool count) {
   if (freeBlock->second.getNextWritePageIndex() == pFTLParam->pagesInBlock) {
     lastFreeBlock.at(lastFreeBlockIndex) = getFreeBlock(lastFreeBlockIndex);
 
-    if (count) {
-      reclaimMore++;
-    }
+    bReclaimMore = true;
   }
 
   blockIndex = lastFreeBlock.at(lastFreeBlockIndex);
@@ -267,10 +265,10 @@ void PageMapping::selectVictimBlock(std::vector<uint32_t> &list,
   }
 
   // reclaim one more if last free block fully used
-  if (reclaimMore > 0) {
-    nBlocks += reclaimMore;
+  if (bReclaimMore) {
+    nBlocks += pFTLParam->pageCountToMaxPerf;
 
-    reclaimMore = 0;
+    bReclaimMore = false;
   }
 
   // Calculate weights of all blocks
@@ -348,7 +346,7 @@ void PageMapping::doGarbageCollection(std::vector<uint32_t> &blocksToReclaim,
       // Valid?
       if (block->second.getPageInfo(pageIndex, lpns, bit)) {
         // Retrive free block
-        auto freeBlock = blocks.find(getLastFreeBlock(true));
+        auto freeBlock = blocks.find(getLastFreeBlock());
 
         // Issue Read
         req.blockIndex = block->first;

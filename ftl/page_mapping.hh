@@ -47,7 +47,7 @@ class PageMapping : public AbstractFTL {
   std::vector<uint32_t> lastFreeBlock;
   uint32_t lastFreeBlockIndex;
 
-  uint32_t reclaimMore;
+  bool bReclaimMore;
 
   float freeBlockRatio();
   uint32_t convertBlockIdx(uint32_t);

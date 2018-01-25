@@ -178,16 +178,14 @@ uint32_t GenericCache::getVictimWay(uint64_t lca) {
   uint32_t setIdx = calcSet(lca);
   uint32_t wayIdx;
 
-  for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
-    Line &line = ppCache[setIdx][wayIdx];
-
-    if ((line.valid && line.tag == lca) || !line.valid) {
-      break;
-    }
-  }
+  wayIdx = getValidWay(lca);
 
   if (wayIdx == waySize) {
-    wayIdx = evictFunction(setIdx);
+    wayIdx = getEmptyWay(setIdx);
+
+    if (wayIdx == waySize) {
+      wayIdx = evictFunction(setIdx);
+    }
   }
 
   return wayIdx;

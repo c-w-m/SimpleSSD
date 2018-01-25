@@ -465,12 +465,17 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   if (mappingList != table.end()) {
     for (uint32_t idx = 0; idx < pFTLParam->ioUnitInPage; idx++) {
       if (req.ioFlag.test(idx)) {
-        block = blocks.find(mappingList->second.at(idx).first);
+        auto &mapping = mappingList->second.at(idx);
 
-        // Invalidate current page
-        bit.reset();
-        bit.set(idx);
-        block->second.invalidate(mappingList->second.at(idx).second, bit);
+        if (mapping.first < pFTLParam->totalPhysicalBlocks &&
+            mapping.second < pFTLParam->pagesInBlock) {
+          block = blocks.find(mapping.first);
+
+          // Invalidate current page
+          bit.reset();
+          bit.set(idx);
+          block->second.invalidate(mapping.second, bit);
+        }
       }
     }
   }

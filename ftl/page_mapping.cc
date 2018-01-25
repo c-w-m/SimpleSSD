@@ -422,7 +422,7 @@ void PageMapping::readInternal(Request &req, uint64_t &tick) {
   if (mappingList != table.end()) {
     for (uint32_t idx = 0; idx < pFTLParam->ioUnitInPage; idx++) {
       if (req.ioFlag.test(idx)) {
-        auto mapping = mappingList->second.at(idx);
+        auto &mapping = mappingList->second.at(idx);
 
         if (mapping.first < pFTLParam->totalPhysicalBlocks &&
             mapping.second < pFTLParam->pagesInBlock) {

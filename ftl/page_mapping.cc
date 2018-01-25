@@ -421,29 +421,33 @@ void PageMapping::readInternal(Request &req, uint64_t &tick) {
 
   if (mappingList != table.end()) {
     for (uint32_t idx = 0; idx < pFTLParam->ioUnitInPage; idx++) {
-      auto mapping = mappingList->second.at(idx);
+      if (req.ioFlag.test(idx)) {
+        auto mapping = mappingList->second.at(idx);
 
-      beginAt = tick;
+        if (mapping.first < pFTLParam->totalPhysicalBlocks &&
+            mapping.second < pFTLParam->pagesInBlock) {
+          palRequest.blockIndex = mapping.first;
+          palRequest.pageIndex = mapping.second;
+          palRequest.ioFlag.reset();
+          palRequest.ioFlag.set(idx);
 
-      if (mapping.first < pFTLParam->totalPhysicalBlocks &&
-          mapping.second < pFTLParam->pagesInBlock) {
-        palRequest.blockIndex = mapping.first;
-        palRequest.pageIndex = mapping.second;
-        palRequest.ioFlag.reset();
-        palRequest.ioFlag.set(idx);
+          auto block = blocks.find(palRequest.blockIndex);
 
-        auto block = blocks.find(palRequest.blockIndex);
+          if (block == blocks.end()) {
+            Logger::panic("Block is not in use");
+          }
 
-        if (block == blocks.end()) {
-          Logger::panic("Block is not in use");
+          beginAt = tick;
+
+          block->second.read(palRequest.pageIndex, palRequest.ioFlag, beginAt);
+          pPAL->read(palRequest, beginAt);
+
+          finishedAt = MAX(finishedAt, beginAt);
         }
-
-        block->second.read(palRequest.pageIndex, palRequest.ioFlag, tick);
-
-        pPAL->read(palRequest, beginAt);
+        else {
+          Logger::panic("Invalid mapping table");
+        }
       }
-
-      finishedAt = MAX(finishedAt, beginAt);
     }
 
     tick = finishedAt;

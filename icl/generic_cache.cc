@@ -142,17 +142,21 @@ uint32_t GenericCache::calcSet(uint64_t lca) {
 }
 
 uint32_t GenericCache::getEmptyWay(uint32_t setIdx) {
-  uint32_t wayIdx;
+  uint32_t retIdx = 0;
+  uint64_t minInsertedAt = std::numeric_limits<uint64_t>::max();
 
-  for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
+  for (uint32_t wayIdx = 0; wayIdx < waySize; wayIdx++) {
     Line &line = ppCache[setIdx][wayIdx];
 
     if (!line.valid) {
-      break;
+      if (minInsertedAt > line.insertedAt) {
+        minInsertedAt = line.insertedAt;
+        retIdx = wayIdx;
+      }
     }
   }
 
-  return wayIdx;
+  return retIdx;
 }
 
 uint32_t GenericCache::getValidWay(uint64_t lca) {
@@ -674,19 +678,15 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         uint64_t beginAt;
         uint64_t finishedAt = tick;
 
-        // Evict current set first for performance
-        beginAt = tick;
-
-        evictVictim(maxList.at(idxToReturn).second, false, beginAt);
-
-        finishedAt = beginAt;
-
-        // Evict others
         for (uint32_t i = 0; i < mapSize; i++) {
-          if (maxList.at(i).second.size() > 0 && i != idxToReturn) {
+          if (maxList.at(i).second.size() > 0) {
             beginAt = tick;
 
             evictVictim(maxList.at(i).second, false, beginAt);
+
+            if (i == idxToReturn) {
+              finishedAt = beginAt;
+            }
           }
         }
 

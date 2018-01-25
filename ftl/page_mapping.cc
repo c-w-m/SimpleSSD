@@ -459,6 +459,8 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   DynamicBitset bit(pFTLParam->ioUnitInPage);
   std::unordered_map<uint32_t, Block>::iterator block;
   auto mappingList = table.find(req.lpn);
+  uint64_t beginAt;
+  uint64_t finishedAt = tick;
 
   if (mappingList != table.end()) {
     for (uint32_t idx = 0; idx < pFTLParam->ioUnitInPage; idx++) {
@@ -501,7 +503,9 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
       uint32_t pageIndex = block->second.getNextWritePageIndex(bit);
       auto &mapping = mappingList->second.at(idx);
 
-      block->second.write(pageIndex, lpns, bit, tick);
+      beginAt = tick;
+
+      block->second.write(pageIndex, lpns, bit, beginAt);
 
       // update mapping to table
       mapping.first = block->first;
@@ -512,10 +516,14 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
         palRequest.pageIndex = pageIndex;
         palRequest.ioFlag = bit;
 
-        pPAL->write(palRequest, tick);
+        pPAL->write(palRequest, beginAt);
       }
+
+      finishedAt = MAX(finishedAt, beginAt);
     }
   }
+
+  tick = finishedAt;
 
   // GC if needed
   if (freeBlockRatio() < conf.readFloat(FTL_GC_THRESHOLD_RATIO)) {

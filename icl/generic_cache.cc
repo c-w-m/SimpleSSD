@@ -142,17 +142,21 @@ uint32_t GenericCache::calcSet(uint64_t lca) {
 }
 
 uint32_t GenericCache::getEmptyWay(uint32_t setIdx) {
-  uint32_t wayIdx;
+  uint32_t retIdx = 0;
+  uint64_t minInsertedAt = std::numeric_limits<uint64_t>::max();
 
-  for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
+  for (uint32_t wayIdx = 0; wayIdx < waySize; wayIdx++) {
     Line &line = ppCache[setIdx][wayIdx];
 
     if (!line.valid) {
-      break;
+      if (minInsertedAt > line.insertedAt) {
+        minInsertedAt = line.insertedAt;
+        retIdx = wayIdx;
+      }
     }
   }
 
-  return wayIdx;
+  return retIdx;
 }
 
 uint32_t GenericCache::getValidWay(uint64_t lca) {
@@ -174,16 +178,14 @@ uint32_t GenericCache::getVictimWay(uint64_t lca) {
   uint32_t setIdx = calcSet(lca);
   uint32_t wayIdx;
 
-  for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
-    Line &line = ppCache[setIdx][wayIdx];
-
-    if ((line.valid && line.tag == lca) || !line.valid) {
-      break;
-    }
-  }
+  wayIdx = getValidWay(lca);
 
   if (wayIdx == waySize) {
-    wayIdx = evictFunction(setIdx);
+    wayIdx = getEmptyWay(setIdx);
+
+    if (wayIdx == waySize) {
+      wayIdx = evictFunction(setIdx);
+    }
   }
 
   return wayIdx;
@@ -278,7 +280,7 @@ uint64_t GenericCache::calculateDelay(uint64_t bytesize) {
 
 void GenericCache::evictVictim(std::vector<EvictData> &list, bool isRead,
                                uint64_t &tick) {
-  static uint64_t lat = calculateDelay(sizeof(Line) + lineSize) * waySize / 2;
+  static uint64_t lat = calculateDelay(sizeof(Line) + lineSize) * waySize;
   std::vector<FTL::Request> reqList;
 
   if (list.size() == 0) {
@@ -414,7 +416,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
   if (useReadCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    static uint64_t lat = calculateDelay(sizeof(Line) + lineSize) * waySize / 2;
+    static uint64_t lat = calculateDelay(sizeof(Line) + lineSize) * waySize;
 
     // Check prefetch
     if (useReadPrefetch) {
@@ -521,7 +523,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
   if (useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    static uint64_t lat = calculateDelay(sizeof(Line) + lineSize) * waySize / 2;
+    static uint64_t lat = calculateDelay(sizeof(Line) + lineSize) * waySize;
 
     // Check cache that we have data for corresponding LCA
     wayIdx = getValidWay(req.range.slpn);
@@ -674,19 +676,15 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         uint64_t beginAt;
         uint64_t finishedAt = tick;
 
-        // Evict current set first for performance
-        beginAt = tick;
-
-        evictVictim(maxList.at(idxToReturn).second, false, beginAt);
-
-        finishedAt = beginAt;
-
-        // Evict others
         for (uint32_t i = 0; i < mapSize; i++) {
-          if (maxList.at(i).second.size() > 0 && i != idxToReturn) {
+          if (maxList.at(i).second.size() > 0) {
             beginAt = tick;
 
             evictVictim(maxList.at(i).second, false, beginAt);
+
+            if (i == idxToReturn) {
+              finishedAt = beginAt;
+            }
           }
         }
 

@@ -51,12 +51,12 @@ class Block {
   uint32_t getValidPageCount();
   uint32_t getDirtyPageCount();
   uint32_t getNextWritePageIndex();
-  uint32_t getNextWritePageIndex(DynamicBitset &);
+  uint32_t getNextWritePageIndex(uint32_t);
   bool getPageInfo(uint32_t, std::vector<uint64_t> &, DynamicBitset &);
-  bool read(uint32_t, DynamicBitset &, uint64_t);
-  bool write(uint32_t, std::vector<uint64_t> &, DynamicBitset &, uint64_t);
+  bool read(uint32_t, uint32_t, uint64_t);
+  bool write(uint32_t, uint64_t, uint32_t, uint64_t);
   void erase();
-  void invalidate(uint32_t, DynamicBitset &);
+  void invalidate(uint32_t, uint32_t);
 };
 
 }  // namespace FTL

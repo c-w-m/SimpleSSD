@@ -109,7 +109,6 @@ void PageMapping::trim(Request &req, uint64_t &tick) {
 
 void PageMapping::format(LPNRange &range, uint64_t &tick) {
   PAL::Request req(pFTLParam->ioUnitInPage);
-  DynamicBitset bit(pFTLParam->ioUnitInPage);
   std::vector<uint32_t> list;
 
   req.ioFlag.set();
@@ -127,9 +126,7 @@ void PageMapping::format(LPNRange &range, uint64_t &tick) {
           Logger::panic("Block is not in use");
         }
 
-        bit.reset();
-        bit.set(idx);
-        block->second.invalidate(mapping.second, bit);
+        block->second.invalidate(mapping.second, idx);
 
         // Collect block indices
         list.push_back(mapping.first);
@@ -357,14 +354,14 @@ void PageMapping::doGarbageCollection(std::vector<uint32_t> &blocksToReclaim,
 
         pPAL->read(req, beginAt);
 
-        // Invalidate
-        block->second.invalidate(pageIndex, req.ioFlag);
-
         // Update mapping table
         uint32_t newBlockIdx = freeBlock->first;
 
         for (uint32_t idx = 0; idx < pFTLParam->ioUnitInPage; idx++) {
           if (bit.test(idx)) {
+            // Invalidate
+            block->second.invalidate(pageIndex, idx);
+
             auto mappingList = table.find(lpns.at(idx));
 
             if (mappingList == table.end()) {
@@ -373,20 +370,18 @@ void PageMapping::doGarbageCollection(std::vector<uint32_t> &blocksToReclaim,
 
             auto &mapping = mappingList->second.at(idx);
 
-            req.ioFlag.reset();
-            req.ioFlag.set(idx);
-
-            uint32_t newPageIdx =
-                freeBlock->second.getNextWritePageIndex(req.ioFlag);
+            uint32_t newPageIdx = freeBlock->second.getNextWritePageIndex(idx);
 
             mapping.first = newBlockIdx;
             mapping.second = newPageIdx;
 
-            freeBlock->second.write(newPageIdx, lpns, req.ioFlag, beginAt);
+            freeBlock->second.write(newPageIdx, lpns.at(idx), idx, beginAt);
 
             // Issue Write
             req.blockIndex = newBlockIdx;
             req.pageIndex = newPageIdx;
+            req.ioFlag.reset();
+            req.ioFlag.set(idx);
 
             beginAt2 = beginAt;
 
@@ -439,7 +434,7 @@ void PageMapping::readInternal(Request &req, uint64_t &tick) {
 
           beginAt = tick;
 
-          block->second.read(palRequest.pageIndex, palRequest.ioFlag, beginAt);
+          block->second.read(palRequest.pageIndex, idx, beginAt);
           pPAL->read(palRequest, beginAt);
 
           finishedAt = MAX(finishedAt, beginAt);
@@ -456,7 +451,6 @@ void PageMapping::readInternal(Request &req, uint64_t &tick) {
 
 void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   PAL::Request palRequest(req);
-  DynamicBitset bit(pFTLParam->ioUnitInPage);
   std::unordered_map<uint32_t, Block>::iterator block;
   auto mappingList = table.find(req.lpn);
   uint64_t beginAt;
@@ -472,9 +466,7 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
           block = blocks.find(mapping.first);
 
           // Invalidate current page
-          bit.reset();
-          bit.set(idx);
-          block->second.invalidate(mapping.second, bit);
+          block->second.invalidate(mapping.second, idx);
         }
       }
     }
@@ -495,7 +487,6 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
 
   // Write data to free block
   block = blocks.find(getLastFreeBlock());
-  std::vector<uint64_t> lpns(pFTLParam->ioUnitInPage, req.lpn);
 
   if (block == blocks.end()) {
     Logger::panic("No such block");
@@ -503,14 +494,12 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
 
   for (uint32_t idx = 0; idx < pFTLParam->ioUnitInPage; idx++) {
     if (req.ioFlag.test(idx)) {
-      bit.reset();
-      bit.set(idx);
-      uint32_t pageIndex = block->second.getNextWritePageIndex(bit);
+      uint32_t pageIndex = block->second.getNextWritePageIndex(idx);
       auto &mapping = mappingList->second.at(idx);
 
       beginAt = tick;
 
-      block->second.write(pageIndex, lpns, bit, beginAt);
+      block->second.write(pageIndex, req.lpn, idx, beginAt);
 
       // update mapping to table
       mapping.first = block->first;
@@ -519,7 +508,8 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
       if (sendToPAL) {
         palRequest.blockIndex = block->first;
         palRequest.pageIndex = pageIndex;
-        palRequest.ioFlag = bit;
+        palRequest.ioFlag.reset();
+        palRequest.ioFlag.set(idx);
 
         pPAL->write(palRequest, beginAt);
       }
@@ -550,7 +540,6 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
 }
 
 void PageMapping::trimInternal(Request &req, uint64_t &tick) {
-  DynamicBitset bit(pFTLParam->ioUnitInPage);
   auto mappingList = table.find(req.lpn);
 
   if (mappingList != table.end()) {
@@ -563,9 +552,7 @@ void PageMapping::trimInternal(Request &req, uint64_t &tick) {
         Logger::panic("Block is not in use");
       }
 
-      bit.reset();
-      bit.set(idx);
-      block->second.invalidate(mapping.second, bit);
+      block->second.invalidate(mapping.second, idx);
     }
 
     // Remove mapping

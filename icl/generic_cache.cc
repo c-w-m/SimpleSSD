@@ -142,7 +142,7 @@ uint32_t GenericCache::calcSet(uint64_t lca) {
 }
 
 uint32_t GenericCache::getEmptyWay(uint32_t setIdx) {
-  uint32_t retIdx = 0;
+  uint32_t retIdx = waySize;
   uint64_t minInsertedAt = std::numeric_limits<uint64_t>::max();
 
   for (uint32_t wayIdx = 0; wayIdx < waySize; wayIdx++) {
@@ -494,7 +494,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 
         list.push_back(data);
 
-        pFTL->read(reqInternal, tick);
+        pFTL->read(reqInternal, finishedAt);
       }
 
       // Flush collected lines
@@ -545,7 +545,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       tick += lat;
 
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                         "READ  | Cache hit at (%u, %u) | %" PRIu64
+                         "WRITE | Cache hit at (%u, %u) | %" PRIu64
                          " - %" PRIu64 " (%" PRIu64 ")",
                          setIdx, wayIdx, arrived, tick, tick - arrived);
 
@@ -575,7 +575,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         tick += lat;
 
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "READ  | Cache miss at (%u, %u) | %" PRIu64
+                           "WRITE | Cache miss at (%u, %u) | %" PRIu64
                            " - %" PRIu64 " (%" PRIu64 ")",
                            setIdx, wayIdx, arrived, tick, tick - arrived);
 

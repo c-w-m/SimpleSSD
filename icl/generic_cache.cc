@@ -142,7 +142,7 @@ uint32_t GenericCache::calcSet(uint64_t lca) {
 }
 
 uint32_t GenericCache::getEmptyWay(uint32_t setIdx) {
-  uint32_t retIdx = 0;
+  uint32_t retIdx = waySize;
   uint64_t minInsertedAt = std::numeric_limits<uint64_t>::max();
 
   for (uint32_t wayIdx = 0; wayIdx < waySize; wayIdx++) {

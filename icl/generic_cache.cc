@@ -494,7 +494,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 
         list.push_back(data);
 
-        pFTL->read(reqInternal, tick);
+        pFTL->read(reqInternal, finishedAt);
       }
 
       // Flush collected lines

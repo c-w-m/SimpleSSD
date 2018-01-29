@@ -35,9 +35,9 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
     : AbstractCache(c, f),
       lineCountInSuperPage(f->getInfo()->ioUnitInPage),
       superPageSize(f->getInfo()->pageSize),
-      waySize(c->iclConfig.readUint(ICL_WAY_SIZE)),
       lineSize(superPageSize / lineCountInSuperPage),
       lineCountInMaxIO(f->getInfo()->pageCountToMaxPerf * lineCountInSuperPage),
+      waySize(c->iclConfig.readUint(ICL_WAY_SIZE)),
       prefetchIOCount(c->iclConfig.readUint(ICL_PREFETCH_COUNT)),
       prefetchIORatio(c->iclConfig.readFloat(ICL_PREFETCH_RATIO)),
       useReadCaching(c->iclConfig.readBoolean(ICL_USE_READ_CACHE)),
@@ -47,7 +47,14 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
       dist(std::uniform_int_distribution<>(0, waySize - 1)) {
   uint64_t cacheSize = c->iclConfig.readUint(ICL_CACHE_SIZE);
 
-  setSize = MAX(cacheSize / lineSize / waySize, 1);
+  // Fully-associated?
+  if (waySize == 0) {
+    setSize = lineCountInMaxIO;
+    waySize = MAX(cacheSize / lineSize / setSize, 1);
+  }
+  else {
+    setSize = MAX(cacheSize / lineSize / waySize, 1);
+  }
 
   // Set size should multiples of lineCountInSuperPage
   uint32_t left = setSize % lineCountInMaxIO;

@@ -42,10 +42,10 @@ class GenericCache : public AbstractCache {
  private:
   const uint32_t lineCountInSuperPage;
   const uint32_t superPageSize;
-  const uint32_t waySize;
   const uint32_t lineSize;
   const uint32_t lineCountInMaxIO;
   uint32_t setSize;
+  uint32_t waySize;
 
   const uint32_t prefetchIOCount;
   const float prefetchIORatio;

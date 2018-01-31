@@ -423,7 +423,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
   if (useReadCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    static uint64_t lat = calculateDelay(sizeof(Line) + lineSize) * req.reqSubID;
+    uint64_t lat = calculateDelay(sizeof(Line) + lineSize) * req.reqSubID;
 
     // Check prefetch
     if (useReadPrefetch) {
@@ -530,7 +530,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
   if (useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    static uint64_t lat = calculateDelay(sizeof(Line) + lineSize) * req.reqSubID;
+    uint64_t lat = calculateDelay(sizeof(Line) + lineSize) * req.reqSubID;
 
     // Check cache that we have data for corresponding LCA
     wayIdx = getValidWay(req.range.slpn);

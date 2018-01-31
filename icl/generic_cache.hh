@@ -68,6 +68,7 @@ class GenericCache : public AbstractCache {
   // TODO: replace this with DRAM model
   Config::DRAMTiming *pTiming;
   Config::DRAMStructure *pStructure;
+  uint64_t lastDRAMAccess;
 
   std::vector<std::vector<Line>> ppCache;
 
@@ -77,7 +78,7 @@ class GenericCache : public AbstractCache {
   uint32_t getVictimWay(uint64_t);
   uint32_t getDirtyEntryCount(uint64_t, std::vector<EvictData> &);
   bool compareEvictList(std::vector<EvictData> &, std::vector<EvictData> &);
-  uint64_t calculateDelay(uint64_t);
+  uint64_t calculateDelay(uint64_t, uint64_t);
   void evictVictim(std::vector<EvictData> &, bool, uint64_t &);
   void checkPrefetch(Request &);
 

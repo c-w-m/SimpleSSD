@@ -44,7 +44,8 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f)
       useWriteCaching(c->iclConfig.readBoolean(ICL_USE_WRITE_CACHE)),
       useReadPrefetch(c->iclConfig.readBoolean(ICL_USE_READ_PREFETCH)),
       gen(rd()),
-      dist(std::uniform_int_distribution<>(0, waySize - 1)) {
+      dist(std::uniform_int_distribution<>(0, waySize - 1)),
+      lastDRAMAccess(0) {
   uint64_t cacheSize = c->iclConfig.readUint(ICL_CACHE_SIZE);
 
   // Fully-associated?
@@ -275,19 +276,29 @@ bool GenericCache::compareEvictList(std::vector<EvictData> &a,
   return ret;
 }
 
-uint64_t GenericCache::calculateDelay(uint64_t bytesize) {
+uint64_t GenericCache::calculateDelay(uint64_t bytesize, uint64_t tick) {
   uint64_t pageCount =
       (bytesize > 0) ? (bytesize - 1) / pStructure->pageSize + 1 : 0;
   uint64_t pageFetch = pTiming->tRP + pTiming->tRCD + pTiming->tCL;
   double bandwidth =
       2.0 * pStructure->busWidth * pStructure->channel / 8.0 / pTiming->tCK;
+  uint64_t latency = (uint64_t)(pageFetch + pageCount * pStructure->pageSize / bandwidth);
+  uint64_t delay = 0;
 
-  return (uint64_t)(pageFetch + pageCount * pStructure->pageSize / bandwidth);
+  if (lastDRAMAccess <= tick) {
+    lastDRAMAccess = tick + latency;
+  }
+  else {
+    delay = lastDRAMAccess - tick;
+    lastDRAMAccess += latency;
+  }
+
+  return delay + latency;
 }
 
 void GenericCache::evictVictim(std::vector<EvictData> &list, bool isRead,
                                uint64_t &tick) {
-  static uint64_t lat = calculateDelay(sizeof(Line) + lineSize) * waySize;
+  static uint64_t lat = calculateDelay(sizeof(Line) + lineSize, 0) * waySize;
   std::vector<FTL::Request> reqList;
 
   if (list.size() == 0) {
@@ -423,7 +434,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
   if (useReadCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    uint64_t lat = calculateDelay(sizeof(Line) + lineSize) * req.reqSubID;
+    uint64_t lat = calculateDelay(sizeof(Line) + lineSize, tick);
 
     // Check prefetch
     if (useReadPrefetch) {
@@ -530,7 +541,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
   if (useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    uint64_t lat = calculateDelay(sizeof(Line) + lineSize) * req.reqSubID;
+    uint64_t lat = calculateDelay(sizeof(Line) + lineSize, tick);
 
     // Check cache that we have data for corresponding LCA
     wayIdx = getValidWay(req.range.slpn);

@@ -282,7 +282,8 @@ uint64_t GenericCache::calculateDelay(uint64_t bytesize, uint64_t tick) {
   uint64_t pageFetch = pTiming->tRP + pTiming->tRCD + pTiming->tCL;
   double bandwidth =
       2.0 * pStructure->busWidth * pStructure->channel / 8.0 / pTiming->tCK;
-  uint64_t latency = (uint64_t)(pageFetch + pageCount * pStructure->pageSize / bandwidth);
+  uint64_t latency =
+      (uint64_t)(pageFetch + pageCount * pStructure->pageSize / bandwidth);
   uint64_t delay = 0;
 
   if (lastDRAMAccess <= tick) {

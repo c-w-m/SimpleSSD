@@ -286,12 +286,14 @@ uint64_t GenericCache::calculateDelay(uint64_t bytesize, uint64_t tick) {
       (uint64_t)(pageFetch + pageCount * pStructure->pageSize / bandwidth);
   uint64_t delay = 0;
 
-  if (lastDRAMAccess <= tick) {
-    lastDRAMAccess = tick + latency;
-  }
-  else {
-    delay = lastDRAMAccess - tick;
-    lastDRAMAccess += latency;
+  if (tick > 0) {
+    if (lastDRAMAccess <= tick) {
+      lastDRAMAccess = tick + latency;
+    }
+    else {
+      delay = lastDRAMAccess - tick;
+      lastDRAMAccess += latency;
+    }
   }
 
   return delay + latency;

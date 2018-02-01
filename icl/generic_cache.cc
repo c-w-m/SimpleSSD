@@ -279,8 +279,8 @@ bool GenericCache::compareEvictList(std::vector<EvictData> &a,
 uint64_t GenericCache::calculateDelay(uint64_t bytesize, uint64_t tick) {
   uint64_t pageCount =
       (bytesize > 0) ? (bytesize - 1) / pStructure->pageSize + 1 : 0;
-  uint64_t pageFetch = pTiming->tRP + pTiming->tRCD + pTiming->tCL;
-  double bandwidth =
+  static uint64_t pageFetch = pTiming->tRP + pTiming->tRCD + pTiming->tCL;
+  static double bandwidth =
       2.0 * pStructure->busWidth * pStructure->channel / 8.0 / pTiming->tCK;
   uint64_t latency =
       (uint64_t)(pageFetch + pageCount * pStructure->pageSize / bandwidth);

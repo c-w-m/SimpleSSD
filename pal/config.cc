@@ -332,6 +332,10 @@ uint32_t Config::getPageAllocationConfig() {
          ((uint32_t)PageAllocation[3] << 24);
 }
 
+Config::NANDTiming *Config::getNANDTiming() {
+  return &nandTiming;
+}
+
 }  // namespace PAL
 
 }  // namespace SimpleSSD

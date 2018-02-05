@@ -37,16 +37,13 @@ namespace PAL {
 PALOLD::PALOLD(Parameter &p, Config &c) : AbstractPAL(p, c) {
   switch (c.readInt(NAND_FLASH_TYPE)) {
     case NAND_SLC:
-      lat = new LatencySLC(c.readUint(NAND_DMA_SPEED),
-                           c.readUint(NAND_PAGE_SIZE));
+      lat = new LatencySLC(*c.getNANDTiming());
       break;
     case NAND_MLC:
-      lat = new LatencyMLC(c.readUint(NAND_DMA_SPEED),
-                           c.readUint(NAND_PAGE_SIZE));
+      lat = new LatencyMLC(*c.getNANDTiming());
       break;
     case NAND_TLC:
-      lat = new LatencyTLC(c.readUint(NAND_DMA_SPEED),
-                           c.readUint(NAND_PAGE_SIZE));
+      lat = new LatencyTLC(*c.getNANDTiming());
       break;
   }
 
@@ -57,7 +54,7 @@ PALOLD::PALOLD(Parameter &p, Config &c) : AbstractPAL(p, c) {
 PALOLD::~PALOLD() {
   delete pal;
   delete stats;
-  // delete lat;
+  delete lat;
 }
 
 void PALOLD::read(Request &req, uint64_t &tick) {

@@ -228,8 +228,7 @@ void Controller::writeRegister(uint64_t offset, uint64_t size, uint8_t *buffer,
         else if (registers.configuration & 0x00000001) {
           registers.status |= 0x00000001;
 
-          pParent->enableController(conf.readUint(NVME_QUEUE_INTERVAL),
-                                    conf.readUint(NVME_WORK_INTERVAL));
+          pParent->enableController(conf.readUint(NVME_WORK_INTERVAL));
         }
         // If EN = 0, Set CSTS.RDY = 0
         else {
@@ -1179,6 +1178,9 @@ void Controller::work(uint64_t &tick) {
   if (!(registers.status & 0x00000001)) {
     return;
   }
+
+  // Collect requests in SQs
+  collectSQueue(tick);
 
   // Check CQFIFO
   if (shutdownReserved) {

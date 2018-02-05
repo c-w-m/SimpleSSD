@@ -99,8 +99,7 @@ PAL2::PAL2(PALStatistics *statistics, SimpleSSD::PAL::Parameter *p,
         tmp = new std::map<uint64_t, uint64_t>;
         ChFreeSlots[i][185000000 / (PGDIV * SPDIV)] = tmp;
         tmp = new std::map<uint64_t, uint64_t>;
-        ChFreeSlots[i][185000000 / (PGDIV * SPDIV) +
-                       100000 / SPDIV] = tmp;
+        ChFreeSlots[i][185000000 / (PGDIV * SPDIV) + 100000 / SPDIV] = tmp;
         tmp = new std::map<uint64_t, uint64_t>;
         ChFreeSlots[i][1500000 / SPDIV] = tmp;
         break;
@@ -112,8 +111,7 @@ PAL2::PAL2(PALStatistics *statistics, SimpleSSD::PAL::Parameter *p,
         tmp = new std::map<uint64_t, uint64_t>;
         ChFreeSlots[i][185000000 / (PGDIV * SPDIV)] = tmp;
         tmp = new std::map<uint64_t, uint64_t>;
-        ChFreeSlots[i][185000000 / (PGDIV * SPDIV) +
-                       100000 / SPDIV] = tmp;
+        ChFreeSlots[i][185000000 / (PGDIV * SPDIV) + 100000 / SPDIV] = tmp;
         tmp = new std::map<uint64_t, uint64_t>;
         ChFreeSlots[i][1500000 / SPDIV] = tmp;
         break;
@@ -125,8 +123,7 @@ PAL2::PAL2(PALStatistics *statistics, SimpleSSD::PAL::Parameter *p,
         tmp = new std::map<uint64_t, uint64_t>;
         ChFreeSlots[i][185000000 / (PGDIV * SPDIV)] = tmp;
         tmp = new std::map<uint64_t, uint64_t>;
-        ChFreeSlots[i][185000000 / (PGDIV * SPDIV) +
-                       100000 / SPDIV] = tmp;
+        ChFreeSlots[i][185000000 / (PGDIV * SPDIV) + 100000 / SPDIV] = tmp;
         tmp = new std::map<uint64_t, uint64_t>;
         ChFreeSlots[i][1500000 / SPDIV] = tmp;
         break;

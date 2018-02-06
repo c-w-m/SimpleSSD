@@ -305,7 +305,6 @@ uint64_t GenericCache::calculateDelay(uint64_t lca, uint64_t bytesize,
 
 void GenericCache::evictVictim(std::vector<EvictData> &list, bool isRead,
                                uint64_t &tick) {
-  static uint64_t lat = calculateDelay(0, sizeof(Line) + lineSize, 0);
   std::vector<FTL::Request> reqList;
 
   if (list.size() == 0) {
@@ -338,8 +337,6 @@ void GenericCache::evictVictim(std::vector<EvictData> &list, bool isRead,
   if (reqList.size() == 0) {
     Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                        "----- | Cache line is clean, no need to flush");
-
-    tick += lat;
   }
   else {
     uint64_t size = reqList.size();
@@ -715,7 +712,12 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
           }
         }
 
-        tick = finishedAt;
+        if (tick < finishedAt) {
+          tick = finishedAt;
+        }
+        else {
+          tick += lat;
+        }
 
         // Update cacheline
         wayIdx = getEmptyWay(setIdx);

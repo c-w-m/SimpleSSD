@@ -305,7 +305,7 @@ uint64_t GenericCache::calculateDelay(uint64_t lca, uint64_t bytesize,
 
 void GenericCache::evictVictim(std::vector<EvictData> &list, bool isRead,
                                uint64_t &tick) {
-  static uint64_t lat = calculateDelay(0, sizeof(Line) + lineSize, 0) * waySize;
+  static uint64_t lat = calculateDelay(0, sizeof(Line) + lineSize, 0);
   std::vector<FTL::Request> reqList;
 
   if (list.size() == 0) {

@@ -520,10 +520,10 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         pFTL->read(reqInternal, finishedAt);
       }
 
-      // Flush collected lines
-      evictVictim(list, true, tick);
-
       tick = finishedAt;
+
+      // Flush collected lines
+      evictVictim(list, true, finishedAt);
     }
   }
   else {

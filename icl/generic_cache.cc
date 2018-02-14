@@ -438,9 +438,6 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
   if (useReadCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    uint64_t lat =
-        calculateDelay(req.range.slpn, sizeof(Line) + lineSize, tick);
-
     // Check prefetch
     if (useReadPrefetch) {
       checkPrefetch(req);
@@ -461,7 +458,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       ppCache[setIdx][wayIdx].lastAccessed = tick;
 
       // Add tDRAM
-      tick += lat;
+      tick += calculateDelay(req.range.slpn, sizeof(Line) + lineSize, tick);
 
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                          "READ  | Cache hit at (%u, %u) | %" PRIu64

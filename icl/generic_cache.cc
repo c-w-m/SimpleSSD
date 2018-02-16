@@ -382,17 +382,18 @@ void GenericCache::evictVictim(std::vector<EvictData> &list, bool isRead,
 
     if (isRead) {
       // On read, make this cacheline valid and clean
+      // insertedAt and lastAccessed will filled at read function
       line.valid = true;
     }
     else {
       // On write, make this cacheline empty
       line.valid = false;
+      line.insertedAt = tick;
+      line.lastAccessed = tick;
     }
 
     line.dirty = false;
     line.tag = iter.tag;
-    line.insertedAt = tick;
-    line.lastAccessed = tick;
   }
 }
 
@@ -471,9 +472,11 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
     else {
       FTL::Request reqInternal(lineCountInSuperPage, req);
       std::vector<EvictData> list;
+      std::vector<EvictData> timing;
       EvictData data;
       uint64_t beginAt;
       uint64_t finishedAt = tick;
+      uint64_t finishedAllAt = tick;
 
       if (prefetchEnabled) {
         static const uint32_t mapSize = lineCountInMaxIO / lineCountInSuperPage;
@@ -490,6 +493,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
               data.wayIdx = getVictimWay(data.tag);
 
               list.push_back(data);
+              timing.push_back(data);
             }
             else {
               reqInternal.ioFlag.set(i, false);
@@ -504,7 +508,16 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
             finishedAt = beginAt;
           }
 
+          // Update timing of lines
+          for (auto &iter : timing) {
+            ppCache[iter.setIdx][iter.wayIdx].insertedAt = beginAt;
+            ppCache[iter.setIdx][iter.wayIdx].lastAccessed = beginAt;
+          }
+
+          timing.clear();
+
           reqInternal.lpn++;
+          finishedAllAt = MAX(finishedAllAt, beginAt);
         }
       }
       else {
@@ -515,12 +528,18 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         list.push_back(data);
 
         pFTL->read(reqInternal, finishedAt);
+
+        // Update line
+        ppCache[data.setIdx][data.wayIdx].insertedAt = finishedAt;
+        ppCache[data.setIdx][data.wayIdx].lastAccessed = finishedAt;
+
+        finishedAllAt = finishedAt;
       }
 
       tick = finishedAt;
 
       // Flush collected lines
-      evictVictim(list, true, finishedAt);
+      evictVictim(list, true, finishedAllAt);
     }
   }
   else {

@@ -475,7 +475,6 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       std::vector<EvictData> timing;
       EvictData data;
       uint64_t beginAt;
-      uint64_t finishedAt = tick;
       uint64_t finishedAllAt = tick;
 
       if (prefetchEnabled) {
@@ -504,10 +503,6 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 
           pFTL->read(reqInternal, beginAt);
 
-          if (reqInternal.lpn == req.range.slpn / lineCountInSuperPage) {
-            finishedAt = beginAt;
-          }
-
           // Update timing of lines
           for (auto &iter : timing) {
             ppCache[iter.setIdx][iter.wayIdx].insertedAt = beginAt;
@@ -527,19 +522,17 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 
         list.push_back(data);
 
-        pFTL->read(reqInternal, finishedAt);
+        pFTL->read(reqInternal, finishedAllAt);
 
         // Update line
-        ppCache[data.setIdx][data.wayIdx].insertedAt = finishedAt;
-        ppCache[data.setIdx][data.wayIdx].lastAccessed = finishedAt;
-
-        finishedAllAt = finishedAt;
+        ppCache[data.setIdx][data.wayIdx].insertedAt = finishedAllAt;
+        ppCache[data.setIdx][data.wayIdx].lastAccessed = finishedAllAt;
       }
 
-      tick = finishedAt;
-
       // Flush collected lines
-      evictVictim(list, true, finishedAllAt);
+      evictVictim(list, true, tick);
+
+      tick = finishedAllAt;
     }
   }
   else {

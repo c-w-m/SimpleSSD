@@ -33,7 +33,7 @@ typedef enum {
   PCIE_NUM
 } PCIE_GEN;
 
-uint64_t calculateDelay(PCIE_GEN, uint64_t);
+uint64_t calculateDelay(PCIE_GEN, uint8_t, uint64_t);
 
 }  // namespace PCIExpress
 

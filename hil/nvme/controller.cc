@@ -25,6 +25,7 @@
 #include "log/trace.hh"
 
 #define BOOLEAN_STRING(b) ((b) ? "true" : "false")
+#define INTERVAL_MULTIPLER 10  // TODO: move this
 
 namespace SimpleSSD {
 
@@ -228,7 +229,8 @@ void Controller::writeRegister(uint64_t offset, uint64_t size, uint8_t *buffer,
         else if (registers.configuration & 0x00000001) {
           registers.status |= 0x00000001;
 
-          pParent->enableController(conf.readUint(NVME_WORK_INTERVAL));
+          pParent->enableController(conf.readUint(NVME_WORK_INTERVAL) *
+                                    INTERVAL_MULTIPLER);
         }
         // If EN = 0, Set CSTS.RDY = 0
         else {
@@ -1217,14 +1219,25 @@ void Controller::work(uint64_t &tick) {
   }
 
   // Check SQFIFO
-  while (lSQFIFO.size() > 0) {
-    SQEntryWrapper front = lSQFIFO.front();
-    CQEntryWrapper response(front);
-    lSQFIFO.pop_front();
+  static uint64_t interval = conf.readUint(NVME_WORK_INTERVAL);
+  static uint64_t nextWorkAt = tick + interval * INTERVAL_MULTIPLER;
 
-    // Process command
-    if (pSubsystem->submitCommand(front, response, tick)) {
-      submit(response);
+  while (tick < nextWorkAt) {
+    if (lSQFIFO.size() > 0) {
+      SQEntryWrapper front = lSQFIFO.front();
+      CQEntryWrapper response(front);
+      lSQFIFO.pop_front();
+
+      // Process command
+      if (pSubsystem->submitCommand(front, response, tick)) {
+        submit(response);
+      }
+
+      // Next tick
+      tick += interval;
+    }
+    else {
+      break;
     }
   }
 }

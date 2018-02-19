@@ -1220,7 +1220,7 @@ void Controller::work(uint64_t &tick) {
 
   // Check SQFIFO
   static uint64_t interval = conf.readUint(NVME_WORK_INTERVAL);
-  static uint64_t nextWorkAt = tick + interval * INTERVAL_MULTIPLER;
+  uint64_t nextWorkAt = tick + interval * INTERVAL_MULTIPLER;
 
   while (tick < nextWorkAt) {
     if (lSQFIFO.size() > 0) {

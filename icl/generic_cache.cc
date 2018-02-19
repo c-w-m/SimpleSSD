@@ -431,6 +431,7 @@ void GenericCache::checkPrefetch(Request &req) {
 // True when hit
 bool GenericCache::read(Request &req, uint64_t &tick) {
   bool ret = false;
+  uint64_t dramAt = tick;
 
   Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                      "READ  | REQ %7u-%-4u | LCA %" PRIu64 " | SIZE %" PRIu64,
@@ -480,6 +481,10 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       if (prefetchEnabled) {
         static const uint32_t mapSize = lineCountInMaxIO / lineCountInSuperPage;
 
+        dramAt = tick + calculateDelay(
+                            req.range.slpn,
+                            (sizeof(Line) + lineSize) * lineCountInMaxIO, tick);
+
         // Read one superpage except already read pages
         for (uint32_t count = 0; count < mapSize; count++) {
           reqInternal.ioFlag.set();
@@ -512,12 +517,14 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
           timing.clear();
 
           reqInternal.lpn++;
+
           finishedAllAt = MAX(finishedAllAt, beginAt);
+          finishedAllAt = MAX(finishedAllAt, dramAt);
         }
       }
       else {
-        uint64_t dramAt = tick + calculateDelay(req.range.slpn,
-                                                sizeof(Line) + lineSize, tick);
+        dramAt = tick +
+                 calculateDelay(req.range.slpn, sizeof(Line) + lineSize, tick);
 
         data.tag = req.range.slpn;
         data.setIdx = setIdx;
@@ -531,7 +538,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         ppCache[data.setIdx][data.wayIdx].insertedAt = finishedAllAt;
         ppCache[data.setIdx][data.wayIdx].lastAccessed = finishedAllAt;
 
-        finishedAllAt = MAX(dramAt, finishedAllAt);
+        finishedAllAt = MAX(finishedAllAt, dramAt);
       }
 
       // Flush collected lines
@@ -542,12 +549,12 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
   }
   else {
     FTL::Request reqInternal(lineCountInSuperPage, req);
-    uint64_t dramAt =
+    dramAt =
         tick + calculateDelay(req.range.slpn, sizeof(Line) + lineSize, tick);
 
     pFTL->read(reqInternal, tick);
 
-    tick = MAX(dramAt, tick);
+    tick = MAX(tick, dramAt);
   }
 
   return ret;

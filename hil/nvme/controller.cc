@@ -1217,7 +1217,7 @@ void Controller::work(uint64_t &tick) {
   }
 
   // Check SQFIFO
-  if (lSQFIFO.size() > 0) {
+  while (lSQFIFO.size() > 0) {
     SQEntryWrapper front = lSQFIFO.front();
     CQEntryWrapper response(front);
     lSQFIFO.pop_front();

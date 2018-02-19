@@ -516,6 +516,9 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         }
       }
       else {
+        uint64_t dramAt = tick + calculateDelay(req.range.slpn,
+                                                sizeof(Line) + lineSize, tick);
+
         data.tag = req.range.slpn;
         data.setIdx = setIdx;
         data.wayIdx = getVictimWay(data.tag);
@@ -527,6 +530,8 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         // Update line
         ppCache[data.setIdx][data.wayIdx].insertedAt = finishedAllAt;
         ppCache[data.setIdx][data.wayIdx].lastAccessed = finishedAllAt;
+
+        finishedAllAt = MAX(dramAt, finishedAllAt);
       }
 
       // Flush collected lines
@@ -537,8 +542,12 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
   }
   else {
     FTL::Request reqInternal(lineCountInSuperPage, req);
+    uint64_t dramAt =
+        tick + calculateDelay(req.range.slpn, sizeof(Line) + lineSize, tick);
 
     pFTL->read(reqInternal, tick);
+
+    tick = MAX(dramAt, tick);
   }
 
   return ret;

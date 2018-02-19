@@ -414,7 +414,7 @@ void GenericCache::checkPrefetch(Request &req) {
       accessCounter += req.length;
 
       if (hitCounter >= prefetchIOCount &&
-          (float)accessCounter / superPageSize > prefetchIORatio) {
+          (float)accessCounter / superPageSize >= prefetchIORatio) {
         prefetchEnabled = true;
       }
     }

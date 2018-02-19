@@ -476,14 +476,14 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       std::vector<EvictData> timing;
       EvictData data;
       uint64_t beginAt;
+      uint64_t finishedAt = tick;
       uint64_t finishedAllAt = tick;
 
       if (prefetchEnabled) {
         static const uint32_t mapSize = lineCountInMaxIO / lineCountInSuperPage;
 
-        dramAt = tick + calculateDelay(
-                            req.range.slpn,
-                            (sizeof(Line) + lineSize) * lineCountInMaxIO, tick);
+        dramAt = tick +
+                 calculateDelay(req.range.slpn, sizeof(Line) + lineSize, tick);
 
         // Read one superpage except already read pages
         for (uint32_t count = 0; count < mapSize; count++) {
@@ -508,6 +508,12 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 
           pFTL->read(reqInternal, beginAt);
 
+          // Do we can return at this tick?
+          if (reqInternal.lpn == req.range.slpn / lineCountInSuperPage) {
+            // Requested data read
+            finishedAt = MAX(beginAt, dramAt);
+          }
+
           // Update timing of lines
           for (auto &iter : timing) {
             ppCache[iter.setIdx][iter.wayIdx].insertedAt = beginAt;
@@ -519,8 +525,14 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
           reqInternal.lpn++;
 
           finishedAllAt = MAX(finishedAllAt, beginAt);
-          finishedAllAt = MAX(finishedAllAt, dramAt);
         }
+
+        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                           "READ  | Prefetch done | %" PRIu64 " - %" PRIu64
+                           " (%" PRIu64 ")",
+                           tick, finishedAllAt, finishedAllAt - tick);
+
+        finishedAllAt = finishedAt;
       }
       else {
         dramAt = tick +
@@ -543,6 +555,13 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
 
       // Flush collected lines
       evictVictim(list, true, tick);
+
+      Logger::debugprint(
+          Logger::LOG_ICL_GENERIC_CACHE,
+          "READ  | Cache miss and read from NAND to (%u, %u) | %" PRIu64
+          " - %" PRIu64 " (%" PRIu64 ")",
+          setIdx, getValidWay(req.range.slpn), tick, finishedAllAt,
+          finishedAllAt - tick);
 
       tick = finishedAllAt;
     }

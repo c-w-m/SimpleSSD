@@ -528,9 +528,10 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         }
 
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "READ  | Prefetch done | %" PRIu64 " - %" PRIu64
-                           " (%" PRIu64 ")",
-                           tick, finishedAllAt, finishedAllAt - tick);
+                           "READ  | Prefetch done | LCA %" PRIu64 " - %" PRIu64
+                           " | %" PRIu64 " - %" PRIu64 " (%" PRIu64 ")",
+                           list.front().tag, list.back().tag, tick,
+                           finishedAllAt, finishedAllAt - tick);
 
         finishedAllAt = finishedAt;
       }

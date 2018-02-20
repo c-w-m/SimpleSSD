@@ -591,8 +591,6 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
   if (useWriteCaching) {
     uint32_t setIdx = calcSet(req.range.slpn);
     uint32_t wayIdx;
-    uint64_t lat =
-        calculateDelay(req.range.slpn, sizeof(Line) + lineSize, tick);
 
     // Check cache that we have data for corresponding LCA
     wayIdx = getValidWay(req.range.slpn);
@@ -611,7 +609,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       ppCache[setIdx][wayIdx].dirty = true;
 
       // Add tDRAM
-      tick += lat;
+      tick += calculateDelay(req.range.slpn, sizeof(Line) + lineSize, tick);
 
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                          "WRITE | Cache hit at (%u, %u) | %" PRIu64
@@ -641,7 +639,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         ppCache[setIdx][wayIdx].lastAccessed = tick;
 
         // Add tDRAM
-        tick += lat;
+        tick += calculateDelay(req.range.slpn, sizeof(Line) + lineSize, tick);
 
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                            "WRITE | Cache miss at (%u, %u) | %" PRIu64
@@ -761,7 +759,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
           tick = finishedAt;
         }
         else {
-          tick += lat;
+          tick += calculateDelay(req.range.slpn, sizeof(Line) + lineSize, tick);
         }
 
         // Update cacheline

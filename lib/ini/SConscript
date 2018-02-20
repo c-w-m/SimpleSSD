@@ -21,3 +21,5 @@ Import('*')
 
 if env['TARGET_ISA'] == 'null':
     Return()
+
+Source('ini.c')

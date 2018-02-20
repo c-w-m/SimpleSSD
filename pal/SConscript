@@ -21,3 +21,7 @@ Import('*')
 
 if env['TARGET_ISA'] == 'null':
     Return()
+
+Source('config.cc')
+Source('pal.cc')
+Source('pal_old.cc')

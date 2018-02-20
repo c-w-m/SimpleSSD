@@ -21,3 +21,7 @@ Import('*')
 
 if env['TARGET_ISA'] == 'null':
     Return()
+
+Source('config.cc')
+Source('ftl.cc')
+Source('page_mapping.cc')

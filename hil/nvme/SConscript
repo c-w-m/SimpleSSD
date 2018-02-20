@@ -21,3 +21,11 @@ Import('*')
 
 if env['TARGET_ISA'] == 'null':
     Return()
+
+Source('config.cc')
+Source('controller.cc')
+Source('def.cc')
+Source('dma.cc')
+Source('namespace.cc')
+Source('queue.cc')
+Source('subsystem.cc')

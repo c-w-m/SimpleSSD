@@ -21,3 +21,11 @@ Import('*')
 
 if env['TARGET_ISA'] == 'null':
     Return()
+
+Source('Latency.cc')
+Source('LatencySLC.cc')
+Source('LatencyMLC.cc')
+Source('LatencyTLC.cc')
+Source('PAL2.cc')
+Source('PAL2_TimeSlot.cc')
+Source('PALStatistics.cc')

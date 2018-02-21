@@ -23,6 +23,7 @@
 #include <cinttypes>
 #include <string>
 
+#include "dram/config.hh"
 #include "ftl/config.hh"
 #include "hil/nvme/config.hh"
 #include "icl/config.hh"
@@ -40,6 +41,7 @@ class ConfigReader {
   HIL::NVMe::Config nvmeConfig;
   ICL::Config iclConfig;
   PAL::Config palConfig;
+  DRAM::Config dramConfig;
 
   bool init(std::string);
 };

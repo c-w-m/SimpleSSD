@@ -428,7 +428,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       ppCache[setIdx][wayIdx].lastAccessed = tick;
 
       // Add tDRAM
-      pDRAM->read(lineSize * (wayIdx * setSize + setIdx), lineSize, tick);
+      pDRAM->read(lineSize * (wayIdx * setSize + setIdx), req.length, tick);
 
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                          "READ  | Cache hit at (%u, %u) | %" PRIu64
@@ -546,7 +546,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
     FTL::Request reqInternal(lineCountInSuperPage, req);
 
     dramAt = tick;
-    pDRAM->read(0, lineSize, dramAt);
+    pDRAM->read(0, req.length, dramAt);
 
     pFTL->read(reqInternal, tick);
 
@@ -585,7 +585,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       ppCache[setIdx][wayIdx].dirty = true;
 
       // Add tDRAM
-      pDRAM->write(lineSize * (wayIdx * setSize + setIdx), lineSize, tick);
+      pDRAM->write(lineSize * (wayIdx * setSize + setIdx), req.length, tick);
 
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                          "WRITE | Cache hit at (%u, %u) | %" PRIu64
@@ -615,7 +615,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         ppCache[setIdx][wayIdx].lastAccessed = tick;
 
         // Add tDRAM
-        pDRAM->write(lineSize * (wayIdx * setSize + setIdx), lineSize, tick);
+        pDRAM->write(lineSize * (wayIdx * setSize + setIdx), req.length, tick);
 
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                            "WRITE | Cache miss at (%u, %u) | %" PRIu64
@@ -738,7 +738,8 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
           tick = finishedAt;
         }
         else {
-          pDRAM->write(lineSize * (wayIdx * setSize + setIdx), lineSize, tick);
+          pDRAM->write(lineSize * (wayIdx * setSize + setIdx), req.length,
+                       tick);
         }
 
         if (wayIdx != waySize) {
@@ -758,7 +759,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
     FTL::Request reqInternal(lineCountInSuperPage, req);
     uint64_t dramAt = tick;
 
-    pDRAM->write(0, lineSize, dramAt);
+    pDRAM->write(0, req.length, dramAt);
 
     pFTL->write(reqInternal, tick);
 

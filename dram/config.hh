@@ -26,6 +26,14 @@ namespace SimpleSSD {
 
 namespace DRAM {
 
+typedef enum {
+  DRAM_MODEL,
+} DRAM_CONFIG;
+
+typedef enum {
+  SIMPLE_MODEL,
+} MODEL;
+
 class Config : public BaseConfig {
  public:
   typedef struct {
@@ -81,6 +89,8 @@ class Config : public BaseConfig {
   } DRAMPower;
 
  private:
+  MODEL model;
+
   DRAMStructure dram;
   DRAMTiming dramTiming;
   DRAMPower dramPower;
@@ -89,6 +99,8 @@ class Config : public BaseConfig {
   Config();
 
   bool setConfig(const char *, const char *) override;
+
+  int64_t readInt(uint32_t) override;
 
   DRAMStructure *getDRAMStructure();
   DRAMTiming *getDRAMTiming();

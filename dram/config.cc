@@ -26,6 +26,7 @@ namespace SimpleSSD {
 
 namespace DRAM {
 
+const char NAME_DRAM_MODEL[] = "DRAMModel";
 const char NAME_DRAM_CHANNEL[] = "DRAMChannel";
 const char NAME_DRAM_BUS_WIDTH[] = "DRAMBusWidth";
 const char NAME_DRAM_PAGE_SIZE[] = "DRAMPageSize";
@@ -35,6 +36,8 @@ const char NAME_DRAM_TIMING_CL[] = "DRAMtCL";
 const char NAME_DRAM_TIMING_RP[] = "DRAMtRP";
 
 Config::Config() {
+  model = SIMPLE_MODEL;
+
   /* LPDDR3-1600 4Gbit 1x32 */
   dram.channel = 1;
   dram.rank = 1;
@@ -98,7 +101,10 @@ Config::Config() {
 bool Config::setConfig(const char *name, const char *value) {
   bool ret = true;
 
-  if (MATCH_NAME(NAME_DRAM_CHANNEL)) {
+  if (MATCH_NAME(NAME_DRAM_MODEL)) {
+    model = (MODEL)strtoul(value, nullptr, 10);
+  }
+  else if (MATCH_NAME(NAME_DRAM_CHANNEL)) {
     dram.channel = strtoul(value, nullptr, 10);
   }
   else if (MATCH_NAME(NAME_DRAM_BUS_WIDTH)) {
@@ -121,6 +127,18 @@ bool Config::setConfig(const char *name, const char *value) {
   }
   else {
     ret = false;
+  }
+
+  return ret;
+}
+
+int64_t Config::readInt(uint32_t idx) {
+  int64_t ret = 0;
+
+  switch (idx) {
+    case DRAM_MODEL:
+      ret = model;
+      break;
   }
 
   return ret;

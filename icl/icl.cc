@@ -19,6 +19,7 @@
 
 #include "icl/icl.hh"
 
+#include "dram/simple.hh"
 #include "icl/generic_cache.hh"
 #include "log/trace.hh"
 #include "util/algorithm.hh"
@@ -37,12 +38,24 @@ ICL::ICL(ConfigReader *c) : pConf(c) {
       param->totalLogicalBlocks * param->pagesInBlock * param->ioUnitInPage;
   logicalPageSize = param->pageSize / param->ioUnitInPage;
 
-  pCache = new GenericCache(pConf, pFTL);
+  switch (pConf->dramConfig.readInt(DRAM::DRAM_MODEL)) {
+    case DRAM::SIMPLE_MODEL:
+      pDRAM = new DRAM::SimpleDRAM(pConf->dramConfig);
+
+      break;
+    default:
+      Logger::panic("Undefined DRAM model");
+
+      break;
+  }
+
+  pCache = new GenericCache(pConf, pFTL, pDRAM);
 }
 
 ICL::~ICL() {
   delete pCache;
   delete pFTL;
+  delete pDRAM;
 }
 
 void ICL::read(Request &req, uint64_t &tick) {

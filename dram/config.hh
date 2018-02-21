@@ -26,69 +26,6 @@ namespace SimpleSSD {
 
 namespace DRAM {
 
-typedef enum {
-  /* Structure */
-  DRAM_CHANNEL,
-  DRAM_RANK,              //!< Ranks / Channel
-  DRAM_BANK,              //!< Banks / Rank
-  DRAM_CHIP,              //!< Chips / Rank
-  DRAM_CHIP_SIZE,         //!< Chip size in bytes
-  DRAM_CHIP_BUS_WIDTH,    //!< Bus width / Channel in bits
-  DRAM_DLL,               //!< DLL is enabled
-  DRAM_BURST_LENGTH,      //!< Burst length
-  DRAM_ACTIVATION_LIMIT,  //!< Max number of activations in window
-  DRAM_PAGE_SIZE,         //!< Page size of DRAM (Typically 4KB)
-
-  /* Timing in ps */
-  DRAM_TIMING_CK,     //!< Clock period
-  DRAM_TIMING_RCD,    //!< RAS to CAS delay
-  DRAM_TIMING_CL,     //!< CAS latency
-  DRAM_TIMING_RP,     //!< Row Precharging time
-  DRAM_TIMING_RAS,    //!< ACT to PRE delay
-  DRAM_TIMING_WR,     //!< Write recovery time
-  DRAM_TIMING_RTP,    //!< Read to precharge
-  DRAM_TIMING_BURST,  //!< Burst duration
-  DRAM_TIMING_CCD_L,  //!< Same bank group CAS to CAS delay
-  DRAM_TIMING_RFC,    //!< Refrech cycle time
-  DRAM_TIMING_REFI,   //!< Refresh command interval
-  DRAM_TIMING_WTR,    //!< Write to read, same rank switching time
-  DRAM_TIMING_RTW,    //!< Read to write, same rank switching time
-  DRAM_TIMING_CS,     //!< Rank to rank switching time
-  DRAM_TIMING_RRD,    //!< ACT to ACT delay
-  DRAM_TIMING_RRD_L,  //!< Same bank group ACT to ACT delay
-  DRAM_TIMING_XAW,    //!< X activation window
-  DRAM_TIMING_XP,     //!< Power-up delay
-  DRAM_TIMING_XPDLL,  //!< Power-up delay with locked DLL
-  DRAM_TIMING_XS,     //!< Self-refresh exit latency
-  DRAM_TIMING_XSDLL,  //!< Self-refresh exit latency with locked DLL
-
-  /* Power in mA or V */
-  DRAM_POWER_IDD0,     //!< Active precharge current
-  DRAM_POWER_IDD02,    //!< Active precharge current VDD2
-  DRAM_POWER_IDD2P0,   //!< Precharge powerdown slow
-  DRAM_POWER_IDD2P02,  //!< Precharge powerdown slow VDD2
-  DRAM_POWER_IDD2P1,   //!< Precharge powerdown fast
-  DRAM_POWER_IDD2P12,  //!< Precharge powerdown fast VDD2
-  DRAM_POWER_IDD2N,    //!< Precharge standby current
-  DRAM_POWER_IDD2N2,   //!< Precharge standby current VDD2
-  DRAM_POWER_IDD3P0,   //!< Active powerdown slow
-  DRAM_POWER_IDD3P02,  //!< Active powerdown slow VDD2
-  DRAM_POWER_IDD3P1,   //!< Active powerdown fast
-  DRAM_POWER_IDD3P12,  //!< Active powerdown fast VDD2
-  DRAM_POWER_IDD3N,    //!< Active standby current
-  DRAM_POWER_IDD3N2,   //!< Active standby current VDD2
-  DRAM_POWER_IDD4R,    //!< READ current
-  DRAM_POWER_IDD4R2,   //!< READ current VDD2
-  DRAM_POWER_IDD4W,    //!< WRITE current
-  DRAM_POWER_IDD4W2,   //!< WRITE current VDD2
-  DRAM_POWER_IDD5,     //!< Refresh current
-  DRAM_POWER_IDD52,    //!< Refresh current VDD2
-  DRAM_POWER_IDD6,     //!< Self-refresh current
-  DRAM_POWER_IDD62,    //!< Self-refresh current VDD2
-  DRAM_POWER_VDD,      //!< Main voltage
-  DRAM_POWER_VDD2      //!< Second voltage
-} ICL_CONFIG;
-
 class Config : public BaseConfig {
  public:
   typedef struct {

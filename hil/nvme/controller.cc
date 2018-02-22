@@ -435,24 +435,22 @@ void Controller::submit(CQEntryWrapper &entry) {
 }
 
 void Controller::completion(uint64_t tick) {
-  if (lCQFIFO.size() > 0) {
-    CQueue *pQueue;
+  CQueue *pQueue = nullptr;
 
-    for (auto iter = lCQFIFO.begin(); iter != lCQFIFO.end(); iter++) {
-      if (iter->submitAt <= tick) {
-        pQueue = ppCQueue[iter->cqID];
+  for (auto iter = lCQFIFO.begin(); iter != lCQFIFO.end(); iter++) {
+    if (iter->submitAt <= tick) {
+      pQueue = ppCQueue[iter->cqID];
 
-        // Write CQ
-        pQueue->setData(&iter->entry, tick);
+      // Write CQ
+      pQueue->setData(&iter->entry, tick);
 
-        // Delete entry
-        iter = lCQFIFO.erase(iter);
+      // Delete entry
+      iter = lCQFIFO.erase(iter);
 
-        // Collect interrupt vector
-        if (pQueue->interruptEnabled()) {
-          // Update interrupt
-          updateInterrupt(pQueue->getInterruptVector(), true);
-        }
+      // Collect interrupt vector
+      if (pQueue->interruptEnabled()) {
+        // Update interrupt
+        updateInterrupt(pQueue->getInterruptVector(), true);
       }
     }
   }

@@ -95,6 +95,7 @@ class Controller {
   void updateInterrupt(uint16_t, bool);
 
   void submit(CQEntryWrapper &);
+  void completion(uint64_t);
   int createCQueue(uint16_t, uint16_t, uint16_t, bool, bool, uint64_t);
   int createSQueue(uint16_t, uint16_t, uint16_t, uint8_t, bool, uint64_t);
   int deleteCQueue(uint16_t);

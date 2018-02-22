@@ -25,7 +25,6 @@
 #include "log/trace.hh"
 
 #define BOOLEAN_STRING(b) ((b) ? "true" : "false")
-#define INTERVAL_MULTIPLER 10  // TODO: move this
 
 namespace SimpleSSD {
 
@@ -229,8 +228,7 @@ void Controller::writeRegister(uint64_t offset, uint64_t size, uint8_t *buffer,
         else if (registers.configuration & 0x00000001) {
           registers.status |= 0x00000001;
 
-          pParent->enableController(conf.readUint(NVME_WORK_INTERVAL) *
-                                    INTERVAL_MULTIPLER);
+          pParent->enableController(conf.readUint(NVME_WORK_INTERVAL));
         }
         // If EN = 0, Set CSTS.RDY = 0
         else {
@@ -432,6 +430,36 @@ void Controller::submit(CQEntryWrapper &entry) {
   }
 
   lCQFIFO.insert(iter, entry);
+
+  pParent->submitCompletion(lCQFIFO.front().submitAt);
+}
+
+void Controller::completion(uint64_t tick) {
+  if (lCQFIFO.size() > 0) {
+    CQueue *pQueue;
+
+    for (auto iter = lCQFIFO.begin(); iter != lCQFIFO.end(); iter++) {
+      if (iter->submitAt <= tick) {
+        pQueue = ppCQueue[iter->cqID];
+
+        // Write CQ
+        pQueue->setData(&iter->entry, tick);
+
+        // Delete entry
+        iter = lCQFIFO.erase(iter);
+
+        // Collect interrupt vector
+        if (pQueue->interruptEnabled()) {
+          // Update interrupt
+          updateInterrupt(pQueue->getInterruptVector(), true);
+        }
+      }
+    }
+  }
+
+  if (lCQFIFO.size() > 0) {
+    pParent->submitCompletion(lCQFIFO.front().submitAt);
+  }
 }
 
 int Controller::createCQueue(uint16_t cqid, uint16_t size, uint16_t iv,
@@ -1184,7 +1212,7 @@ void Controller::work(uint64_t &tick) {
   // Collect requests in SQs
   collectSQueue(tick);
 
-  // Check CQFIFO
+  // Check NVMe shutdown
   if (shutdownReserved) {
     pParent->disableController();
 
@@ -1196,48 +1224,16 @@ void Controller::work(uint64_t &tick) {
     lCQFIFO.clear();
     lSQFIFO.clear();
   }
-  else if (lCQFIFO.size() > 0) {
-    CQueue *pQueue;
-
-    for (auto iter = lCQFIFO.begin(); iter != lCQFIFO.end(); iter++) {
-      if (iter->submitAt <= tick) {
-        pQueue = ppCQueue[iter->cqID];
-
-        // Write CQ
-        pQueue->setData(&iter->entry, tick);
-
-        // Delete entry
-        iter = lCQFIFO.erase(iter);
-
-        // Collect interrupt vector
-        if (pQueue->interruptEnabled()) {
-          // Update interrupt
-          updateInterrupt(pQueue->getInterruptVector(), true);
-        }
-      }
-    }
-  }
 
   // Check SQFIFO
-  static uint64_t interval = conf.readUint(NVME_WORK_INTERVAL);
-  uint64_t nextWorkAt = tick + interval * INTERVAL_MULTIPLER;
+  if (lSQFIFO.size() > 0) {
+    SQEntryWrapper front = lSQFIFO.front();
+    CQEntryWrapper response(front);
+    lSQFIFO.pop_front();
 
-  while (tick < nextWorkAt) {
-    if (lSQFIFO.size() > 0) {
-      SQEntryWrapper front = lSQFIFO.front();
-      CQEntryWrapper response(front);
-      lSQFIFO.pop_front();
-
-      // Process command
-      if (pSubsystem->submitCommand(front, response, tick)) {
-        submit(response);
-      }
-
-      // Next tick
-      tick += interval;
-    }
-    else {
-      break;
+    // Process command
+    if (pSubsystem->submitCommand(front, response, tick)) {
+      submit(response);
     }
   }
 }

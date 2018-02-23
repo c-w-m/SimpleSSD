@@ -45,8 +45,7 @@ class SimpleDRAM : public AbstractDRAM {
   uint64_t cacheLatency;
   std::list<std::pair<uint64_t, uint64_t>> simpleCache;
 
-  bool checkRead(uint64_t, uint64_t);
-  bool checkWrite(uint64_t, uint64_t);
+  bool checkCache(uint64_t, uint64_t);
 
  public:
   SimpleDRAM(Config &p);

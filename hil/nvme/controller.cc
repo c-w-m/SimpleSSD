@@ -1124,6 +1124,10 @@ void Controller::identify(uint8_t *data) {
 }
 
 void Controller::setCoalescingParameter(uint8_t time, uint8_t thres) {
+  debugprint(Logger::LOG_HIL_NVME,
+             "INTR    | Update coalescing parameters | TIME %u | THRES %u",
+             time, thres);
+
   aggregationTime = time * 100000000;
   aggregationThreshold = thres;
 }
@@ -1141,6 +1145,10 @@ void Controller::setCoalescing(uint16_t iv, bool enable) {
   auto iter = aggregationMap.find(iv);
 
   if (iter != aggregationMap.end()) {
+    debugprint(Logger::LOG_HIL_NVME,
+               "INTR    | %s interrupt coalescing | IV %u",
+               enable ? "Enable" : "Disable", iv);
+
     iter->second.valid = enable;
     iter->second.nextTime = 0;
     iter->second.requestCount = 0;

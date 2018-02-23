@@ -36,7 +36,7 @@ SimpleDRAM::SimpleDRAM(Config &p) : AbstractDRAM(p), lastDRAMAccess(0) {
   // configs/common/Caches.py L2 cache has 20 Cycle
   cacheSize = 16777216;  // 16MB
   cacheUsed = 0;
-  cacheLatency = 780;  // Latency / byte
+  cacheLatency = 20;  // Latency / byte
 }
 
 SimpleDRAM::~SimpleDRAM() {

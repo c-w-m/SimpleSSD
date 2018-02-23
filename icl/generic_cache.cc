@@ -30,8 +30,24 @@ namespace SimpleSSD {
 
 namespace ICL {
 
-#define MAKE_ADDR(setIdx, wayIdx, offset) \
-  ((lineSize + sizeof(Line)) * (wayIdx * setSize + setIdx) + offset)
+/**
+ * Generic Cache memory address map
+ *  M = sizeof (Line)
+ *  L = lineSize
+ *  S = setSize
+ *  W = waySize
+ *
+ * Metadata address = (wayIdx * S + setIdx) * M
+ * Data address = Data offset + (wayIdx * S + setIdx) * L
+ * Data offset = S * W * M
+ */
+
+#define MAKE_META_ADDR(setIdx, wayIdx, offset) \
+  (sizeof(Line) * (wayIdx * setSize + setIdx) + offset)
+
+#define MAKE_DATA_ADDR(setIdx, wayIdx, offset)                                 \
+  (sizeof(Line) * setSize * waySize + lineSize * (wayIdx * setSize + setIdx) + \
+   offset)
 
 EvictData::EvictData() : setIdx(0), wayIdx(0), tag(0) {}
 
@@ -112,9 +128,8 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f, DRAM::AbstractDRAM *d)
         uint64_t min = std::numeric_limits<uint64_t>::max();
 
         for (uint32_t i = 0; i < waySize; i++) {
-          pDRAM->read(
-              MAKE_ADDR(setIdx, i, lineSize + offsetof(Line, insertedAt)), 8,
-              tick);
+          pDRAM->read(MAKE_META_ADDR(setIdx, i, offsetof(Line, insertedAt)), 8,
+                      tick);
 
           if (ppCache[setIdx][i].insertedAt < min) {
             min = ppCache[setIdx][i].insertedAt;
@@ -132,9 +147,8 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f, DRAM::AbstractDRAM *d)
         uint64_t min = std::numeric_limits<uint64_t>::max();
 
         for (uint32_t i = 0; i < waySize; i++) {
-          pDRAM->read(
-              MAKE_ADDR(setIdx, i, lineSize + offsetof(Line, lastAccessed)), 8,
-              tick);
+          pDRAM->read(MAKE_META_ADDR(setIdx, i, offsetof(Line, lastAccessed)),
+                      8, tick);
 
           if (ppCache[setIdx][i].lastAccessed < min) {
             min = ppCache[setIdx][i].lastAccessed;
@@ -168,9 +182,8 @@ uint32_t GenericCache::getEmptyWay(uint32_t setIdx, uint64_t &tick) {
     Line &line = ppCache[setIdx][wayIdx];
 
     if (!line.valid) {
-      pDRAM->read(
-          MAKE_ADDR(setIdx, wayIdx, lineSize + offsetof(Line, insertedAt)), 8,
-          tick);
+      pDRAM->read(MAKE_META_ADDR(setIdx, wayIdx, offsetof(Line, insertedAt)), 8,
+                  tick);
 
       if (minInsertedAt > line.insertedAt) {
         minInsertedAt = line.insertedAt;
@@ -189,8 +202,7 @@ uint32_t GenericCache::getValidWay(uint64_t lca, uint64_t &tick) {
   for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
     Line &line = ppCache[setIdx][wayIdx];
 
-    pDRAM->read(MAKE_ADDR(setIdx, wayIdx, lineSize + offsetof(Line, tag)), 8,
-                tick);
+    pDRAM->read(MAKE_META_ADDR(setIdx, wayIdx, offsetof(Line, tag)), 8, tick);
 
     if (line.valid && line.tag == lca) {
       break;
@@ -452,7 +464,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       ppCache[setIdx][wayIdx].lastAccessed = tick;
 
       // Add tDRAM
-      pDRAM->read(MAKE_ADDR(setIdx, wayIdx, req.offset), req.length, tick);
+      pDRAM->read(MAKE_DATA_ADDR(setIdx, wayIdx, req.offset), req.length, tick);
 
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                          "READ  | Cache hit at (%u, %u) | %" PRIu64
@@ -505,7 +517,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
           // Do we can return at this tick?
           if (reqInternal.lpn == req.range.slpn / lineCountInSuperPage) {
             dramAt = tick;
-            pDRAM->read(MAKE_ADDR(setIdx, wayIdx, 0), lineSize, dramAt);
+            pDRAM->read(MAKE_DATA_ADDR(setIdx, wayIdx, 0), lineSize, dramAt);
 
             // Requested data read
             finishedAt = MAX(beginAt, dramAt);
@@ -538,7 +550,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         data.wayIdx = getVictimWay(data.tag, tick);
 
         dramAt = tick;
-        pDRAM->read(MAKE_ADDR(setIdx, wayIdx, 0), lineSize, dramAt);
+        pDRAM->read(MAKE_DATA_ADDR(setIdx, wayIdx, 0), lineSize, dramAt);
 
         list.push_back(data);
 
@@ -609,7 +621,8 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       ppCache[setIdx][wayIdx].dirty = true;
 
       // Add tDRAM
-      pDRAM->write(MAKE_ADDR(setIdx, wayIdx, req.offset), req.length, tick);
+      pDRAM->write(MAKE_DATA_ADDR(setIdx, wayIdx, req.offset), req.length,
+                   tick);
 
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                          "WRITE | Cache hit at (%u, %u) | %" PRIu64
@@ -639,7 +652,8 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         ppCache[setIdx][wayIdx].lastAccessed = tick;
 
         // Add tDRAM
-        pDRAM->write(MAKE_ADDR(setIdx, wayIdx, req.offset), req.length, tick);
+        pDRAM->write(MAKE_DATA_ADDR(setIdx, wayIdx, req.offset), req.length,
+                     tick);
 
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                            "WRITE | Cache miss at (%u, %u) | %" PRIu64
@@ -762,7 +776,8 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
           tick = finishedAt;
         }
         else {
-          pDRAM->write(MAKE_ADDR(setIdx, wayIdx, req.offset), req.length, tick);
+          pDRAM->write(MAKE_DATA_ADDR(setIdx, wayIdx, req.offset), req.length,
+                       tick);
         }
 
         if (wayIdx != waySize) {

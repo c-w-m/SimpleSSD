@@ -466,11 +466,11 @@ void Controller::completion(uint64_t tick) {
                   map->second.requestCount <= aggregationThreshold) {
                 post = false;
               }
-            }
 
-            if (post) {
-              map->second.nextTime = tick + aggregationTime;
-              map->second.requestCount = 0;
+              if (post) {
+                map->second.nextTime = tick + aggregationTime;
+                map->second.requestCount = 0;
+              }
             }
           }
         }

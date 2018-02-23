@@ -41,6 +41,8 @@ Controller::Controller(Interface *intrface, ConfigReader *c)
       adminQueueInited(false),
       interruptMask(0),
       shutdownReserved(false),
+      aggregationTime(0),
+      aggregationThreshold(0),
       conf(c->nvmeConfig) {
   // Allocate array for Command Queues
   ppCQueue = (CQueue **)calloc(conf.readUint(NVME_MAX_IO_CQUEUE) + 1,
@@ -449,8 +451,34 @@ void Controller::completion(uint64_t tick) {
 
       // Collect interrupt vector
       if (pQueue->interruptEnabled()) {
-        // Update interrupt
-        updateInterrupt(pQueue->getInterruptVector(), true);
+        uint16_t iv = pQueue->getInterruptVector();
+        bool post = true;
+
+        if (iter->cqID > 0) {
+          // Interrupt Coalescing does not applied to admin queues
+          auto map = aggregationMap.find(iv);
+
+          if (map != aggregationMap.end()) {
+            if (map->second.valid) {
+              map->second.requestCount++;
+
+              if (iter->submitAt < map->second.nextTime &&
+                  map->second.requestCount <= aggregationThreshold) {
+                post = false;
+              }
+            }
+
+            if (post) {
+              map->second.nextTime = tick + aggregationTime;
+              map->second.requestCount = 0;
+            }
+          }
+        }
+
+        if (post) {
+          // Update interrupt
+          updateInterrupt(iv, true);
+        }
       }
     }
   }
@@ -474,6 +502,21 @@ int Controller::createCQueue(uint16_t cqid, uint16_t size, uint16_t iv,
     debugprint(Logger::LOG_HIL_NVME,
                "CQ %-5d| CREATE | Entry size %d | IV %04X | IEN %s | PC %s",
                cqid, size, iv, BOOLEAN_STRING(ien), BOOLEAN_STRING(pc));
+
+    // Interrupt coalescing config
+    auto iter = aggregationMap.find(iv);
+    AggregationInfo info;
+
+    info.valid = false;
+    info.nextTime = 0;
+    info.requestCount = 0;
+
+    if (iter == aggregationMap.end()) {
+      aggregationMap.insert({iv, info});
+    }
+    else {
+      iter->second = info;
+    }
   }
 
   return ret;
@@ -505,9 +548,10 @@ int Controller::createSQueue(uint16_t sqid, uint16_t cqid, uint16_t size,
 
 int Controller::deleteCQueue(uint16_t cqid) {
   int ret = 0;  // Success
+  static uint32_t maxIOCQueue = conf.readUint(NVME_MAX_IO_CQUEUE) + 1;
 
   if (ppCQueue[cqid] != NULL && cqid > 0) {
-    for (uint16_t i = 1; i < conf.readUint(NVME_MAX_IO_CQUEUE) + 1; i++) {
+    for (uint16_t i = 1; i < maxIOCQueue; i++) {
       if (ppSQueue[i]) {
         if (ppSQueue[i]->getCQID() == cqid) {
           ret = 2;  // Invalid Queue Deletion
@@ -517,10 +561,28 @@ int Controller::deleteCQueue(uint16_t cqid) {
     }
 
     if (ret == 0) {
+      uint16_t iv = ppCQueue[cqid]->getInterruptVector();
+      bool sameIV = false;
+
       delete ppCQueue[cqid];
       ppCQueue[cqid] = NULL;
 
       debugprint(Logger::LOG_HIL_NVME, "CQ %-5d| DELETE", cqid);
+
+      // Interrupt coalescing config
+      for (uint16_t i = 1; i < maxIOCQueue; i++) {
+        if (ppCQueue[i]) {
+          if (ppCQueue[i]->getInterruptVector() == iv) {
+            sameIV = true;
+
+            break;
+          }
+        }
+      }
+
+      if (!sameIV) {
+        aggregationMap.erase(aggregationMap.find(iv));
+      }
     }
   }
   else {
@@ -1059,6 +1121,40 @@ void Controller::identify(uint8_t *data) {
 
   // Vendor specific area
   memset(data + 0x0C00, 0, 1024);
+}
+
+void Controller::setCoalescingParameter(uint8_t time, uint8_t thres) {
+  aggregationTime = time * 100000000;
+  aggregationThreshold = thres;
+}
+
+void Controller::getCoalescingParameter(uint8_t *time, uint8_t *thres) {
+  if (time) {
+    *time = aggregationTime / 100000000;
+  }
+  if (thres) {
+    *thres = aggregationThreshold;
+  }
+}
+
+void Controller::setCoalescing(uint16_t iv, bool enable) {
+  auto iter = aggregationMap.find(iv);
+
+  if (iter != aggregationMap.end()) {
+    iter->second.valid = enable;
+    iter->second.nextTime = 0;
+    iter->second.requestCount = 0;
+  }
+}
+
+bool Controller::getCoalescing(uint16_t iv) {
+  auto iter = aggregationMap.find(iv);
+
+  if (iter != aggregationMap.end()) {
+    return iter->second.valid;
+  }
+
+  return false;
 }
 
 void Controller::collectSQueue(uint64_t &tick) {

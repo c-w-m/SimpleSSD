@@ -31,10 +31,88 @@ SimpleDRAM::SimpleDRAM(Config &p) : AbstractDRAM(p), lastDRAMAccess(0) {
   pageFetchLatency = pTiming->tRP + pTiming->tRCD + pTiming->tCL;
   interfaceBandwidth =
       2.0 * pStructure->busWidth * pStructure->channel / 8.0 / pTiming->tCK;
+
+  // TODO: make configurable
+  // configs/common/Caches.py L2 cache has 20 Cycle
+  cacheSize = 16777216;  // 16MB
+  cacheUsed = 0;
+  cacheLatency = 780;  // Latency / byte
 }
 
 SimpleDRAM::~SimpleDRAM() {
   // DO NOTHING
+}
+
+bool SimpleDRAM::checkRead(uint64_t addr, uint64_t size) {
+  auto iter = simpleCache.begin();
+  bool found = false;
+
+  for (; iter != simpleCache.end(); iter++) {
+    if (iter->first == addr) {
+      found = true;
+
+      break;
+    }
+  }
+
+  if (found) {
+    if (size <= iter->second) {
+      found = true;
+    }
+    else {
+      cacheUsed -= iter->second;
+      cacheUsed += size;
+
+      iter->second = size;
+    }
+  }
+  else {
+    while (cacheUsed + size > cacheSize) {
+      cacheUsed -= simpleCache.front().second;
+      simpleCache.pop_front();
+    }
+
+    simpleCache.push_back({addr, size});
+  }
+
+  return found;
+}
+
+bool SimpleDRAM::checkWrite(uint64_t addr, uint64_t size) {
+  auto iter = simpleCache.begin();
+  bool found = false;
+
+  for (; iter != simpleCache.end(); iter++) {
+    if (iter->first == addr) {
+      found = true;
+
+      break;
+    }
+  }
+
+  if (found) {
+    if (size <= iter->second) {
+      found = true;
+    }
+    else {
+      cacheUsed -= iter->second;
+      cacheUsed += size;
+
+      iter->second = size;
+    }
+  }
+  else {
+    while (cacheUsed + size > cacheSize) {
+      cacheUsed -= simpleCache.front().second;
+      simpleCache.pop_front();
+    }
+
+    simpleCache.push_back({addr, size});
+
+    found = true;
+  }
+
+  return found;
 }
 
 void SimpleDRAM::updateDelay(uint64_t latency, uint64_t &tick) {
@@ -52,16 +130,30 @@ void SimpleDRAM::updateDelay(uint64_t latency, uint64_t &tick) {
 
 void SimpleDRAM::read(uint64_t addr, uint64_t size, uint64_t &tick) {
   uint64_t pageCount = (size > 0) ? (size - 1) / pStructure->pageSize + 1 : 0;
-  uint64_t latency = (uint64_t)(
-      pageFetchLatency + pageCount * pStructure->pageSize / interfaceBandwidth);
+  uint64_t latency;
+
+  if (checkRead(addr, size)) {
+    latency = cacheLatency * size;
+  }
+  else {
+    latency = (uint64_t)(pageFetchLatency +
+                         pageCount * pStructure->pageSize / interfaceBandwidth);
+  }
 
   updateDelay(latency, tick);
 }
 
 void SimpleDRAM::write(uint64_t addr, uint64_t size, uint64_t &tick) {
   uint64_t pageCount = (size > 0) ? (size - 1) / pStructure->pageSize + 1 : 0;
-  uint64_t latency = (uint64_t)(
-      pageFetchLatency + pageCount * pStructure->pageSize / interfaceBandwidth);
+  uint64_t latency;
+
+  if (checkWrite(addr, size)) {
+    latency = cacheLatency * size;
+  }
+  else {
+    latency = (uint64_t)(pageFetchLatency +
+                         pageCount * pStructure->pageSize / interfaceBandwidth);
+  }
 
   updateDelay(latency, tick);
 }

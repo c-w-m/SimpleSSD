@@ -20,6 +20,8 @@
 #ifndef __DRAM_SIMPLE__
 #define __DRAM_SIMPLE__
 
+#include <list>
+
 #include "dram/abstract_dram.hh"
 
 namespace SimpleSSD {
@@ -36,6 +38,15 @@ class SimpleDRAM : public AbstractDRAM {
   double interfaceBandwidth;
 
   uint64_t lastDRAMAccess;
+
+  // Simple fully-associated FIFO cache
+  uint64_t cacheSize;
+  uint64_t cacheUsed;
+  uint64_t cacheLatency;
+  std::list<std::pair<uint64_t, uint64_t>> simpleCache;
+
+  bool checkRead(uint64_t, uint64_t);
+  bool checkWrite(uint64_t, uint64_t);
 
  public:
   SimpleDRAM(Config &p);

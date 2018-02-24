@@ -32,9 +32,8 @@ SimpleDRAM::SimpleDRAM(Config &p) : AbstractDRAM(p), lastDRAMAccess(0) {
   interfaceBandwidth =
       2.0 * pStructure->busWidth * pStructure->channel / 8.0 / pTiming->tCK;
 
-  // TODO: make configurable
   // configs/common/Caches.py L2 cache has 20 Cycle
-  cacheSize = 16777216;  // 16MB
+  cacheSize = conf.readUint(SIMPLE_DRAM_SIZE);
   cacheUsed = 0;
   cacheLatency = 20;  // Latency / byte
 }

@@ -67,12 +67,14 @@ bool SimpleDRAM::checkCache(uint64_t addr, uint64_t size) {
     }
   }
   else {
-    while (cacheUsed + size > cacheSize) {
+    while (cacheUsed + size > cacheSize && simpleCache.size() > 0) {
       cacheUsed -= simpleCache.front().second;
       simpleCache.pop_front();
     }
 
-    simpleCache.push_back({addr, size});
+    if (cacheUsed + size <= cacheSize) {
+      simpleCache.push_back({addr, size});
+    }
   }
 
   return found;

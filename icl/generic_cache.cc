@@ -161,9 +161,8 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f, DRAM::AbstractDRAM *d)
 
       break;
     default:
-      evictFunction = [](uint32_t setIdx, uint64_t &tick) -> uint32_t {
-        return 0;
-      };
+      Logger::panic("Undefined cache evict policy");
+
       break;
   }
 }

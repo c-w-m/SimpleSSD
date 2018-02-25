@@ -1328,9 +1328,10 @@ void Controller::work(uint64_t &tick) {
   }
 
   // Check SQFIFO
-  uint64_t count = conf.readUint(NVME_MAX_REQUEST_COUNT);
+  static uint64_t maxRequest = conf.readUint(NVME_MAX_REQUEST_COUNT);
+  uint64_t count = 0;
 
-  while (lSQFIFO.size() > 0 && count > 0) {
+  while (lSQFIFO.size() > 0 && count < maxRequest) {
     SQEntryWrapper front = lSQFIFO.front();
     CQEntryWrapper response(front);
     lSQFIFO.pop_front();
@@ -1340,7 +1341,7 @@ void Controller::work(uint64_t &tick) {
       submit(response);
     }
 
-    count--;
+    count++;
   }
 }
 

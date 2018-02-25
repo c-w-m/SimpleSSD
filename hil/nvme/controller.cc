@@ -1328,7 +1328,9 @@ void Controller::work(uint64_t &tick) {
   }
 
   // Check SQFIFO
-  if (lSQFIFO.size() > 0) {
+  uint64_t count = conf.readUint(NVME_MAX_REQUEST_COUNT);
+
+  while (lSQFIFO.size() > 0 && count > 0) {
     SQEntryWrapper front = lSQFIFO.front();
     CQEntryWrapper response(front);
     lSQFIFO.pop_front();
@@ -1337,6 +1339,8 @@ void Controller::work(uint64_t &tick) {
     if (pSubsystem->submitCommand(front, response, tick)) {
       submit(response);
     }
+
+    count--;
   }
 }
 

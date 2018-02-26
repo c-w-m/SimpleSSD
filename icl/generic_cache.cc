@@ -20,6 +20,7 @@
 #include "icl/generic_cache.hh"
 
 #include <algorithm>
+#include <cstddef>
 #include <limits>
 
 #include "log/trace.hh"
@@ -28,6 +29,25 @@
 namespace SimpleSSD {
 
 namespace ICL {
+
+/**
+ * Generic Cache memory address map
+ *  M = sizeof (Line)
+ *  L = lineSize
+ *  S = setSize
+ *  W = waySize
+ *
+ * Metadata address = (wayIdx * S + setIdx) * M
+ * Data address = Data offset + (wayIdx * S + setIdx) * L
+ * Data offset = S * W * M
+ */
+
+#define MAKE_META_ADDR(setIdx, wayIdx, offset) \
+  (sizeof(Line) * (wayIdx * setSize + setIdx) + offset)
+
+#define MAKE_DATA_ADDR(setIdx, wayIdx, offset)                                 \
+  (sizeof(Line) * setSize * waySize + lineSize * (wayIdx * setSize + setIdx) + \
+   offset)
 
 EvictData::EvictData() : setIdx(0), wayIdx(0), tag(0) {}
 
@@ -97,15 +117,20 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f, DRAM::AbstractDRAM *d)
 
   switch (policy) {
     case POLICY_RANDOM:
-      evictFunction = [this](uint32_t setIdx) -> uint32_t { return dist(gen); };
+      evictFunction = [this](uint32_t setIdx, uint64_t &tick) -> uint32_t {
+        return dist(gen);
+      };
 
       break;
     case POLICY_FIFO:
-      evictFunction = [this](uint32_t setIdx) -> uint32_t {
+      evictFunction = [this](uint32_t setIdx, uint64_t &tick) -> uint32_t {
         uint32_t wayIdx = 0;
         uint64_t min = std::numeric_limits<uint64_t>::max();
 
         for (uint32_t i = 0; i < waySize; i++) {
+          pDRAM->read(MAKE_META_ADDR(setIdx, i, offsetof(Line, insertedAt)), 8,
+                      tick);
+
           if (ppCache[setIdx][i].insertedAt < min) {
             min = ppCache[setIdx][i].insertedAt;
             wayIdx = i;
@@ -117,11 +142,14 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f, DRAM::AbstractDRAM *d)
 
       break;
     case POLICY_LEAST_RECENTLY_USED:
-      evictFunction = [this](uint32_t setIdx) -> uint32_t {
+      evictFunction = [this](uint32_t setIdx, uint64_t &tick) -> uint32_t {
         uint32_t wayIdx = 0;
         uint64_t min = std::numeric_limits<uint64_t>::max();
 
         for (uint32_t i = 0; i < waySize; i++) {
+          pDRAM->read(MAKE_META_ADDR(setIdx, i, offsetof(Line, lastAccessed)),
+                      8, tick);
+
           if (ppCache[setIdx][i].lastAccessed < min) {
             min = ppCache[setIdx][i].lastAccessed;
             wayIdx = i;
@@ -133,7 +161,8 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f, DRAM::AbstractDRAM *d)
 
       break;
     default:
-      evictFunction = [](uint32_t setIdx) -> uint32_t { return 0; };
+      Logger::panic("Undefined cache evict policy");
+
       break;
   }
 }
@@ -144,7 +173,7 @@ uint32_t GenericCache::calcSet(uint64_t lca) {
   return lca % setSize;
 }
 
-uint32_t GenericCache::getEmptyWay(uint32_t setIdx) {
+uint32_t GenericCache::getEmptyWay(uint32_t setIdx, uint64_t &tick) {
   uint32_t retIdx = waySize;
   uint64_t minInsertedAt = std::numeric_limits<uint64_t>::max();
 
@@ -152,6 +181,9 @@ uint32_t GenericCache::getEmptyWay(uint32_t setIdx) {
     Line &line = ppCache[setIdx][wayIdx];
 
     if (!line.valid) {
+      pDRAM->read(MAKE_META_ADDR(setIdx, wayIdx, offsetof(Line, insertedAt)), 8,
+                  tick);
+
       if (minInsertedAt > line.insertedAt) {
         minInsertedAt = line.insertedAt;
         retIdx = wayIdx;
@@ -162,12 +194,14 @@ uint32_t GenericCache::getEmptyWay(uint32_t setIdx) {
   return retIdx;
 }
 
-uint32_t GenericCache::getValidWay(uint64_t lca) {
+uint32_t GenericCache::getValidWay(uint64_t lca, uint64_t &tick) {
   uint32_t setIdx = calcSet(lca);
   uint32_t wayIdx;
 
   for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
     Line &line = ppCache[setIdx][wayIdx];
+
+    pDRAM->read(MAKE_META_ADDR(setIdx, wayIdx, offsetof(Line, tag)), 8, tick);
 
     if (line.valid && line.tag == lca) {
       break;
@@ -177,17 +211,17 @@ uint32_t GenericCache::getValidWay(uint64_t lca) {
   return wayIdx;
 }
 
-uint32_t GenericCache::getVictimWay(uint64_t lca) {
+uint32_t GenericCache::getVictimWay(uint64_t lca, uint64_t &tick) {
   uint32_t setIdx = calcSet(lca);
   uint32_t wayIdx;
 
-  wayIdx = getValidWay(lca);
+  wayIdx = getValidWay(lca, tick);
 
   if (wayIdx == waySize) {
-    wayIdx = getEmptyWay(setIdx);
+    wayIdx = getEmptyWay(setIdx, tick);
 
     if (wayIdx == waySize) {
-      wayIdx = evictFunction(setIdx);
+      wayIdx = evictFunction(setIdx, tick);
     }
   }
 
@@ -195,7 +229,8 @@ uint32_t GenericCache::getVictimWay(uint64_t lca) {
 }
 
 uint32_t GenericCache::getDirtyEntryCount(uint64_t lpn,
-                                          std::vector<EvictData> &list) {
+                                          std::vector<EvictData> &list,
+                                          uint64_t &tick) {
   uint64_t lca = lpn * lineCountInSuperPage;
   uint32_t counter = 0;
   EvictData data;
@@ -204,7 +239,7 @@ uint32_t GenericCache::getDirtyEntryCount(uint64_t lpn,
 
   for (uint32_t i = 0; i < lineCountInSuperPage; i++) {
     uint32_t setIdx = calcSet(lca + i);
-    uint32_t wayIdx = getValidWay(lca + i);
+    uint32_t wayIdx = getValidWay(lca + i, tick);
 
     if (wayIdx != waySize) {
       if (ppCache[setIdx][wayIdx].dirty) {
@@ -414,7 +449,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
     }
 
     // Check cache that we have data for corresponding LCA
-    wayIdx = getValidWay(req.range.slpn);
+    wayIdx = getValidWay(req.range.slpn, tick);
 
     if (wayIdx != waySize) {
       uint64_t arrived = tick;
@@ -428,7 +463,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       ppCache[setIdx][wayIdx].lastAccessed = tick;
 
       // Add tDRAM
-      pDRAM->read(lineSize * (wayIdx * setSize + setIdx), req.length, tick);
+      pDRAM->read(MAKE_DATA_ADDR(setIdx, wayIdx, req.offset), req.length, tick);
 
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                          "READ  | Cache hit at (%u, %u) | %" PRIu64
@@ -454,12 +489,14 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         for (uint32_t count = 0; count < mapSize; count++) {
           reqInternal.ioFlag.set();
 
+          beginAt = tick;
+
           for (uint32_t i = 0; i < lineCountInSuperPage; i++) {
             data.tag = reqInternal.lpn * lineCountInSuperPage + i;
 
-            if (getValidWay(data.tag) == waySize) {
+            if (getValidWay(data.tag, beginAt) == waySize) {
               data.setIdx = calcSet(data.tag);
-              data.wayIdx = getVictimWay(data.tag);
+              data.wayIdx = getVictimWay(data.tag, beginAt);
 
               list.push_back(data);
               timing.push_back(data);
@@ -474,15 +511,12 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
             }
           }
 
-          beginAt = tick;
-
           pFTL->read(reqInternal, beginAt);
 
           // Do we can return at this tick?
           if (reqInternal.lpn == req.range.slpn / lineCountInSuperPage) {
             dramAt = tick;
-            pDRAM->read(lineSize * (wayIdx * setSize + setIdx), lineSize,
-                        dramAt);
+            pDRAM->read(MAKE_DATA_ADDR(setIdx, wayIdx, 0), lineSize, dramAt);
 
             // Requested data read
             finishedAt = MAX(beginAt, dramAt);
@@ -512,11 +546,10 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       else {
         data.tag = req.range.slpn;
         data.setIdx = setIdx;
-        data.wayIdx = getVictimWay(data.tag);
+        data.wayIdx = getVictimWay(data.tag, tick);
 
         dramAt = tick;
-        pDRAM->read(lineSize * (data.wayIdx * setSize + data.setIdx), lineSize,
-                    dramAt);
+        pDRAM->read(MAKE_DATA_ADDR(setIdx, wayIdx, 0), lineSize, dramAt);
 
         list.push_back(data);
 
@@ -530,13 +563,15 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       }
 
       // Flush collected lines
+      beginAt = 0;
+
       evictVictim(list, true, tick);
 
       Logger::debugprint(
           Logger::LOG_ICL_GENERIC_CACHE,
           "READ  | Cache miss and read from NAND to (%u, %u) | %" PRIu64
           " - %" PRIu64 " (%" PRIu64 ")",
-          setIdx, getValidWay(req.range.slpn), tick, finishedAllAt,
+          setIdx, getValidWay(req.range.slpn, beginAt), tick, finishedAllAt,
           finishedAllAt - tick);
 
       tick = finishedAllAt;
@@ -569,7 +604,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
     uint32_t wayIdx;
 
     // Check cache that we have data for corresponding LCA
-    wayIdx = getValidWay(req.range.slpn);
+    wayIdx = getValidWay(req.range.slpn, tick);
 
     if (wayIdx != waySize) {
       uint64_t arrived = tick;
@@ -585,7 +620,8 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       ppCache[setIdx][wayIdx].dirty = true;
 
       // Add tDRAM
-      pDRAM->write(lineSize * (wayIdx * setSize + setIdx), req.length, tick);
+      pDRAM->write(MAKE_DATA_ADDR(setIdx, wayIdx, req.offset), req.length,
+                   tick);
 
       Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                          "WRITE | Cache hit at (%u, %u) | %" PRIu64
@@ -597,7 +633,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
     }
     else {
       // Check cache that we have empty slot
-      wayIdx = getEmptyWay(setIdx);
+      wayIdx = getEmptyWay(setIdx, tick);
 
       if (wayIdx != waySize) {
         uint64_t arrived = tick;
@@ -615,7 +651,8 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         ppCache[setIdx][wayIdx].lastAccessed = tick;
 
         // Add tDRAM
-        pDRAM->write(lineSize * (wayIdx * setSize + setIdx), req.length, tick);
+        pDRAM->write(MAKE_DATA_ADDR(setIdx, wayIdx, req.offset), req.length,
+                     tick);
 
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                            "WRITE | Cache miss at (%u, %u) | %" PRIu64
@@ -668,7 +705,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
           }
 
           for (auto iter = lpns.begin(); iter != last; iter++) {
-            count = getDirtyEntryCount(*iter, tempList);
+            count = getDirtyEntryCount(*iter, tempList, tick);
 
             // tempList should contain current setIdx
             if (force) {
@@ -706,7 +743,7 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
 
               data.tag = req.range.slpn;
               data.setIdx = setIdx;
-              data.wayIdx = getVictimWay(data.tag);
+              data.wayIdx = getVictimWay(data.tag, tick);
 
               maxList.at(mapOffset).second.push_back(data);
             }
@@ -732,13 +769,13 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         }
 
         // Update cacheline
-        wayIdx = getEmptyWay(setIdx);
+        wayIdx = getEmptyWay(setIdx, tick);
 
         if (tick < finishedAt) {
           tick = finishedAt;
         }
         else {
-          pDRAM->write(lineSize * (wayIdx * setSize + setIdx), req.length,
+          pDRAM->write(MAKE_DATA_ADDR(setIdx, wayIdx, req.offset), req.length,
                        tick);
         }
 
@@ -778,7 +815,7 @@ bool GenericCache::flush(Request &req, uint64_t &tick) {
     uint32_t wayIdx;
 
     // Check cache that we have data for corresponding LBA
-    wayIdx = getValidWay(req.range.slpn);
+    wayIdx = getValidWay(req.range.slpn, tick);
 
     // We have data to flush
     if (wayIdx != waySize) {
@@ -817,7 +854,7 @@ bool GenericCache::trim(Request &req, uint64_t &tick) {
     uint32_t wayIdx;
 
     // Check cache that we have data for corresponding LBA
-    wayIdx = getValidWay(req.range.slpn);
+    wayIdx = getValidWay(req.range.slpn, tick);
 
     if (wayIdx != waySize) {
       // invalidate
@@ -845,7 +882,7 @@ void GenericCache::format(LPNRange &range, uint64_t &tick) {
     for (uint64_t i = 0; i < range.nlp; i++) {
       lpn = range.slpn + i;
       setIdx = calcSet(lpn);
-      wayIdx = getValidWay(lpn);
+      wayIdx = getValidWay(lpn, tick);
 
       if (wayIdx != waySize) {
         // invalidate

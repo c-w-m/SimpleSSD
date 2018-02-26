@@ -28,6 +28,7 @@ namespace DRAM {
 
 typedef enum {
   DRAM_MODEL,
+  SIMPLE_DRAM_SIZE,
 } DRAM_CONFIG;
 
 typedef enum {
@@ -95,12 +96,16 @@ class Config : public BaseConfig {
   DRAMTiming dramTiming;
   DRAMPower dramPower;
 
+  // Configs for Simple DRAM
+  uint64_t simpleCacheSize;
+
  public:
   Config();
 
   bool setConfig(const char *, const char *) override;
 
   int64_t readInt(uint32_t) override;
+  uint64_t readUint(uint32_t) override;
 
   DRAMStructure *getDRAMStructure();
   DRAMTiming *getDRAMTiming();

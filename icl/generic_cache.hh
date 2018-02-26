@@ -60,7 +60,7 @@ class GenericCache : public AbstractCache {
   uint32_t accessCounter;
 
   EVICT_POLICY policy;
-  std::function<uint32_t(uint32_t)> evictFunction;
+  std::function<uint32_t(uint32_t, uint64_t &)> evictFunction;
   std::random_device rd;
   std::mt19937 gen;
   std::uniform_int_distribution<> dist;
@@ -68,10 +68,10 @@ class GenericCache : public AbstractCache {
   std::vector<std::vector<Line>> ppCache;
 
   uint32_t calcSet(uint64_t);
-  uint32_t getEmptyWay(uint32_t);
-  uint32_t getValidWay(uint64_t);
-  uint32_t getVictimWay(uint64_t);
-  uint32_t getDirtyEntryCount(uint64_t, std::vector<EvictData> &);
+  uint32_t getEmptyWay(uint32_t, uint64_t &);
+  uint32_t getValidWay(uint64_t, uint64_t &);
+  uint32_t getVictimWay(uint64_t, uint64_t &);
+  uint32_t getDirtyEntryCount(uint64_t, std::vector<EvictData> &, uint64_t &);
   bool compareEvictList(std::vector<EvictData> &, std::vector<EvictData> &);
   void evictVictim(std::vector<EvictData> &, bool, uint64_t &);
   void checkPrefetch(Request &);

@@ -59,6 +59,7 @@ ICL::~ICL() {
 }
 
 void ICL::read(Request &req, uint64_t &tick) {
+  uint64_t beginAt;
   uint64_t finishedAt = tick;
   uint64_t reqRemain = req.length;
   Request reqInternal;
@@ -67,12 +68,16 @@ void ICL::read(Request &req, uint64_t &tick) {
   reqInternal.offset = req.offset;
 
   for (uint64_t i = 0; i < req.range.nlp; i++) {
+    beginAt =  tick;
+
     reqInternal.reqSubID = i + 1;
     reqInternal.range.slpn = req.range.slpn + i;
     reqInternal.length = MIN(reqRemain, logicalPageSize - reqInternal.offset);
-    pCache->read(reqInternal, finishedAt);
+    pCache->read(reqInternal, beginAt);
     reqRemain -= reqInternal.length;
     reqInternal.offset = 0;
+
+    finishedAt = MAX(finishedAt, beginAt);
   }
 
   Logger::debugprint(Logger::LOG_ICL,
@@ -85,6 +90,7 @@ void ICL::read(Request &req, uint64_t &tick) {
 }
 
 void ICL::write(Request &req, uint64_t &tick) {
+  uint64_t beginAt;
   uint64_t finishedAt = tick;
   uint64_t reqRemain = req.length;
   Request reqInternal;
@@ -93,12 +99,16 @@ void ICL::write(Request &req, uint64_t &tick) {
   reqInternal.offset = req.offset;
 
   for (uint64_t i = 0; i < req.range.nlp; i++) {
+    beginAt =  tick;
+
     reqInternal.reqSubID = i + 1;
     reqInternal.range.slpn = req.range.slpn + i;
     reqInternal.length = MIN(reqRemain, logicalPageSize - reqInternal.offset);
-    pCache->write(reqInternal, finishedAt);
+    pCache->write(reqInternal, beginAt);
     reqRemain -= reqInternal.length;
     reqInternal.offset = 0;
+
+    finishedAt = MAX(finishedAt, beginAt);
   }
 
   Logger::debugprint(Logger::LOG_ICL,
@@ -111,6 +121,7 @@ void ICL::write(Request &req, uint64_t &tick) {
 }
 
 void ICL::flush(Request &req, uint64_t &tick) {
+  uint64_t beginAt;
   uint64_t finishedAt = tick;
   uint64_t reqRemain = req.length;
   Request reqInternal;
@@ -119,12 +130,16 @@ void ICL::flush(Request &req, uint64_t &tick) {
   reqInternal.offset = req.offset;
 
   for (uint64_t i = 0; i < req.range.nlp; i++) {
+    beginAt =  tick;
+
     reqInternal.reqSubID = i + 1;
     reqInternal.range.slpn = req.range.slpn + i;
     reqInternal.length = MIN(reqRemain, logicalPageSize - reqInternal.offset);
-    pCache->flush(reqInternal, finishedAt);
+    pCache->flush(reqInternal, beginAt);
     reqRemain -= reqInternal.length;
     reqInternal.offset = 0;
+
+    finishedAt = MAX(finishedAt, beginAt);
   }
 
   Logger::debugprint(Logger::LOG_ICL,
@@ -137,6 +152,7 @@ void ICL::flush(Request &req, uint64_t &tick) {
 }
 
 void ICL::trim(Request &req, uint64_t &tick) {
+  uint64_t beginAt;
   uint64_t finishedAt = tick;
   uint64_t reqRemain = req.length;
   Request reqInternal;
@@ -145,12 +161,16 @@ void ICL::trim(Request &req, uint64_t &tick) {
   reqInternal.offset = req.offset;
 
   for (uint64_t i = 0; i < req.range.nlp; i++) {
+    beginAt =  tick;
+
     reqInternal.reqSubID = i + 1;
     reqInternal.range.slpn = req.range.slpn + i;
     reqInternal.length = MIN(reqRemain, logicalPageSize - reqInternal.offset);
-    pCache->trim(reqInternal, finishedAt);
+    pCache->trim(reqInternal, beginAt);
     reqRemain -= reqInternal.length;
     reqInternal.offset = 0;
+
+    finishedAt = MAX(finishedAt, beginAt);
   }
 
   Logger::debugprint(Logger::LOG_ICL,

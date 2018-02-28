@@ -19,6 +19,7 @@
 
 #include "hil/nvme/controller.hh"
 
+#include <algorithm>
 #include <cmath>
 
 #include "hil/nvme/subsystem.hh"
@@ -438,6 +439,7 @@ void Controller::submit(CQEntryWrapper &entry) {
 
 void Controller::completion(uint64_t tick) {
   CQueue *pQueue = nullptr;
+  std::vector<uint16_t> ivToPost;
 
   for (auto iter = lCQFIFO.begin(); iter != lCQFIFO.end(); iter++) {
     if (iter->submitAt <= tick) {
@@ -476,10 +478,20 @@ void Controller::completion(uint64_t tick) {
         }
 
         if (post) {
-          // Update interrupt
-          updateInterrupt(iv, true);
+          // Prepare for merge
+          ivToPost.push_back(iv);
         }
       }
+    }
+  }
+
+  if (ivToPost.size() > 0) {
+    std::sort(ivToPost.begin(), ivToPost.end());
+    auto end = std::unique(ivToPost.begin(), ivToPost.end());
+
+    for (auto iter = ivToPost.begin(); iter != end; iter++) {
+      // Update interrupt
+      updateInterrupt(*iter, true);
     }
   }
 

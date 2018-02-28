@@ -312,7 +312,9 @@ bool Subsystem::submitCommand(SQEntryWrapper &req, CQEntryWrapper &resp,
   // NVM commands or Namespace specific Admin commands
   if (!processed) {
     for (auto &iter : lNamespaces) {
-      return iter->submitCommand(req, resp, beginAt);
+      if (iter->getNSID() == req.entry.namespaceID) {
+        return iter->submitCommand(req, resp, beginAt);
+      }
     }
   }
 

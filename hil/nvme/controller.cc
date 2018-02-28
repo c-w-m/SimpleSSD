@@ -1341,7 +1341,9 @@ void Controller::work(uint64_t &tick) {
 
   // Check SQFIFO
   static uint64_t maxRequest = conf.readUint(NVME_MAX_REQUEST_COUNT);
+  static uint64_t workInterval = conf.readUint(NVME_WORK_INTERVAL) / maxRequest;
   uint64_t count = 0;
+  uint64_t beginAt;
 
   while (lSQFIFO.size() > 0 && count < maxRequest) {
     SQEntryWrapper front = lSQFIFO.front();
@@ -1349,7 +1351,9 @@ void Controller::work(uint64_t &tick) {
     lSQFIFO.pop_front();
 
     // Process command
-    if (pSubsystem->submitCommand(front, response, tick)) {
+    beginAt = tick + workInterval * count;
+
+    if (pSubsystem->submitCommand(front, response, beginAt)) {
       submit(response);
     }
 

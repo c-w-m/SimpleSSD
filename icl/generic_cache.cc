@@ -42,6 +42,8 @@ namespace ICL {
  * Data offset = S * W * M
  */
 
+#define CACHE_DELAY 20
+
 #define MAKE_META_ADDR(setIdx, wayIdx, offset) \
   (sizeof(Line) * (wayIdx * setSize + setIdx) + offset)
 
@@ -181,8 +183,10 @@ uint32_t GenericCache::getEmptyWay(uint32_t setIdx, uint64_t &tick) {
     Line &line = ppCache[setIdx][wayIdx];
 
     if (!line.valid) {
-      pDRAM->read(MAKE_META_ADDR(setIdx, wayIdx, offsetof(Line, insertedAt)), 8,
-                  tick);
+      tick += CACHE_DELAY * 8;
+      // pDRAM->read(MAKE_META_ADDR(setIdx, wayIdx, offsetof(Line, insertedAt)),
+      // 8,
+      //             tick);
 
       if (minInsertedAt > line.insertedAt) {
         minInsertedAt = line.insertedAt;
@@ -201,7 +205,9 @@ uint32_t GenericCache::getValidWay(uint64_t lca, uint64_t &tick) {
   for (wayIdx = 0; wayIdx < waySize; wayIdx++) {
     Line &line = ppCache[setIdx][wayIdx];
 
-    pDRAM->read(MAKE_META_ADDR(setIdx, wayIdx, offsetof(Line, tag)), 8, tick);
+    tick += CACHE_DELAY * 8;
+    // pDRAM->read(MAKE_META_ADDR(setIdx, wayIdx, offsetof(Line, tag)), 8,
+    // tick);
 
     if (line.valid && line.tag == lca) {
       break;

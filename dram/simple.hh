@@ -39,14 +39,6 @@ class SimpleDRAM : public AbstractDRAM {
 
   uint64_t lastDRAMAccess;
 
-  // Simple fully-associated FIFO cache
-  uint64_t cacheSize;
-  uint64_t cacheUsed;
-  uint64_t cacheLatency;
-  std::list<std::pair<uint64_t, uint64_t>> simpleCache;
-
-  bool checkCache(uint64_t, uint64_t);
-
  public:
   SimpleDRAM(Config &p);
   ~SimpleDRAM();

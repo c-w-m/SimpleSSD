@@ -31,52 +31,10 @@ SimpleDRAM::SimpleDRAM(Config &p) : AbstractDRAM(p), lastDRAMAccess(0) {
   pageFetchLatency = pTiming->tRP + pTiming->tRCD + pTiming->tCL;
   interfaceBandwidth =
       2.0 * pStructure->busWidth * pStructure->channel / 8.0 / pTiming->tCK;
-
-  // configs/common/Caches.py L2 cache has 20 Cycle
-  cacheSize = conf.readUint(SIMPLE_DRAM_SIZE);
-  cacheUsed = 0;
-  cacheLatency = 20;  // Latency / byte
 }
 
 SimpleDRAM::~SimpleDRAM() {
   // DO NOTHING
-}
-
-bool SimpleDRAM::checkCache(uint64_t addr, uint64_t size) {
-  auto iter = simpleCache.begin();
-  bool found = false;
-
-  for (; iter != simpleCache.end(); iter++) {
-    if (iter->first == addr) {
-      found = true;
-
-      break;
-    }
-  }
-
-  if (found) {
-    if (size <= iter->second) {
-      found = true;
-    }
-    else {
-      cacheUsed -= iter->second;
-      cacheUsed += size;
-
-      iter->second = size;
-    }
-  }
-  else {
-    while (cacheUsed + size > cacheSize && simpleCache.size() > 0) {
-      cacheUsed -= simpleCache.front().second;
-      simpleCache.pop_front();
-    }
-
-    if (cacheUsed + size <= cacheSize) {
-      simpleCache.push_back({addr, size});
-    }
-  }
-
-  return found;
 }
 
 void SimpleDRAM::updateDelay(uint64_t latency, uint64_t &tick) {
@@ -94,30 +52,16 @@ void SimpleDRAM::updateDelay(uint64_t latency, uint64_t &tick) {
 
 void SimpleDRAM::read(uint64_t addr, uint64_t size, uint64_t &tick) {
   uint64_t pageCount = (size > 0) ? (size - 1) / pStructure->pageSize + 1 : 0;
-  uint64_t latency;
-
-  if (checkCache(addr, size)) {
-    latency = cacheLatency * size;
-  }
-  else {
-    latency = (uint64_t)(pageFetchLatency +
+  uint64_t latency = (uint64_t)(pageFetchLatency +
                          pageCount * pStructure->pageSize / interfaceBandwidth);
-  }
 
   updateDelay(latency, tick);
 }
 
 void SimpleDRAM::write(uint64_t addr, uint64_t size, uint64_t &tick) {
   uint64_t pageCount = (size > 0) ? (size - 1) / pStructure->pageSize + 1 : 0;
-  uint64_t latency;
-
-  if (checkCache(addr, size)) {
-    latency = cacheLatency * size;
-  }
-  else {
-    latency = (uint64_t)(pageFetchLatency +
+  uint64_t latency = (uint64_t)(pageFetchLatency +
                          pageCount * pStructure->pageSize / interfaceBandwidth);
-  }
 
   updateDelay(latency, tick);
 }

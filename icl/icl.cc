@@ -68,7 +68,7 @@ void ICL::read(Request &req, uint64_t &tick) {
   reqInternal.offset = req.offset;
 
   for (uint64_t i = 0; i < req.range.nlp; i++) {
-    beginAt =  tick;
+    beginAt = tick;
 
     reqInternal.reqSubID = i + 1;
     reqInternal.range.slpn = req.range.slpn + i;
@@ -99,7 +99,7 @@ void ICL::write(Request &req, uint64_t &tick) {
   reqInternal.offset = req.offset;
 
   for (uint64_t i = 0; i < req.range.nlp; i++) {
-    beginAt =  tick;
+    beginAt = tick;
 
     reqInternal.reqSubID = i + 1;
     reqInternal.range.slpn = req.range.slpn + i;
@@ -130,7 +130,7 @@ void ICL::flush(Request &req, uint64_t &tick) {
   reqInternal.offset = req.offset;
 
   for (uint64_t i = 0; i < req.range.nlp; i++) {
-    beginAt =  tick;
+    beginAt = tick;
 
     reqInternal.reqSubID = i + 1;
     reqInternal.range.slpn = req.range.slpn + i;
@@ -161,7 +161,7 @@ void ICL::trim(Request &req, uint64_t &tick) {
   reqInternal.offset = req.offset;
 
   for (uint64_t i = 0; i < req.range.nlp; i++) {
-    beginAt =  tick;
+    beginAt = tick;
 
     reqInternal.reqSubID = i + 1;
     reqInternal.range.slpn = req.range.slpn + i;

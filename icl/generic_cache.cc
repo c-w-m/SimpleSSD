@@ -130,8 +130,9 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f, DRAM::AbstractDRAM *d)
         uint64_t min = std::numeric_limits<uint64_t>::max();
 
         for (uint32_t i = 0; i < waySize; i++) {
-          pDRAM->read(MAKE_META_ADDR(setIdx, i, offsetof(Line, insertedAt)), 8,
-                      tick);
+          tick += CACHE_DELAY * 8;
+          // pDRAM->read(MAKE_META_ADDR(setIdx, i, offsetof(Line, insertedAt)),
+          // 8, tick);
 
           if (ppCache[setIdx][i].insertedAt < min) {
             min = ppCache[setIdx][i].insertedAt;
@@ -149,8 +150,9 @@ GenericCache::GenericCache(ConfigReader *c, FTL::FTL *f, DRAM::AbstractDRAM *d)
         uint64_t min = std::numeric_limits<uint64_t>::max();
 
         for (uint32_t i = 0; i < waySize; i++) {
-          pDRAM->read(MAKE_META_ADDR(setIdx, i, offsetof(Line, lastAccessed)),
-                      8, tick);
+          tick += CACHE_DELAY * 8;
+          // pDRAM->read(MAKE_META_ADDR(setIdx, i, offsetof(Line,
+          // lastAccessed)), 8, tick);
 
           if (ppCache[setIdx][i].lastAccessed < min) {
             min = ppCache[setIdx][i].lastAccessed;
@@ -185,8 +187,7 @@ uint32_t GenericCache::getEmptyWay(uint32_t setIdx, uint64_t &tick) {
     if (!line.valid) {
       tick += CACHE_DELAY * 8;
       // pDRAM->read(MAKE_META_ADDR(setIdx, wayIdx, offsetof(Line, insertedAt)),
-      // 8,
-      //             tick);
+      // 8, tick);
 
       if (minInsertedAt > line.insertedAt) {
         minInsertedAt = line.insertedAt;

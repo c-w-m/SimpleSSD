@@ -29,9 +29,6 @@ namespace FTL {
 FTL::FTL(ConfigReader *c) : pConf(c) {
   PAL::Parameter *palparam;
 
-  pLatency =
-      new Latency(pConf->nvmeConfig.readUint(HIL::NVMe::NVME_WORK_INTERVAL));
-
   pPAL = new PAL::PAL(pConf);
   palparam = pPAL->getInfo();
 
@@ -67,7 +64,6 @@ FTL::FTL(ConfigReader *c) : pConf(c) {
 }
 
 FTL::~FTL() {
-  delete pLatency;
   delete pPAL;
   delete pFTL;
 }
@@ -75,26 +71,22 @@ FTL::~FTL() {
 void FTL::read(Request &req, uint64_t &tick) {
   Logger::debugprint(Logger::LOG_FTL, "READ  | LPN %" PRIu64, req.lpn);
 
-  pLatency->access(tick);
   pFTL->read(req, tick);
 }
 
 void FTL::write(Request &req, uint64_t &tick) {
   Logger::debugprint(Logger::LOG_FTL, "WRITE | LPN %" PRIu64, req.lpn);
 
-  pLatency->access(tick);
   pFTL->write(req, tick);
 }
 
 void FTL::trim(Request &req, uint64_t &tick) {
   Logger::debugprint(Logger::LOG_FTL, "TRIM  | LPN %" PRIu64, req.lpn);
 
-  pLatency->access(tick);
   pFTL->trim(req, tick);
 }
 
 void FTL::format(LPNRange &range, uint64_t &tick) {
-  pLatency->access(tick);
   pFTL->format(range, tick);
 }
 

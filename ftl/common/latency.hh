@@ -21,6 +21,8 @@
 #define __FTL_LATENCY__
 
 #include <cinttypes>
+#include <queue>
+#include <vector>
 
 namespace SimpleSSD {
 
@@ -28,14 +30,15 @@ namespace FTL {
 
 class Latency {
  private:
-  uint64_t lastFTLRequestAt;
+  std::priority_queue<uint64_t, std::vector<uint64_t>, std::greater<uint64_t>>
+      lastFTLRequestAt;
   uint64_t latency;
 
  public:
-  Latency(uint64_t);
+  Latency(uint64_t, uint64_t);
   ~Latency();
 
-  void access(uint64_t &tick);
+  void access(uint32_t size, uint64_t &tick);
 };
 
 }  // namespace FTL

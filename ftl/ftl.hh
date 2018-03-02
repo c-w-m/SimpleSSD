@@ -20,7 +20,6 @@
 #ifndef __FTL_FTL__
 #define __FTL_FTL__
 
-#include "ftl/common/latency.hh"
 #include "pal/pal.hh"
 #include "util/config.hh"
 #include "util/def.hh"
@@ -47,8 +46,6 @@ class FTL {
 
   ConfigReader *pConf;
   AbstractFTL *pFTL;
-
-  Latency *pLatency;
 
  public:
   FTL(ConfigReader *);

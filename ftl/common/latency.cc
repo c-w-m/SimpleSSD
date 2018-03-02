@@ -23,20 +23,29 @@ namespace SimpleSSD {
 
 namespace FTL {
 
-Latency::Latency(uint64_t l) : lastFTLRequestAt(0), latency(l) {}
+Latency::Latency(uint64_t l, uint64_t queueSize) : latency(l) {
+  for (uint64_t i = 0; i < queueSize; i++) {
+    lastFTLRequestAt.push(0);
+  }
+}
 
 Latency::~Latency() {}
 
-void Latency::access(uint64_t &tick) {
+void Latency::access(uint32_t size, uint64_t &tick) {
   if (tick > 0) {
-    if (lastFTLRequestAt <= tick) {
-      lastFTLRequestAt = tick + latency;
+    uint64_t smallest = lastFTLRequestAt.top();
+
+    if (smallest <= tick) {
+      smallest = tick + latency * size;
     }
     else {
-      lastFTLRequestAt += latency;
+      smallest += latency * size;
     }
 
-    tick = lastFTLRequestAt;
+    tick = smallest;
+
+    lastFTLRequestAt.pop();
+    lastFTLRequestAt.push(smallest);
   }
 }
 

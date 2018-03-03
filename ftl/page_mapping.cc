@@ -456,9 +456,9 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   uint64_t beginAt;
   uint64_t finishedAt = tick;
 
-  if (mappingList != table.end()) {
-    latency.access(req.ioFlag.count(), tick);
+  latency.access(req.ioFlag.count(), tick);
 
+  if (mappingList != table.end()) {
     for (uint32_t idx = 0; idx < pFTLParam->ioUnitInPage; idx++) {
       if (req.ioFlag.test(idx)) {
         auto &mapping = mappingList->second.at(idx);
@@ -485,8 +485,6 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
     }
 
     mappingList = ret.first;
-
-    latency.access(pFTLParam->ioUnitInPage, tick);
   }
 
   // Write data to free block

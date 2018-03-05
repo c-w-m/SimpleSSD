@@ -292,6 +292,10 @@ void GenericCache::evictCache(uint64_t tick) {
     for (uint32_t col = 0; col < parallelIO; col++) {
       beginAt = tick;
 
+      if (evictData[row][col] == nullptr) {
+        continue;
+      }
+
       if (evictData[row][col]->valid && evictData[row][col]->dirty) {
         reqInternal.lpn = evictData[row][col]->tag / lineCountInSuperPage;
         reqInternal.ioFlag.reset();
@@ -305,6 +309,7 @@ void GenericCache::evictCache(uint64_t tick) {
       evictData[row][col]->valid = false;
       evictData[row][col]->dirty = false;
       evictData[row][col]->tag = 0;
+      evictData[row][col] = nullptr;
 
       finishedAt = MAX(finishedAt, beginAt);
     }

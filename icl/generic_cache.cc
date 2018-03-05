@@ -383,7 +383,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         setIdx = calcSetIndex(lca);
         wayIdx = getEmptyWay(setIdx, tick);
 
-        if (wayIdx == waySize || tick > cacheData[setIdx][wayIdx].insertedAt) {
+        if (wayIdx == waySize) {
           wayIdx = evictFunction(setIdx, tick);
 
           if (cacheData[setIdx][wayIdx].dirty) {
@@ -415,6 +415,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         reqInternal.ioFlag.reset();
         reqInternal.ioFlag.set(lca % lineCountInSuperPage);
 
+        beginAt = tick; // Ignore cache metadata access
         pFTL->read(reqInternal, beginAt);
 
         // DRAM delay
@@ -428,11 +429,16 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         cacheData[setIdx][wayIdx].lastAccessed = beginAt;
         cacheData[setIdx][wayIdx].valid = true;
         cacheData[setIdx][wayIdx].dirty = false;
-        cacheData[setIdx][wayIdx].tag = req.range.slpn;
+        cacheData[setIdx][wayIdx].tag = lca;
 
         if (lca == req.range.slpn) {
           finishedAt = beginAt;
         }
+
+        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                           "READ  | Cache miss at (%u, %u) | %" PRIu64
+                           " - %" PRIu64 " (%" PRIu64 ")",
+                           setIdx, wayIdx, tick, beginAt, beginAt - tick);
       }
 
       tick = finishedAt;

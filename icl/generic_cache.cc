@@ -364,6 +364,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
     // We should read data from NVM
     else {
       FTL::Request reqInternal(lineCountInSuperPage, req);
+      std::vector<std::pair<uint64_t, uint64_t>> readList;
       uint32_t row, col;  // Variable for I/O position (IOFlag)
       uint64_t dramAt;
       uint64_t beginLCA, endLCA;
@@ -379,6 +380,11 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       }
 
       for (uint64_t lca = beginLCA; lca < endLCA; lca++) {
+        // Check cache
+        if (getValidWay(lca, beginAt) != waySize) {
+          continue;
+        }
+
         // Find way to write data read from NVM
         setIdx = calcSetIndex(lca);
         wayIdx = getEmptyWay(setIdx, tick);
@@ -391,59 +397,49 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
             calcIOPosition(cacheData[setIdx][wayIdx].tag, row, col);
             evictData[row][col] = cacheData[setIdx] + wayIdx;
           }
-          else {
-            // We will write data here
-            cacheData[setIdx][wayIdx].valid = false;
-          }
         }
+
+        cacheData[setIdx][wayIdx].insertedAt = tick;
+        cacheData[setIdx][wayIdx].lastAccessed = tick;
+        cacheData[setIdx][wayIdx].valid = true;
+        cacheData[setIdx][wayIdx].dirty = false;
+
+        readList.push_back({lca, ((uint64_t)setIdx << 32) | wayIdx});
       }
 
       evictCache(tick);
 
-      for (uint64_t lca = beginLCA; lca < endLCA; lca++) {
-        beginAt = tick;
-
-        // Check cache
-        if (getValidWay(lca, beginAt) != waySize) {
-          continue;
-        }
-
-        setIdx = calcSetIndex(lca);
-        wayIdx = getEmptyWay(setIdx, beginAt);
-
-        if (wayIdx == waySize) {
-          Logger::panic("Cache corrupted!");
-        }
+      for (auto &iter : readList) {
+        Line *pLine = &cacheData[iter.second >> 32][iter.second & 0xFFFFFFFF];
 
         // Read data
-        reqInternal.lpn = lca / lineCountInSuperPage;
+        reqInternal.lpn = iter.first / lineCountInSuperPage;
         reqInternal.ioFlag.reset();
-        reqInternal.ioFlag.set(lca % lineCountInSuperPage);
+        reqInternal.ioFlag.set(iter.first % lineCountInSuperPage);
 
         beginAt = tick;  // Ignore cache metadata access
         pFTL->read(reqInternal, beginAt);
 
         // DRAM delay
-        dramAt = cacheData[setIdx][wayIdx].insertedAt;
-        pDRAM->read(&cacheData[setIdx][wayIdx], lineSize, dramAt);
+        dramAt = pLine->insertedAt;
+        pDRAM->read(pLine, lineSize, dramAt);
 
         // Set cache data
         beginAt = MAX(tick, dramAt);
 
-        cacheData[setIdx][wayIdx].insertedAt = beginAt;
-        cacheData[setIdx][wayIdx].lastAccessed = beginAt;
-        cacheData[setIdx][wayIdx].valid = true;
-        cacheData[setIdx][wayIdx].dirty = false;
-        cacheData[setIdx][wayIdx].tag = lca;
+        pLine->insertedAt = beginAt;
+        pLine->lastAccessed = beginAt;
+        pLine->tag = iter.first;
 
-        if (lca == req.range.slpn) {
+        if (pLine->tag == req.range.slpn) {
           finishedAt = beginAt;
         }
 
         Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
                            "READ  | Cache miss at (%u, %u) | %" PRIu64
                            " - %" PRIu64 " (%" PRIu64 ")",
-                           setIdx, wayIdx, tick, beginAt, beginAt - tick);
+                           iter.second >> 32, iter.second & 0xFFFFFFFF, tick,
+                           beginAt, beginAt - tick);
       }
 
       tick = finishedAt;

@@ -45,8 +45,8 @@ class SimpleDRAM : public AbstractDRAM {
 
   void updateDelay(uint64_t, uint64_t &);
 
-  void read(uint64_t, uint64_t, uint64_t &) override;
-  void write(uint64_t, uint64_t, uint64_t &) override;
+  void read(void *, uint64_t, uint64_t &) override;
+  void write(void *, uint64_t, uint64_t &) override;
 };
 
 }  // namespace DRAM

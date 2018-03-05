@@ -35,12 +35,8 @@ const char NAME_DRAM_TIMING_RCD[] = "DRAMtRCD";
 const char NAME_DRAM_TIMING_CL[] = "DRAMtCL";
 const char NAME_DRAM_TIMING_RP[] = "DRAMtRP";
 
-const char NAME_SIMPLE_CACHE_SIZE[] = "SimpleCacheSize";
-
 Config::Config() {
   model = SIMPLE_MODEL;
-
-  simpleCacheSize = 1048576;
 
   /* LPDDR3-1600 4Gbit 1x32 */
   dram.channel = 1;
@@ -108,9 +104,6 @@ bool Config::setConfig(const char *name, const char *value) {
   if (MATCH_NAME(NAME_DRAM_MODEL)) {
     model = (MODEL)strtoul(value, nullptr, 10);
   }
-  else if (MATCH_NAME(NAME_SIMPLE_CACHE_SIZE)) {
-    simpleCacheSize = strtoul(value, nullptr, 10);
-  }
   else if (MATCH_NAME(NAME_DRAM_CHANNEL)) {
     dram.channel = strtoul(value, nullptr, 10);
   }
@@ -145,18 +138,6 @@ int64_t Config::readInt(uint32_t idx) {
   switch (idx) {
     case DRAM_MODEL:
       ret = model;
-      break;
-  }
-
-  return ret;
-}
-
-uint64_t Config::readUint(uint32_t idx) {
-  uint64_t ret = 0;
-
-  switch (idx) {
-    case SIMPLE_DRAM_SIZE:
-      ret = simpleCacheSize;
       break;
   }
 

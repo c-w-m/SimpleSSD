@@ -19,6 +19,7 @@
 
 #include "hil/nvme/controller.hh"
 
+#include <algorithm>
 #include <cmath>
 
 #include "hil/nvme/subsystem.hh"
@@ -438,6 +439,7 @@ void Controller::submit(CQEntryWrapper &entry) {
 
 void Controller::completion(uint64_t tick) {
   CQueue *pQueue = nullptr;
+  std::vector<uint16_t> ivToPost;
 
   for (auto iter = lCQFIFO.begin(); iter != lCQFIFO.end(); iter++) {
     if (iter->submitAt <= tick) {
@@ -476,10 +478,20 @@ void Controller::completion(uint64_t tick) {
         }
 
         if (post) {
-          // Update interrupt
-          updateInterrupt(iv, true);
+          // Prepare for merge
+          ivToPost.push_back(iv);
         }
       }
+    }
+  }
+
+  if (ivToPost.size() > 0) {
+    std::sort(ivToPost.begin(), ivToPost.end());
+    auto end = std::unique(ivToPost.begin(), ivToPost.end());
+
+    for (auto iter = ivToPost.begin(); iter != end; iter++) {
+      // Update interrupt
+      updateInterrupt(*iter, true);
     }
   }
 
@@ -1329,7 +1341,9 @@ void Controller::work(uint64_t &tick) {
 
   // Check SQFIFO
   static uint64_t maxRequest = conf.readUint(NVME_MAX_REQUEST_COUNT);
+  static uint64_t workInterval = conf.readUint(NVME_WORK_INTERVAL) / maxRequest;
   uint64_t count = 0;
+  uint64_t beginAt;
 
   while (lSQFIFO.size() > 0 && count < maxRequest) {
     SQEntryWrapper front = lSQFIFO.front();
@@ -1337,7 +1351,9 @@ void Controller::work(uint64_t &tick) {
     lSQFIFO.pop_front();
 
     // Process command
-    if (pSubsystem->submitCommand(front, response, tick)) {
+    beginAt = tick + workInterval * count;
+
+    if (pSubsystem->submitCommand(front, response, beginAt)) {
       submit(response);
     }
 

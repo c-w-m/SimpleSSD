@@ -415,7 +415,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         reqInternal.ioFlag.reset();
         reqInternal.ioFlag.set(lca % lineCountInSuperPage);
 
-        beginAt = tick; // Ignore cache metadata access
+        beginAt = tick;  // Ignore cache metadata access
         pFTL->read(reqInternal, beginAt);
 
         // DRAM delay
@@ -492,12 +492,12 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
       ret = true;
     }
     else {
+      uint64_t arrived = tick;
+
       wayIdx = getEmptyWay(setIdx, tick);
 
       // Do we have place to write data?
       if (wayIdx != waySize) {
-        uint64_t arrived = tick;
-
         // Wait cache to be valid
         if (tick < cacheData[setIdx][wayIdx].insertedAt) {
           tick = cacheData[setIdx][wayIdx].insertedAt;
@@ -512,11 +512,6 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
 
         // DRAM access
         pDRAM->read(&cacheData[setIdx][wayIdx], req.length, tick);
-
-        Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
-                           "WRITE | Cache miss at (%u, %u) | %" PRIu64
-                           " - %" PRIu64 " (%" PRIu64 ")",
-                           setIdx, wayIdx, arrived, tick, tick - arrived);
 
         ret = true;
       }
@@ -558,6 +553,11 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
         cacheData[setIdx][wayIdx].dirty = true;
         cacheData[setIdx][wayIdx].tag = req.range.slpn;
       }
+
+      Logger::debugprint(Logger::LOG_ICL_GENERIC_CACHE,
+                         "WRITE | Cache miss at (%u, %u) | %" PRIu64
+                         " - %" PRIu64 " (%" PRIu64 ")",
+                         setIdx, wayIdx, arrived, tick, tick - arrived);
     }
   }
   else {

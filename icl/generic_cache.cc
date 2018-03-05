@@ -387,8 +387,13 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
           wayIdx = evictFunction(setIdx, tick);
 
           if (cacheData[setIdx][wayIdx].dirty) {
+            // We need to evict data before write
             calcIOPosition(cacheData[setIdx][wayIdx].tag, row, col);
             evictData[row][col] = cacheData[setIdx] + wayIdx;
+          }
+          else {
+            // We will write data here
+            cacheData[setIdx][wayIdx].valid = false;
           }
         }
       }

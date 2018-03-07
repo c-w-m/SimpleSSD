@@ -106,6 +106,9 @@ void Config::update() {
   if (popcount(lbaSize) != 1) {
     Logger::panic("Invalid LBA size");
   }
+  if (maxRequestCount == 0) {
+    Logger::panic("MaxRequestCount should be larger then 0");
+  }
 }
 
 int64_t Config::readInt(uint32_t idx) {

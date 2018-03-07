@@ -63,7 +63,7 @@ bool Config::setConfig(const char *name, const char *value) {
     workInterval = strtoul(value, nullptr, 10);
   }
   else if (MATCH_NAME(NAME_MAX_REQUEST_COUNT)) {
-    maxRequestCount = (uint16_t)strtoul(value, nullptr, 10);
+    maxRequestCount = strtoul(value, nullptr, 10);
   }
   else if (MATCH_NAME(NAME_MAX_IO_CQUEUE)) {
     maxIOCQueue = (uint16_t)strtoul(value, nullptr, 10);

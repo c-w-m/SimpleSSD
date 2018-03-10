@@ -425,7 +425,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
         pDRAM->read(pLine, lineSize, dramAt);
 
         // Set cache data
-        beginAt = MAX(tick, dramAt);
+        beginAt = MAX(beginAt, dramAt);
 
         pLine->insertedAt = beginAt;
         pLine->lastAccessed = beginAt;

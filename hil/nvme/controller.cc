@@ -364,13 +364,16 @@ void Controller::ringCQHeadDoorbell(uint16_t qid, uint16_t head,
   pParent->dmaWrite(0, 4, nullptr, tick);
 
   if (pQueue) {
+    uint16_t oldhead = pQueue->getHead();
+    uint32_t oldcount = pQueue->getItemCount();
+
     pQueue->setHead(head);
 
-    debugprint(
-        Logger::LOG_HIL_NVME,
-        "CQ %-5d| Completion Queue Head Doorbell | Item count in queue %d | "
-        "head %d | tail %d",
-        qid, pQueue->getItemCount(), pQueue->getHead(), pQueue->getTail());
+    debugprint(Logger::LOG_HIL_NVME,
+               "CQ %-5d| Completion Queue Head Doorbell | Item count in queue "
+               "%d -> %d | head %d -> %d | tail %d",
+               qid, oldcount, pQueue->getItemCount(), oldhead,
+               pQueue->getHead(), pQueue->getTail());
 
     if (pQueue->interruptEnabled()) {
       clearInterrupt(pQueue->getInterruptVector());
@@ -385,13 +388,16 @@ void Controller::ringSQTailDoorbell(uint16_t qid, uint16_t tail,
   pParent->dmaWrite(0, 4, nullptr, tick);
 
   if (pQueue) {
+    uint16_t oldtail = pQueue->getTail();
+    uint32_t oldcount = pQueue->getItemCount();
+
     pQueue->setTail(tail);
 
-    debugprint(
-        Logger::LOG_HIL_NVME,
-        "SQ %-5d| Submission Queue Tail Doorbell | Item count in queue %d | "
-        "head %d | tail %d",
-        qid, pQueue->getItemCount(), pQueue->getHead(), pQueue->getTail());
+    debugprint(Logger::LOG_HIL_NVME,
+               "SQ %-5d| Submission Queue Tail Doorbell | Item count in queue "
+               "%d -> %d | head %d | tail %d -> %d",
+               qid, oldcount, pQueue->getItemCount(), pQueue->getHead(),
+               oldtail, pQueue->getTail());
   }
 }
 

@@ -63,7 +63,7 @@ bool Config::setConfig(const char *name, const char *value) {
     workInterval = strtoul(value, nullptr, 10);
   }
   else if (MATCH_NAME(NAME_MAX_REQUEST_COUNT)) {
-    maxRequestCount = (uint16_t)strtoul(value, nullptr, 10);
+    maxRequestCount = strtoul(value, nullptr, 10);
   }
   else if (MATCH_NAME(NAME_MAX_IO_CQUEUE)) {
     maxIOCQueue = (uint16_t)strtoul(value, nullptr, 10);
@@ -105,6 +105,9 @@ bool Config::setConfig(const char *name, const char *value) {
 void Config::update() {
   if (popcount(lbaSize) != 1) {
     Logger::panic("Invalid LBA size");
+  }
+  if (maxRequestCount == 0) {
+    Logger::panic("MaxRequestCount should be larger then 0");
   }
 }
 

@@ -62,6 +62,7 @@ typedef struct {
   uint64_t nextTime;
   uint32_t requestCount;
   bool valid;
+  bool pending;
 } AggregationInfo;
 
 class Controller {
@@ -92,6 +93,7 @@ class Controller {
   Config &conf;
 
   static bool checkQueue(SQueue *, std::list<SQEntryWrapper> &, uint64_t &);
+  void reserveCompletion();
 
  public:
   Controller(Interface *, ConfigReader *);

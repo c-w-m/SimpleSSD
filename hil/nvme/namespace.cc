@@ -243,7 +243,6 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
 
   if (!err) {
     uint64_t dmaTick = tick;
-    uint64_t diff = tick;
     uint64_t dmaDelayed;
 
     if (req.useSGL) {
@@ -253,8 +252,6 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
       dma = new PRPList(pCfgdata, req.entry.data1, req.entry.data2,
                         (uint64_t)nlb * info.lbaSize);
     }
-
-    pParent->write(this, slba, nlb, tick);
 
     if (pDisk) {
       uint8_t *buffer = (uint8_t *)calloc(nlb, info.lbaSize);
@@ -269,13 +266,18 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
     }
 
     Logger::debugprint(Logger::LOG_HIL_NVME,
-                       "NVM     | WRITE | %" PRIX64 " + %d | NAND %" PRIu64
-                       " - %" PRIu64 " (%" PRIu64 ") | DMA %" PRIu64
+                       "NVM     | WRITE | %" PRIX64 " + %d | DMA %" PRIu64
                        " - %" PRIu64 " (%" PRIu64 ")",
-                       slba, nlb, diff, tick, tick - diff, dmaDelayed, dmaTick,
-                       dmaTick - dmaDelayed);
+                       slba, nlb, dmaDelayed, dmaTick, dmaTick - dmaDelayed);
 
-    tick = MAX(tick, dmaTick);
+    tick = dmaTick;
+
+    pParent->write(this, slba, nlb, tick);
+
+    Logger::debugprint(Logger::LOG_HIL_NVME,
+                       "NVM     | WRITE | %" PRIX64 " + %d | NAND %" PRIu64
+                       " - %" PRIu64 " (%" PRIu64 ")",
+                       slba, nlb, dmaTick, tick, tick - dmaTick);
   }
 }
 
@@ -303,7 +305,6 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
 
   if (!err) {
     uint64_t dmaTick = tick;
-    uint64_t diff = tick;
     uint64_t dmaDelayed;
 
     if (req.useSGL) {
@@ -315,6 +316,13 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
     }
 
     pParent->read(this, slba, nlb, tick);
+
+    Logger::debugprint(Logger::LOG_HIL_NVME,
+                       "NVM     | READ  | %" PRIX64 " + %d | NAND %" PRIu64
+                       " - %" PRIu64 " (%" PRIu64 ")",
+                       slba, nlb, dmaTick, tick, tick - dmaTick);
+
+    dmaTick = tick;
 
     if (pDisk) {
       uint8_t *buffer = (uint8_t *)calloc(nlb, info.lbaSize);
@@ -329,11 +337,9 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
     }
 
     Logger::debugprint(Logger::LOG_HIL_NVME,
-                       "NVM     | READ  | %" PRIX64 " + %d | NAND %" PRIu64
-                       " - %" PRIu64 " (%" PRIu64 ") | DMA %" PRIu64
+                       "NVM     | READ  | %" PRIX64 " + %d | DMA %" PRIu64
                        " - %" PRIu64 " (%" PRIu64 ")",
-                       slba, nlb, diff, tick, tick - diff, dmaDelayed, dmaTick,
-                       dmaTick - dmaDelayed);
+                       slba, nlb, dmaDelayed, dmaTick, dmaTick - dmaDelayed);
 
     tick = MAX(tick, dmaTick);
   }

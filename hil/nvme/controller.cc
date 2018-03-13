@@ -493,7 +493,8 @@ void Controller::completion(uint64_t tick) {
   }
 
   for (auto &iter : aggregationMap) {
-    if (iter.second.valid && iter.second.nextTime <= tick && iter.second.pending) {
+    if (iter.second.valid && iter.second.nextTime <= tick &&
+        iter.second.pending) {
       iter.second.nextTime = tick + aggregationTime;
       iter.second.requestCount = 0;
       iter.second.pending = false;
@@ -1422,7 +1423,7 @@ void Controller::getStats(std::vector<Stats> &list) {
   pSubsystem->getStats(list);
 }
 
-void Controller::getStatValues(std::vector<uint64_t> & values) {
+void Controller::getStatValues(std::vector<uint64_t> &values) {
   pSubsystem->getStatValues(values);
 }
 

@@ -145,7 +145,7 @@ void PAL::getStats(std::vector<Stats> &list) {
   pPAL->getStats(list);
 }
 
-void PAL::getStatValues(std::vector<uint64_t> & values) {
+void PAL::getStatValues(std::vector<uint64_t> &values) {
   pPAL->getStatValues(values);
 }
 

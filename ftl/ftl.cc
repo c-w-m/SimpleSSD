@@ -103,7 +103,7 @@ void FTL::getStats(std::vector<Stats> &list) {
   pPAL->getStats(list);
 }
 
-void FTL::getStatValues(std::vector<uint64_t> & values) {
+void FTL::getStatValues(std::vector<uint64_t> &values) {
   pFTL->getStatValues(values);
   pPAL->getStatValues(values);
 }

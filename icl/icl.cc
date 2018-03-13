@@ -209,7 +209,7 @@ void ICL::getStats(std::vector<Stats> &list) {
   pFTL->getStats(list);
 }
 
-void ICL::getStatValues(std::vector<uint64_t> & values) {
+void ICL::getStatValues(std::vector<uint64_t> &values) {
   pCache->getStatValues(values);
   pFTL->getStatValues(values);
 }

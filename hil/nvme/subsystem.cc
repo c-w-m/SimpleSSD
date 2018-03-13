@@ -50,7 +50,8 @@ Subsystem::Subsystem(Controller *ctrl, ConfigData *cfg)
     : pParent(ctrl),
       pCfgdata(cfg),
       conf(cfg->pConfigReader->nvmeConfig),
-      allocatedLogicalPages(0) {
+      allocatedLogicalPages(0),
+      commandCount(0) {
   pHIL = new HIL(cfg->pConfigReader);
 
   pHIL->getLPNInfo(totalLogicalPages, logicalPageSize);
@@ -259,6 +260,8 @@ bool Subsystem::submitCommand(SQEntryWrapper &req, CQEntryWrapper &resp,
 
   // TODO: change this
   tick += 1000000;  // 1us of command delay
+
+  commandCount++;
 
   // Admin command
   if (req.sqID == 0) {
@@ -1041,6 +1044,28 @@ bool Subsystem::formatNVM(SQEntryWrapper &req, CQEntryWrapper &resp,
   }
 
   return true;
+}
+
+void Subsystem::getStats(std::vector<Stats> &list) {
+  Stats temp;
+
+  temp.name = "command_count";
+  temp.desc = "Total number of NVMe command handled";
+  list.push_back(temp);
+
+  pHIL->getStats(list);
+}
+
+void Subsystem::getStatValues(std::vector<uint64_t> &values) {
+  values.push_back(commandCount);
+
+  pHIL->getStatValues(values);
+}
+
+void Subsystem::resetStats() {
+  commandCount = 0;
+
+  pHIL->resetStats();
 }
 
 }  // namespace NVMe

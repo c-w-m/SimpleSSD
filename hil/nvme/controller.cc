@@ -1418,6 +1418,18 @@ void Controller::reserveCompletion() {
   }
 }
 
+void Controller::getStats(std::vector<Stats> &list) {
+  pSubsystem->getStats(list);
+}
+
+void Controller::getStatValues(std::vector<uint64_t> & values) {
+  pSubsystem->getStatValues(values);
+}
+
+void Controller::resetStats() {
+  pSubsystem->resetStats();
+}
+
 }  // namespace NVMe
 
 }  // namespace HIL

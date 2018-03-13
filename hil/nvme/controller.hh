@@ -28,6 +28,7 @@
 #include "hil/nvme/interface.hh"
 #include "hil/nvme/queue.hh"
 #include "util/config.hh"
+#include "util/def.hh"
 
 namespace SimpleSSD {
 
@@ -65,7 +66,7 @@ typedef struct {
   bool pending;
 } AggregationInfo;
 
-class Controller {
+class Controller : public StatObject {
  private:
   Interface *pParent;     //!< NVMe::Interface passed from constructor
   Subsystem *pSubsystem;  //!< NVMe::Subsystem allocate in constructor
@@ -122,6 +123,10 @@ class Controller {
 
   void collectSQueue(uint64_t &);
   void work(uint64_t &);
+
+  void getStats(std::vector<Stats> &) override;
+  void getStatValues(std::vector<uint64_t> &) override;
+  void resetStats() override;
 };
 
 }  // namespace NVMe

@@ -195,6 +195,8 @@ void Namespace::getLogPage(SQEntryWrapper &req, CQEntryWrapper &resp,
                       STATUS_INVALID_LOG_PAGE);
       break;
   }
+
+  delete dma;
 }
 
 void Namespace::flush(SQEntryWrapper &req, CQEntryWrapper &resp,
@@ -264,6 +266,8 @@ void Namespace::write(SQEntryWrapper &req, CQEntryWrapper &resp,
     else {
       dmaDelayed = dma->read(0, nlb * info.lbaSize, nullptr, dmaTick);
     }
+
+    delete dma;
 
     Logger::debugprint(Logger::LOG_HIL_NVME,
                        "NVM     | WRITE | %" PRIX64 " + %d | DMA %" PRIu64
@@ -336,6 +340,8 @@ void Namespace::read(SQEntryWrapper &req, CQEntryWrapper &resp,
       dmaDelayed = dma->write(0, nlb * info.lbaSize, nullptr, dmaTick);
     }
 
+    delete dma;
+
     Logger::debugprint(Logger::LOG_HIL_NVME,
                        "NVM     | READ  | %" PRIX64 " + %d | DMA %" PRIu64
                        " - %" PRIu64 " (%" PRIu64 ")",
@@ -384,6 +390,8 @@ void Namespace::datasetManagement(SQEntryWrapper &req, CQEntryWrapper &resp,
       dma->read(i * 0x10, 0x10, range.data, tick);
       pParent->trim(this, range.slba, range.nlb, tick);
     }
+
+    delete dma;
 
     Logger::debugprint(Logger::LOG_HIL_NVME,
                        "NVM     | TRIM  | NSID %-5d| %" PRIu64 " - %" PRIu64

@@ -524,6 +524,8 @@ bool Subsystem::getLogPage(SQEntryWrapper &req, CQEntryWrapper &resp,
       break;
   }
 
+  delete dma;
+
   return ret;
 }
 
@@ -680,6 +682,8 @@ bool Subsystem::identify(SQEntryWrapper &req, CQEntryWrapper &resp,
   if (ret && !err) {
     dma->write(0, 0x1000, data, tick);
   }
+
+  delete dma;
 
   return ret;
 }
@@ -867,6 +871,8 @@ bool Subsystem::namespaceManagement(SQEntryWrapper &req, CQEntryWrapper &resp,
 
         dma->read(0, 0x1000, data, tick);
 
+        delete dma;
+
         // Copy data
         memcpy(&info.size, data + 0, 8);
         memcpy(&info.capacity, data + 8, 8);
@@ -935,6 +941,8 @@ bool Subsystem::namespaceAttachment(SQEntryWrapper &req, CQEntryWrapper &resp,
   }
 
   dma->read(0, 4, (uint8_t *)&ctrlList, tick);
+
+  delete dma;
 
   if (ctrlList != 0x00000001) {
     err = true;
